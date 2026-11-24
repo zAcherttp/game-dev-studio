@@ -1,0 +1,41 @@
+{
+  "status": "published",
+  "note": "",
+  "items": [
+    {
+      "id": "node-pnpm-git",
+      "item": "[Node, pnpm, git and Pi](https://ratstack.sh/tokenmaxx/setup.md)",
+      "proof": null
+    },
+    {
+      "id": "workshop-tools",
+      "item": "[The workshop tools](https://ratstack.sh/tokenmaxx/setup.md)",
+      "proof": null
+    },
+    {
+      "id": "herdr",
+      "item": "[Herdr](https://ratstack.sh/tokenmaxx/setup.md)",
+      "proof": null
+    },
+    {
+      "id": "pi-model",
+      "item": "[The person gives Pi a model](https://ratstack.sh/tokenmaxx/setup.md)",
+      "proof": null
+    },
+    {
+      "id": "check",
+      "item": "[The check](https://ratstack.sh/tokenmaxx/setup.md)",
+      "proof": "pnpm ex 00.1 check"
+    },
+    {
+      "id": "own-repo",
+      "item": "[The person's own repo](https://ratstack.sh/tokenmaxx/setup.md)",
+      "proof": "pnpm ex 01.1 done"
+    },
+    {
+      "id": "report",
+      "item": "[Report](https://ratstack.sh/tokenmaxx/setup.md)",
+      "proof": null
+    }
+  ]
+}

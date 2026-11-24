@@ -1,0 +1,1151 @@
+[
+  {
+    "kind": "video",
+    "url": "https://www.youtube.com/watch?v=BA1lV8JgUqM",
+    "title": "Devin Jameson: Frontend for Agents & Humans",
+    "summary": "Foldkit's author, who has just joined Effect, gives a 39-minute talk at Effect Miami #3.",
+    "date": "2026-11-23",
+    "repo": null,
+    "author": {
+      "github": "devinjameson",
+      "x": "devinjameson"
+    },
+    "source": "https://www.youtube.com/watch?v=BA1lV8JgUqM",
+    "engagement": {
+      "views": 1289
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/dmmulroy/rex-sdk",
+    "title": "rex-sdk: an Effect-native SDK for the Rex server API",
+    "summary": "Every Rex method is a typed Effect with Schema codecs generated from the server's JSON Schemas; live events and terminal output are Streams.",
+    "date": "2026-11-23",
+    "repo": "dmmulroy/rex-sdk",
+    "author": {
+      "github": "dmmulroy",
+      "x": "dillon_mulroy"
+    },
+    "source": "https://github.com/dmmulroy/rex-sdk",
+    "engagement": {
+      "stars": 34
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/rivet-dev/rivet-effect-cluster",
+    "title": "Effect Cluster runs on Rivet Actors",
+    "summary": "Experimental: Effect Cluster entities, workflows, queues and singletons run as Rivet Actors, each with its own SQLite database, with no Postgres or shard ring.",
+    "date": "2026-11-22",
+    "repo": "rivet-dev/rivet-effect-cluster",
+    "author": {
+      "github": "rivet-dev",
+      "x": "NathanFlurry"
+    },
+    "source": "https://x.com/NathanFlurry/status/2124538395682853187",
+    "engagement": {
+      "stars": 2
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/potion-run/emulate",
+    "title": "@potion.run/emulate runs third-party APIs as Effect layers",
+    "summary": "Local GitHub, Vercel, Google, Slack and Stripe emulators as Effect platform layers with typed errors, plus an Alchemy resource for alchemy dev.",
+    "date": "2026-11-22",
+    "repo": "potion-run/emulate",
+    "author": {
+      "github": "potion-run",
+      "x": "NFS__21"
+    },
+    "source": "https://x.com/NFS__21/status/2124510714358276399",
+    "engagement": {
+      "stars": 2
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/sshkeda/minecraft-server-on-orange-cloud",
+    "title": "A Minecraft server that runs entirely on Cloudflare",
+    "summary": "Spectrum hands player TCP to a Worker and Durable Object that wakes a Paper container; the world saves to R2. Deployed with Alchemy.",
+    "date": "2026-11-21",
+    "repo": "sshkeda/minecraft-server-on-orange-cloud",
+    "author": {
+      "github": "sshkeda",
+      "x": null
+    },
+    "source": "https://github.com/sshkeda/minecraft-server-on-orange-cloud",
+    "engagement": {
+      "stars": 420
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://github.com/Effect-TS/effect/releases/tag/effect%404.1.5",
+    "title": "effect@4.1.5 sharpens property-test failures",
+    "summary": "Patch release: property tests shrink failing strings further and name unsupported regex patterns; adds Base64 and BigInt helpers and fixes cache expiry.",
+    "date": "2026-11-20",
+    "repo": "Effect-TS/effect",
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://github.com/Effect-TS/effect/releases/tag/effect%404.1.5",
+    "engagement": {
+      "stars": 17648
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://github.com/statelyai/xstate/releases/tag/xstate%406.0.0-beta.4",
+    "title": "XState 6 beta.4 fixes timer replacement",
+    "summary": "Timers that reuse an ID now wait for their own deadline, eventless steps run once, and @xstate/effect beta.3 keeps workflows progressing under steady traffic.",
+    "date": "2026-11-20",
+    "repo": "statelyai/xstate",
+    "author": {
+      "github": "statelyai",
+      "x": "DavidKPiano"
+    },
+    "source": "https://github.com/statelyai/xstate/releases/tag/xstate%406.0.0-beta.4",
+    "engagement": {
+      "stars": 30530
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/southpolesteve/workers-dns-tcp",
+    "title": "workers-dns-tcp answers DNS queries from a Worker",
+    "summary": "An authoritative DNS server on the Workers TCP handler; an optional Workers AI mode answers questions asked with dig, in TXT records.",
+    "date": "2026-11-20",
+    "repo": "southpolesteve/workers-dns-tcp",
+    "author": {
+      "github": "southpolesteve",
+      "x": null
+    },
+    "source": "https://github.com/southpolesteve/workers-dns-tcp",
+    "engagement": {
+      "stars": 51
+    }
+  },
+  {
+    "kind": "video",
+    "url": "https://www.youtube.com/watch?v=xB3YKYwoqxM",
+    "title": "Effect Module of the Week 8: HttpApi",
+    "summary": "HttpApi writes the HTTP protocol first, as Effect Schemas, and derives both the server and the client from it, so they change together.",
+    "date": "2026-11-20",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://www.youtube.com/watch?v=xB3YKYwoqxM",
+    "engagement": {
+      "views": 826
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/bjacobso/effect-datastar",
+    "title": "effect-datastar: a Datastar app with an all-Effect server",
+    "summary": "Schema-driven CRUD with live updates across tabs, sign-in and organizations; the form widgets derive from the schemas, and the server is Effect 4 throughout.",
+    "date": "2026-11-20",
+    "repo": "bjacobso/effect-datastar",
+    "author": {
+      "github": "bjacobso",
+      "x": "bjacobso"
+    },
+    "source": "https://github.com/bjacobso/effect-datastar",
+    "engagement": {
+      "stars": 0
+    }
+  },
+  {
+    "kind": "post",
+    "url": "https://foldkit.dev/blog/foldkit-joins-effect",
+    "title": "Foldkit joins Effect as its full-stack framework",
+    "summary": "Devin Jameson joins Effectful full time; Foldkit moves under Effect, becomes its full-stack framework on a rebuilt frontend foundation; current feature work pauses.",
+    "date": "2026-11-19",
+    "repo": "foldkit/foldkit",
+    "author": {
+      "github": "devinjameson",
+      "x": "devinjameson"
+    },
+    "source": "https://x.com/devinjameson/status/2123473797848424931"
+  },
+  {
+    "kind": "thread",
+    "url": "https://x.com/samgoodwin89/status/2123295778345202158",
+    "title": "Alchemy Domain proves a model's rules with Z3",
+    "summary": "Merged in alchemy#3260, unreleased: Domain models declare invariants, transition rules and eventually-goals; one test proves them with Z3 or finds a breaking command sequence.",
+    "date": "2026-11-19",
+    "repo": null,
+    "author": {
+      "github": "sam-goodwin",
+      "x": "samgoodwin89"
+    },
+    "source": "https://github.com/alchemy-run/alchemy/pull/3260",
+    "topReplies": [
+      {
+        "likes": 26,
+        "text": "Instead of writing tests for each case you can think of (although of course you should do that too), one test can verify the model implementation never violates the invariants. https://t.co/wiKwwugocm",
+        "url": "https://x.com/samgoodwin89/status/2123295780454953223",
+        "x": "samgoodwin89"
+      },
+      {
+        "likes": 12,
+        "text": "Run the tests to see a report of what was proven and how far and wide a simulator searched.\n\nA mix of proof checking and simulation gives you a high baseline of confidence in correctness without tests. https://t.co/wJkzD5b9Ai",
+        "url": "https://x.com/samgoodwin89/status/2123295782543798712",
+        "x": "samgoodwin89"
+      },
+      {
+        "likes": 8,
+        "text": "Rules can span aggregates. A relation says what holds between two instances, and it is proved across every command and decision that writes to either one. https://t.co/zohSv9Y4ja",
+        "url": "https://x.com/samgoodwin89/status/2123295786649935950",
+        "x": "samgoodwin89"
+      }
+    ],
+    "engagement": {
+      "likes": 396,
+      "replies": 16,
+      "participants": 17
+    }
+  },
+  {
+    "kind": "post",
+    "url": "https://developers.cloudflare.com/changelog/post/2026-11-19-inbound-tcp/",
+    "title": "Workers can accept inbound TCP connections",
+    "summary": "Public beta: Workers accept raw TCP connections through Spectrum and can hand them to Durable Objects, and Containers gain two-way gRPC.",
+    "date": "2026-11-19",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": "cfchangelog"
+    },
+    "source": "https://x.com/cfchangelog/status/2123899414255394834"
+  },
+  {
+    "kind": "post",
+    "url": "https://github.com/alchemy-run/alchemy/pull/3506",
+    "title": "Alchemy Domain example serves one board to people and agents",
+    "summary": "Open PR: one Domain model on Durable Objects serves a Vercel Board-style board to people in Foldkit and to agents over MCP and CLI.",
+    "date": "2026-11-19",
+    "repo": "alchemy-run/alchemy",
+    "author": {
+      "github": "sam-goodwin",
+      "x": "samgoodwin89"
+    },
+    "source": "https://x.com/samgoodwin89/status/2123851816505111035"
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/rivet-dev/code-mode-language-benchmark",
+    "title": "Rivet measures scripting runtimes for code mode",
+    "summary": "Memory, startup and tool-call cost per instance for embedded runtimes and processes: embedded Starlark takes 6.82 KiB, a V8 isolate 1.11 MiB.",
+    "date": "2026-11-19",
+    "repo": "rivet-dev/code-mode-language-benchmark",
+    "author": {
+      "github": "rivet-dev",
+      "x": null
+    },
+    "source": "https://github.com/rivet-dev/code-mode-language-benchmark",
+    "engagement": {
+      "stars": 13
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/ismailkarsli/TypeSQL",
+    "title": "TypeSQL types raw SQL queries for Effect",
+    "summary": "@typesql/effect runs type-checked raw SQL as Effects on an Effect SqlClient; rows and parameters are typed from the query, with no codegen or database connection.",
+    "date": "2026-11-18",
+    "repo": "ismailkarsli/TypeSQL",
+    "author": {
+      "github": "ismailkarsli",
+      "x": "ismailkarsli54"
+    },
+    "source": "https://x.com/ismailkarsli54/status/2123062328664920190",
+    "engagement": {
+      "stars": 63
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://github.com/foldkit/foldkit/releases/tag/foldkit%400.171.0",
+    "title": "Foldkit 0.171.0 requires result Message schemas",
+    "summary": "Breaking: createKeyedLazy now evicts keys absent from the latest render, and Command and Mount definitions require result Message schemas. Adds awaitable disposeAsync for embeds.",
+    "date": "2026-11-17",
+    "repo": "foldkit/foldkit",
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://github.com/foldkit/foldkit/releases",
+    "engagement": {
+      "stars": 1241
+    }
+  },
+  {
+    "kind": "thread",
+    "url": "https://x.com/mattpocockuk/status/2122618527840354327",
+    "title": "A prompt for assessing the XState v6 beta",
+    "summary": "Prompt for a coding agent: research the XState v6 beta, apply it to the app's gnarliest problem in a draft PR, verify and grade it.",
+    "date": "2026-11-17",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": "mattpocockuk"
+    },
+    "source": "https://x.com/mattpocockuk/status/2122618527840354327",
+    "topReplies": [
+      {
+        "likes": 19,
+        "text": "@mattpocockuk Thanks! Millions of tokens over many months went into it 😅",
+        "url": "https://x.com/DavidKPiano/status/2122659376531923055",
+        "x": "DavidKPiano"
+      },
+      {
+        "likes": 4,
+        "text": "@mattpocockuk It's even faster if you prompt @DavidKPiano: Is XState v6 beta good?",
+        "url": "https://x.com/betterbomb/status/2122690991807422793",
+        "x": "betterbomb"
+      },
+      {
+        "likes": 3,
+        "text": "@betterbomb @mattpocockuk Yes it's much better than v5 especially for agents",
+        "url": "https://x.com/DavidKPiano/status/2122697186710352089",
+        "x": "DavidKPiano"
+      }
+    ],
+    "engagement": {
+      "likes": 761,
+      "replies": 70,
+      "participants": 78
+    }
+  },
+  {
+    "kind": "thread",
+    "url": "https://x.com/makisuo/status/2122818263490904221",
+    "title": "Superwall runs all production services on Effect",
+    "summary": "All of Superwall's production services now run on Effect, 29 APIs and services in total, after more than a year and a half of adoption.",
+    "date": "2026-11-17",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": "makisuo"
+    },
+    "source": "https://x.com/makisuo/status/2122818263490904221",
+    "topReplies": [],
+    "engagement": {
+      "likes": 12,
+      "replies": 0,
+      "participants": 0
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/timhanlon/fluid-functionalism-foldkit",
+    "title": "Fluid Functionalism ported to Foldkit",
+    "summary": "A port of the Fluid Functionalism component set to Foldkit and Foldkit UI, with a live demo; smooth animation needs a pending Foldkit patch.",
+    "date": "2026-11-16",
+    "repo": "timhanlon/fluid-functionalism-foldkit",
+    "author": {
+      "github": "timhanlon",
+      "x": "timhnln"
+    },
+    "source": "https://x.com/timhnln/status/2122383624993694038",
+    "engagement": {
+      "stars": 13
+    }
+  },
+  {
+    "kind": "thread",
+    "url": "https://x.com/0xblacklight/status/2122164674309521562",
+    "title": "anti-slop adds Effect rules and a Jev plugin",
+    "summary": "Update to an anti-slop lint repo: more Effect rules, a vendored oxlint Jev plugin for rules written as natural-language questions, and changed-code-only checks.",
+    "date": "2026-11-16",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": "0xblacklight"
+    },
+    "source": "https://x.com/0xblacklight/status/2122164674309521562",
+    "topReplies": [
+      {
+        "likes": 14,
+        "text": "@0xblacklight @EffectTS_ @typesafeai Check out @harrysolovay ‘s trait thing",
+        "url": "https://x.com/MichaelArnaldi/status/2122221723890368968",
+        "x": "MichaelArnaldi"
+      },
+      {
+        "likes": 6,
+        "text": "Some of the newer rules are a little more experimental and I’m going to have to decide whether to keep them or not",
+        "url": "https://x.com/0xblacklight/status/2122169441643589757",
+        "x": "0xblacklight"
+      },
+      {
+        "likes": 3,
+        "text": "@MichaelArnaldi @EffectTS_ @typesafeai @harrysolovay Seems cool will do",
+        "url": "https://x.com/0xblacklight/status/2122334923482886237",
+        "x": "0xblacklight"
+      }
+    ],
+    "engagement": {
+      "likes": 383,
+      "replies": 5,
+      "participants": 6
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/nanocodexyz/harnesslang",
+    "title": "harnesslang compiles agent harnesses to each platform's durability",
+    "summary": "A language for agent harnesses whose compiler proves a program against each target's crash guarantees, such as Durable Objects or native Rust, then emits code.",
+    "date": "2026-11-14",
+    "repo": "nanocodexyz/harnesslang",
+    "author": {
+      "github": "nanocodexyz",
+      "x": null
+    },
+    "source": "https://github.com/nanocodexyz/harnesslang",
+    "engagement": {
+      "stars": 25
+    }
+  },
+  {
+    "kind": "post",
+    "url": "https://zenn.dev/yasuakiomokawa/articles/de83bb4c4ea928",
+    "title": "Moving a React app to Foldkit one path at a time",
+    "summary": "Moves a frontend from React to Foldkit in 22 issues: each path boots the old or new app, and existing end-to-end tests gate each step.",
+    "date": "2026-11-14",
+    "repo": null,
+    "author": {
+      "github": "YasuakiOmokawa",
+      "x": null
+    },
+    "source": "https://zenn.dev/yasuakiomokawa/articles/de83bb4c4ea928"
+  },
+  {
+    "kind": "video",
+    "url": "https://www.youtube.com/watch?v=O_zcc6Xl12g",
+    "title": "All Code Is Slop (Except Mine)",
+    "summary": "Talk on scaling coding agents with architecture, lint rules, automated tests, runtime and formal verification; reports 11,000 PRs in a month with about 0.5% reverts.",
+    "date": "2026-11-14",
+    "repo": null,
+    "author": {
+      "github": "poteto",
+      "x": "poteto"
+    },
+    "source": "https://www.youtube.com/watch?v=O_zcc6Xl12g",
+    "engagement": {
+      "views": 524716
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/SandroMaglione/tabletop-grand-prix",
+    "title": "Tabletop Grand Prix: a browser racer on Effect and Alchemy",
+    "summary": "A time-attack racer with a global leaderboard and ghost laps, built on Effect 4.1.4 with Alchemy beta.87's Cloudflare provider.",
+    "date": "2026-11-14",
+    "repo": "SandroMaglione/tabletop-grand-prix",
+    "author": {
+      "github": "SandroMaglione",
+      "x": "SandroMaglione"
+    },
+    "source": "https://tabletop-grand-prix.typeonce.games",
+    "engagement": {
+      "stars": 3
+    }
+  },
+  {
+    "kind": "video",
+    "url": "https://www.youtube.com/watch?v=fM5FDXIjlaY",
+    "title": "Effect Module of the Week 7: Cluster workflows",
+    "summary": "Effect Workflow replaces hand-written crash bookkeeping: each activity's result is recorded and replayed after a crash, and a workflow stays in progress without running.",
+    "date": "2026-11-13",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://www.youtube.com/watch?v=fM5FDXIjlaY",
+    "engagement": {
+      "views": 428
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/davidnussio/effect-cqrs",
+    "title": "effect-cqrs brings CQRS and event sourcing to Effect v4",
+    "summary": "Trial port of a 2019 CQRS and event sourcing module to Effect v4: event store, projections, sagas, outbox, crypto-shredding and upcasting.",
+    "date": "2026-11-13",
+    "repo": "davidnussio/effect-cqrs",
+    "author": {
+      "github": "davidnussio",
+      "x": "davidnussio"
+    },
+    "source": "https://x.com/davidnussio/status/2121142090721833322",
+    "engagement": {
+      "stars": 5
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://github.com/alchemy-run/alchemy/releases/tag/v2.0.0-beta.87",
+    "title": "Alchemy 2.0.0-beta.87 adds Rivet and Effect Cluster providers",
+    "summary": "Since beta.85: breaking Domain changes put handlers on Layers; new Rivet, Effect Cluster, Archil, Daytona and Boat providers; Docker networking; needs effect 4.1.4.",
+    "date": "2026-11-12",
+    "repo": "alchemy-run/alchemy",
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://api.github.com/repos/alchemy-run/alchemy/releases",
+    "engagement": {
+      "stars": 1968
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/rivet-dev/open-orange",
+    "title": "OpenOrange runs Workers and Durable Objects on any cloud",
+    "summary": "Runs Cloudflare Workers, Durable Objects and Workflows unchanged on AWS, GCP, Azure or your own servers on Node or Bun, with no-downtime migrations.",
+    "date": "2026-11-12",
+    "repo": "rivet-dev/open-orange",
+    "author": {
+      "github": "NathanFlurry",
+      "x": "NathanFlurry"
+    },
+    "source": "https://x.com/NathanFlurry/status/2120915020355658240",
+    "engagement": {
+      "stars": 725
+    }
+  },
+  {
+    "kind": "post",
+    "url": "https://github.com/alchemy-run/alchemy/pull/3260",
+    "title": "Alchemy Domain PR proves aggregate invariants with Z3",
+    "summary": "Open PR: Prove checks an aggregate's declared invariants for every state and command, and Explore searches command sequences for violations, using the Z3 solver.",
+    "date": "2026-11-12",
+    "repo": "alchemy-run/alchemy",
+    "author": {
+      "github": "sam-goodwin",
+      "x": "samgoodwin89"
+    },
+    "source": "https://github.com/alchemy-run/alchemy/pull/3260"
+  },
+  {
+    "kind": "post",
+    "url": "https://developers.cloudflare.com/workers/framework-guides/web-apps/foldkit/#deploy-with-alchemy",
+    "title": "Cloudflare's Foldkit guide covers deploying with Alchemy",
+    "summary": "The Workers framework guide for Foldkit covers SPA, SSG and SSR builds on Workers Assets, and now has a section on deploying with Alchemy.",
+    "date": "2026-11-12",
+    "repo": null,
+    "author": {
+      "github": "devinjameson",
+      "x": "devinjameson"
+    },
+    "source": "https://x.com/devinjameson/status/2121017721211036124"
+  },
+  {
+    "kind": "video",
+    "url": "https://www.youtube.com/watch?v=fNpJ63QjK-k",
+    "title": "Effect Module of the Week 6: Cluster idempotency",
+    "summary": "How Effect Cluster's at-least-once delivery can repeat work, and the fixes: idempotency keys, transactional handlers and delegating to Workflows.",
+    "date": "2026-11-12",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://www.youtube.com/watch?v=fNpJ63QjK-k",
+    "engagement": {
+      "views": 332
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/artile/foldkit-bombadil-spike",
+    "title": "Bombadil fuzzes a real Foldkit app",
+    "summary": "Measured proof of concept: Bombadil drives a real Foldkit app through DOM actions, Messages sent over Foldkit's Port API, and headless property tests.",
+    "date": "2026-11-12",
+    "repo": "artile/foldkit-bombadil-spike",
+    "author": {
+      "github": "artile",
+      "x": null
+    },
+    "source": "https://github.com/artile/foldkit-bombadil-spike",
+    "engagement": {
+      "stars": 0
+    }
+  },
+  {
+    "kind": "video",
+    "url": "https://www.youtube.com/watch?v=JcY0th6QuMg",
+    "title": "Fork Every Business: Alchemy, Effect and AI",
+    "summary": "A conversation on Alchemy: an app and its cloud written as one TypeScript program, why Effect layers fit it, and how agents can copy, change and remix a company that is code.",
+    "date": "2026-11-11",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://www.youtube.com/watch?v=JcY0th6QuMg",
+    "engagement": {
+      "views": 254
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://github.com/aidenybai/tla-ts/releases/tag/tla-ts%400.0.10",
+    "title": "tla-ts 0.0.10 checks TypeScript models",
+    "summary": "tla-ts now compiles a TypeScript model to TLA+ and checks it with the same output and exit codes, with JSDoc tags for properties and fairness, and evaluates LET functions and INSTANCE substitutions faster.",
+    "date": "2026-11-11",
+    "repo": "aidenybai/tla-ts",
+    "author": {
+      "github": "aidenybai",
+      "x": "aidenybai"
+    },
+    "source": "https://github.com/aidenybai/tla-ts/releases/tag/tla-ts%400.0.10",
+    "engagement": {
+      "stars": 267
+    }
+  },
+  {
+    "kind": "video",
+    "url": "https://www.youtube.com/watch?v=YOZF2tN8YmY",
+    "title": "Effect LSP: smarter rules, faster linting",
+    "summary": "A clip from Effect Office Hours 53 on the Effect language service: smarter diagnostic rules and faster linting.",
+    "date": "2026-11-10",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://www.youtube.com/watch?v=YOZF2tN8YmY",
+    "engagement": {
+      "views": 579
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/archiboi69/domain-devtools",
+    "title": "Domain Devtools draws Alchemy Domain models",
+    "summary": "Generates Mermaid command diagrams and aggregate state overviews from Alchemy Domain models, to inspect their contracts, decisions, events and evolution.",
+    "date": "2026-11-10",
+    "repo": "archiboi69/domain-devtools",
+    "author": {
+      "github": "archiboi69",
+      "x": null
+    },
+    "source": "https://github.com/archiboi69/domain-devtools",
+    "engagement": {
+      "stars": 26
+    }
+  },
+  {
+    "kind": "video",
+    "url": "https://www.youtube.com/watch?v=kU2FpNm65-k",
+    "title": "Effect Office Hours 52 with Resonate HQ",
+    "summary": "Office Hours 52 hosts the founder of Resonate HQ, which builds open durable execution: async and await across TypeScript, Python and more.",
+    "date": "2026-11-09",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://www.youtube.com/watch?v=kU2FpNm65-k",
+    "engagement": {
+      "views": 238
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/littledivy/tailnet-do",
+    "title": "tailnet-do",
+    "summary": "Puts a Cloudflare Durable Object on a Tailscale tailnet as a device with its own address, using Tailscale's userspace client compiled to WebAssembly.",
+    "date": "2026-11-07",
+    "repo": "littledivy/tailnet-do",
+    "author": {
+      "github": "littledivy",
+      "x": null
+    },
+    "source": "https://github.com/littledivy/tailnet-do",
+    "engagement": {
+      "stars": 270
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://github.com/clavia-labs/tardigrade/releases/tag/v0.55.0",
+    "title": "Tardigrade 0.55 on Effect 4.1",
+    "summary": "Durable, event-driven actors for TypeScript; v0.54 moved to Effect 4.1 stable and v0.55 adds remote methods to the client.",
+    "date": "2026-11-07",
+    "repo": "clavia-labs/tardigrade",
+    "author": {
+      "github": "clavia-labs",
+      "x": "arjunkmrm"
+    },
+    "source": "https://github.com/clavia-labs/tardigrade/releases",
+    "engagement": {
+      "stars": 475
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://github.com/foldkit/foldkit/pull/1655",
+    "title": "Foldkit Blocks and Effect Layers preview",
+    "summary": "A new preview: Blocks are built through Layers, take InMessages and compose their updates, with less child initialization wiring. APIs may change before stable.",
+    "date": "2026-11-07",
+    "repo": "foldkit/foldkit",
+    "author": {
+      "github": "foldkit",
+      "x": "devinjameson"
+    },
+    "source": "https://x.com/devinjameson/status/2119175626066104745",
+    "engagement": {
+      "stars": 1241
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://stately.ai/blog/2026-11-05-xstate-v6-beta",
+    "title": "XState 6 beta and @xstate/effect 1.0 beta",
+    "summary": "XState v6 enters beta: no more breaking changes planned for @public APIs; snapshot restore moves to restoreActor in xstate/persist.",
+    "date": "2026-11-06",
+    "repo": "statelyai/xstate",
+    "author": {
+      "github": "statelyai",
+      "x": "DavidKPiano"
+    },
+    "source": "https://github.com/statelyai/xstate/releases/tag/xstate%406.0.0-beta.1",
+    "engagement": {
+      "stars": 30476
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/RhysSullivan/effect-discord-perms",
+    "title": "effect-discord-perms",
+    "summary": "A typed layer over dfx on Effect v4: missing permissions, payload rules and intents become compile errors, each rule checked against live Discord.",
+    "date": "2026-11-06",
+    "repo": "RhysSullivan/effect-discord-perms",
+    "author": {
+      "github": "RhysSullivan",
+      "x": "RhysSullivan"
+    },
+    "source": "https://github.com/RhysSullivan/effect-discord-perms",
+    "engagement": {
+      "stars": 18
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/nstudio/ns-foldkit",
+    "title": "ns-foldkit runs Foldkit on iOS and Android",
+    "summary": "Runs Foldkit apps unmodified on iOS and Android with real native views through NativeScript, replacing only the DOM layer with a native bridge.",
+    "date": "2026-11-06",
+    "repo": "nstudio/ns-foldkit",
+    "author": {
+      "github": "nstudio",
+      "x": null
+    },
+    "source": "https://github.com/nstudio/ns-foldkit",
+    "engagement": {
+      "stars": 2
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/just-be-dev/cantrip",
+    "title": "Cantrip is a macOS command bar whose commands are Effect programs",
+    "summary": "A macOS command bar with a GPU-drawn Rust UI; its commands, called spells, are Effect programs that run on Bun.",
+    "date": "2026-11-06",
+    "repo": "just-be-dev/cantrip",
+    "author": {
+      "github": "just-be-dev",
+      "x": "just_be_dev"
+    },
+    "source": "https://github.com/just-be-dev/cantrip",
+    "engagement": {
+      "stars": 0
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/joelhooks/alchemy-turbo-cache",
+    "title": "alchemy-turbo-cache",
+    "summary": "A Turbo remote cache on Cloudflare Workers and R2, declared by an Alchemy Stack: one call declares the Worker, an expiring bucket and per-team tokens.",
+    "date": "2026-11-05",
+    "repo": "joelhooks/alchemy-turbo-cache",
+    "author": {
+      "github": "joelhooks",
+      "x": "joelhooks"
+    },
+    "source": "https://github.com/joelhooks/alchemy-turbo-cache",
+    "engagement": {
+      "stars": 25
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/UsefulSoftwareCo/executor",
+    "title": "Executor 2 beta",
+    "summary": "Lets agents call OpenAPI, MCP, GraphQL and custom JavaScript functions in a secure environment; built on Effect, MIT licensed.",
+    "date": "2026-11-05",
+    "repo": "UsefulSoftwareCo/executor",
+    "author": {
+      "github": "UsefulSoftwareCo",
+      "x": "RhysSullivan"
+    },
+    "source": "https://executor.sh",
+    "engagement": {
+      "stars": 4458
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/smithersai/vibelang",
+    "title": "VibeLang alpha spec",
+    "summary": "A v0 language for writing Effect programs in TypeScript syntax, with typed errors and services the compiler checks; alpha spec final, release pending.",
+    "date": "2026-11-04",
+    "repo": "smithersai/vibelang",
+    "author": {
+      "github": "smithersai",
+      "x": "FUCORY"
+    },
+    "source": "https://vibelang.sh/spec",
+    "engagement": {
+      "stars": 23
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://github.com/joelhooks/mutant-cafe",
+    "title": "mutant-cafe 0.1.2: mutation testing for Effect TypeScript",
+    "summary": "Type-directed mutants for Effect code, including one per tagged error that swallows just that error; inspired by cargo-mutants. Install with npm i -D mutant-cafe.",
+    "date": "2026-11-03",
+    "repo": "joelhooks/mutant-cafe",
+    "author": {
+      "github": "joelhooks",
+      "x": null
+    },
+    "source": "https://registry.npmjs.org/mutant-cafe",
+    "engagement": {
+      "stars": 65
+    }
+  },
+  {
+    "kind": "post",
+    "url": "https://silklang.org",
+    "title": "Silk: What If Effect Were a Low-Level Language?",
+    "summary": "A low-level language with Effect-style typed failures, service requirements and lazy effects, affine ownership, and LLVM output for native and WebAssembly targets.",
+    "date": "2026-11-02",
+    "repo": "silk-lang/silk",
+    "author": {
+      "github": "julia-script",
+      "x": "JuliaScript"
+    },
+    "source": "https://silklang.org",
+    "engagement": {
+      "stars": 103
+    }
+  },
+  {
+    "kind": "post",
+    "url": "https://github.com/Effect-TS/effect/pull/10306",
+    "title": "Effect fixes the type errors TypeScript 7.1 reports",
+    "summary": "Merged: TypeScript 7.1 reports errors at five places 7.0.2 accepts; this fixes them without changing any public type signature.",
+    "date": "2026-11-02",
+    "repo": "Effect-TS/effect",
+    "author": {
+      "github": "tim-smart",
+      "x": null
+    },
+    "source": "https://github.com/Effect-TS/effect/pull/10306"
+  },
+  {
+    "kind": "video",
+    "url": "https://www.youtube.com/watch?v=ugEBQBL1TtA",
+    "title": "Effect Office Hours 51: McpTask for long-running tools",
+    "summary": "Office Hours clip: a community review of adding McpTask to Effect's MCP support for long-running tools.",
+    "date": "2026-11-02",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://www.youtube.com/watch?v=ugEBQBL1TtA",
+    "engagement": {
+      "views": 239
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/MapleTechLabs/changesets",
+    "title": "An Effect-based drop-in for Changesets",
+    "summary": "Replaces @changesets/cli add, version and status, reading and writing the same files; its only dependencies are effect and @effect/platform-node.",
+    "date": "2026-11-02",
+    "repo": "MapleTechLabs/changesets",
+    "author": {
+      "github": "MapleTechLabs",
+      "x": null
+    },
+    "source": "https://github.com/MapleTechLabs/changesets",
+    "engagement": {
+      "stars": 1
+    }
+  },
+  {
+    "kind": "video",
+    "url": "https://www.youtube.com/watch?v=rAE_2kiEfvA",
+    "title": "Cause & Effect 10: software engineering in the AI era",
+    "summary": "A clip from Effect's Cause & Effect podcast, episode 10, with John De Goes on software engineering in the AI era.",
+    "date": "2026-11-01",
+    "repo": null,
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://www.youtube.com/watch?v=rAE_2kiEfvA",
+    "engagement": {
+      "views": 1930
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/julia-script/foldkit-serverfn",
+    "title": "foldkit-serverfn",
+    "summary": "Schema-typed server functions and streaming for Foldkit on effect/rpc: Commands call them, Subscriptions consume streams, and server renders run handlers in process.",
+    "date": "2026-11-01",
+    "repo": "julia-script/foldkit-serverfn",
+    "author": {
+      "github": "julia-script",
+      "x": "JuliaScript"
+    },
+    "source": "https://github.com/julia-script/foldkit-serverfn",
+    "engagement": {
+      "stars": 1
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/Manzanita-Research/terrarium-v2",
+    "title": "Terrarium v2",
+    "summary": "Small deterministic agent simulations on Alchemy Domain and Effect, with a run explorer for forking and replaying agent runs.",
+    "date": "2026-11-01",
+    "repo": "Manzanita-Research/terrarium-v2",
+    "author": {
+      "github": "Manzanita-Research",
+      "x": null
+    },
+    "source": "https://github.com/Manzanita-Research/terrarium-v2",
+    "engagement": {
+      "stars": 1
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/Tanner-Scadden/munch-manor",
+    "title": "Munch Manor",
+    "summary": "Open-source pixel zombie shooter built with Foldkit and Effect on Cloudflare: seed-replayable games, server-run co-op on Durable Objects, art drawn in code.",
+    "date": "2026-10-31",
+    "repo": "Tanner-Scadden/munch-manor",
+    "author": {
+      "github": "Tanner-Scadden",
+      "x": null
+    },
+    "source": "https://github.com/Tanner-Scadden/munch-manor",
+    "engagement": {
+      "stars": 16
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/lroy-stack/admin-os",
+    "title": "admin-OS: one set of typed capabilities for screens and MCP tools",
+    "summary": "An open-source small-business dashboard on Cloudflare Workers. Every screen and every MCP tool reads and writes through the same typed capabilities.",
+    "date": "2026-10-31",
+    "repo": "lroy-stack/admin-os",
+    "author": {
+      "github": "lroy-stack",
+      "x": null
+    },
+    "source": "https://github.com/lroy-stack/admin-os",
+    "engagement": {
+      "stars": 35
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/nanami-0713/relay-kit",
+    "title": "relay-kit: an end-to-end encrypted relay on Workers",
+    "summary": "A self-hostable relay on Cloudflare Workers and Durable Objects. It forwards only ciphertext between a phone and a local service; one command deploys it.",
+    "date": "2026-10-30",
+    "repo": "nanami-0713/relay-kit",
+    "author": {
+      "github": "nanami-0713",
+      "x": null
+    },
+    "source": "https://github.com/nanami-0713/relay-kit",
+    "engagement": {
+      "stars": 199
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/rivet-dev/durable-object-migrator",
+    "title": "durable-object-migrator moves Durable Object data off Cloudflare",
+    "summary": "Migrates Durable Object SQLite data to Postgres, files or Rivet Actors without downtime. Ships a library, an agent prompt and Alchemy support.",
+    "date": "2026-10-29",
+    "repo": "rivet-dev/durable-object-migrator",
+    "author": {
+      "github": "rivet-dev",
+      "x": "NathanFlurry"
+    },
+    "source": "https://x.com/NathanFlurry/status/2115789130911429006",
+    "engagement": {
+      "stars": 47
+    }
+  },
+  {
+    "kind": "post",
+    "url": "https://github.com/alchemy-run/alchemy/pull/2700",
+    "title": "Alchemy adds a Foldkit adapter for Domain Apis",
+    "summary": "Merged: @alchemy.run/domain/Foldkit turns a Domain Api into Foldkit Commands and Subscriptions, so apps stop hand-writing the client bridge.",
+    "date": "2026-10-29",
+    "repo": "alchemy-run/alchemy",
+    "author": {
+      "github": "artile",
+      "x": null
+    },
+    "source": "https://github.com/alchemy-run/alchemy/pull/2700"
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/foldkit/foldkit-domains",
+    "title": "Foldkit Domains example",
+    "summary": "A Foldkit example of domain search: the field ships in static HTML, accepts edits before hydration, and runs on the Blocks and Layers preview.",
+    "date": "2026-10-27",
+    "repo": "foldkit/foldkit-domains",
+    "author": {
+      "github": "foldkit",
+      "x": "foldkit"
+    },
+    "source": "https://github.com/foldkit/foldkit-domains",
+    "engagement": {
+      "stars": 29
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://www.npmjs.com/package/@yielded/effect-tsrs/v/0.2.2",
+    "title": "rat-stack aligns its tsrs checker pins",
+    "summary": "rat-stack uses effect-tsrs 0.2.2 with --strict --type-check for TypeScript and Effect diagnostics. Plain tsrs 0.20.0 targets TypeScript 7.1 beta. Patched tsc checks parity on checker bumps. effect-tsrs 0.2.2 needs `--type-check` to report ordinary TypeScript errors.",
+    "date": "2026-10-26",
+    "repo": "joelhooks/rat-stack",
+    "author": {
+      "github": "joelhooks",
+      "x": "joelhooks"
+    },
+    "source": "https://www.npmjs.com/package/@yielded/effect-tsrs/v/0.2.2",
+    "engagement": {
+      "stars": 209
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/aidenybai/tla-ts",
+    "title": "tla-ts",
+    "summary": "A TLA+ interpreter and model checker in TypeScript that runs in Node or the browser; 0.0.8 shipped on 2026-11-05.",
+    "date": "2026-10-26",
+    "repo": "aidenybai/tla-ts",
+    "author": {
+      "github": "aidenybai",
+      "x": "aidenybai"
+    },
+    "source": "https://tla-ts.aidenybai.com/",
+    "engagement": {
+      "stars": 267
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/me-shaon/mailswitch",
+    "title": "mailswitch",
+    "summary": "A transactional email library for Cloudflare Workers with one API over Resend, Postmark, Amazon SES and SMTP; providers switch without a redeploy.",
+    "date": "2026-10-26",
+    "repo": "me-shaon/mailswitch",
+    "author": {
+      "github": "me-shaon",
+      "x": "me_shaon"
+    },
+    "source": "https://github.com/me-shaon/mailswitch",
+    "engagement": {
+      "stars": 23
+    }
+  },
+  {
+    "kind": "launch",
+    "url": "https://github.com/codician-team/diffinery",
+    "title": "diffinery",
+    "summary": "An agent-first GitHub and GitHub Actions alternative that runs on your own Cloudflare account: git hosting, pull requests and code review. Apache-2.0.",
+    "date": "2026-10-25",
+    "repo": "codician-team/diffinery",
+    "author": {
+      "github": "codician-team",
+      "x": null
+    },
+    "source": "https://github.com/codician-team/diffinery",
+    "engagement": {
+      "stars": 84
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://www.npmjs.com/package/@yielded/effect-tsrs/v/0.2.0",
+    "title": "effect-tsrs runs Effect diagnostics on tsrs",
+    "summary": "rat-stack type-checks with effect-tsrs 0.2.0 in strict mode, so Effect warnings fail. Patched tsc remains a separate CI backstop.",
+    "date": "2026-10-24",
+    "repo": "joelhooks/rat-stack",
+    "author": {
+      "github": "joelhooks",
+      "x": "joelhooks"
+    },
+    "source": "https://www.npmjs.com/package/@yielded/effect-tsrs/v/0.2.0",
+    "engagement": {
+      "stars": 209
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://blog.cloudflare.com/typescript-rust-port/",
+    "title": "tsrs joins the stack as the fast typecheck",
+    "summary": "rat-stack adds tsrs for fast typechecks. It does not run Effect diagnostics, so patched tsc stays in the gate.",
+    "date": "2026-10-24",
+    "repo": "joelhooks/rat-stack",
+    "author": {
+      "github": "joelhooks",
+      "x": "joelhooks"
+    },
+    "source": "https://blog.cloudflare.com/typescript-rust-port/",
+    "engagement": {
+      "stars": 209
+    }
+  },
+  {
+    "kind": "release",
+    "url": "https://github.com/Effect-TS/tsgo/releases/tag/%40effect%2Ftsgo%400.56.0",
+    "title": "@effect/tsgo 0.56.0 released",
+    "summary": "Effect language service for tsgo now builds, tests and ships against the TypeScript beta channel, currently the 7.1.0 beta compiler.",
+    "date": "2026-10-21",
+    "repo": "Effect-TS/tsgo",
+    "author": {
+      "github": null,
+      "x": null
+    },
+    "source": "https://github.com/Effect-TS/tsgo/releases",
+    "engagement": {
+      "stars": 337
+    }
+  }
+]
