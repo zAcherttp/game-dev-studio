@@ -152,9 +152,7 @@ const cli = (directory: string, ...args: readonly string[]) =>
   );
 
 await test("CLI emits safe JSONL for each valid run and keeps going after malformed artifacts", (t) => {
-  const directory = mkdtempSync(
-    path.join(os.tmpdir(), "ratstack-turbo-summary-")
-  );
+  const directory = mkdtempSync(path.join(os.tmpdir(), "gds-turbo-summary-"));
 
   t.after(() => {
     rmSync(directory, { recursive: true });
@@ -192,7 +190,7 @@ await test("CLI emits safe JSONL for each valid run and keeps going after malfor
 
 await test("missing or empty directories warn without inventing data or failing the gate", (t) => {
   const directory = mkdtempSync(
-    path.join(os.tmpdir(), "ratstack-turbo-summary-empty-")
+    path.join(os.tmpdir(), "gds-turbo-summary-empty-")
   );
 
   t.after(() => {

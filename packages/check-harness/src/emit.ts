@@ -7,7 +7,7 @@ import type { Verdict } from "./verdict.js";
 export class CheckExit extends Schema.TaggedError<
   CheckExit,
   { readonly brand: unique symbol }
->()("@rat-stack/check-harness/CheckExit", { exitCode: Schema.Int }) {
+>()("@gds/check-harness/CheckExit", { exitCode: Schema.Int }) {
   override get [Runtime.errorExitCode]() {
     return this.exitCode;
   }

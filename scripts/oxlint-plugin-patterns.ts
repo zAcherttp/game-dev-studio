@@ -10,8 +10,6 @@ import type {
   Variable,
 } from "@oxlint/plugins";
 
-import { auditedStringRegexes } from "../apps/site/scripts/source-regex-policy.ts";
-
 type RuleContext = Context;
 
 type NodeOfType<Type extends ESTree.Node["type"]> = Extract<
@@ -463,19 +461,11 @@ const cacheConstructors = [
   "cachedInvalidateWithTTL",
 ];
 
-const isAlchemyModule = (module: string) =>
-  module.startsWith("alchemy") || module.startsWith("@alchemy.run/");
-
 const isInitializationCall = (
   node: ESTree.CallExpression,
   context: RuleContext
 ) => {
   const scope = context.sourceCode.getScope(node);
-  const identity = importIdentity(node.callee, scope, context);
-
-  if (identity !== null && isAlchemyModule(identity.module)) {
-    return true;
-  }
 
   if (node.callee.type !== "MemberExpression") {
     return false;
@@ -486,8 +476,7 @@ const isInitializationCall = (
   return (
     object !== null &&
     ((object.module === "effect" && object.name === "Layer") ||
-      object.module === "effect/Layer" ||
-      isAlchemyModule(object.module))
+      object.module === "effect/Layer")
   );
 };
 
@@ -818,7 +807,7 @@ const noModuleLevelMutableState = defineRule({
     },
     messages: {
       moduleState:
-        "Module-level let and var hold state that outlives one request. Every request a Worker isolate or server process handles shares it, so one request's state leaks into the next. Fix: keep the state in a `Ref` inside a Layer, a Durable Object, or the database.",
+        "Module-level let and var hold state that outlives one request. Every request the server process handles shares it, so one request's state leaks into the next. Fix: keep the state in a `Ref` inside a Layer or behind a store port.",
     },
     type: "problem",
   },
@@ -908,33 +897,7 @@ const isLayerOwnedConstruction = (
   );
 };
 
-const isDurableObjectInstanceField = (
-  field: ESTree.PropertyDefinition,
-  context: RuleContext
-) => {
-  const owner = field.parent?.parent;
-
-  const superclass =
-    owner?.type === "ClassDeclaration" || owner?.type === "ClassExpression"
-      ? owner.superClass
-      : null;
-
-  const identity =
-    superclass === null
-      ? null
-      : importIdentity(superclass, context.sourceCode.getScope(field), context);
-
-  return (
-    !field.static &&
-    identity?.module === "cloudflare:workers" &&
-    identity.name === "DurableObject"
-  );
-};
-
-const sharedWaiterOwner = (
-  node: ESTree.Node,
-  context: RuleContext
-): ESTree.Node | null => {
+const sharedWaiterOwner = (node: ESTree.Node): ESTree.Node | null => {
   let current = node.parent;
 
   while (current !== null) {
@@ -947,7 +910,7 @@ const sharedWaiterOwner = (
     }
 
     if (current.type === "PropertyDefinition") {
-      return isDurableObjectInstanceField(current, context) ? null : current;
+      return current;
     }
 
     if (
@@ -974,7 +937,7 @@ const sharedWaiters = defineRule({
     return {
       CallExpression(node) {
         if (
-          sharedWaiterOwner(node, context) !== null &&
+          sharedWaiterOwner(node) !== null &&
           isWaitingConstructor(node, context) &&
           !isLayerOwnedConstruction(node, context)
         ) {
@@ -986,11 +949,11 @@ const sharedWaiters = defineRule({
   meta: {
     docs: {
       description:
-        "Keep Deferred, Cache, Ref, Semaphore, Queue, Latch, PubSub, PartitionedSemaphore, and TxSemaphore construction out of module const bindings and class fields outside Durable Object instances. In drovr #2344 and #2348, cross-request waiters in a Worker isolate made another caller hang or receive a 503.",
+        "Keep Deferred, Cache, Ref, Semaphore, Queue, Latch, PubSub, PartitionedSemaphore, and TxSemaphore construction out of module const bindings and class fields. Cross-request waiters in a long-lived server process make another caller hang or time out.",
     },
     messages: {
       sharedWaiter:
-        "This waiting primitive lives at module level or outside a Durable Object instance. Worker request contexts then share its pending work, so another caller hangs or gets a 503. Fix: construct it inside a request-owned Effect or a Durable Object instance; for Layers use `Layer.effect(Tag, Ref.make(...))`, not `Layer.succeed(Tag, Ref.makeUnsafe(...))`, and never store it or its run result in a module const.",
+        "This waiting primitive lives at module level or in a class field. Every request then shares its pending work, so another caller hangs or times out. Fix: construct it inside a request-owned Effect; for Layers use `Layer.effect(Tag, Ref.make(...))`, not `Layer.succeed(Tag, Ref.makeUnsafe(...))`, and never store it or its run result in a module const.",
     },
     type: "problem",
   },
@@ -1371,306 +1334,9 @@ const watchEffectActors = defineRule({
     },
     messages: {
       unwatched:
-        'This createEffectActor result is never passed to watchActor. Without it, rat_list_actors cannot see this machine. Fix: call `watchActor("<machine>", actor)` from `@rat-stack/capability/actor-watch` after `createEffectActor`; it is a no-op until devtools provides a watcher.',
+        'This createEffectActor result is never passed to watchActor. Without it, rat_list_actors cannot see this machine. Fix: call `watchActor("<machine>", actor)` from `@gds/capability/actor-watch` after `createEffectActor`; it is a no-op until devtools provides a watcher.',
     },
     type: "suggestion",
-  },
-});
-
-const isLearnSnippet = (filename: string) =>
-  /(?:^|\/)\.brain\/data\/learn-cards\/.+\.ts$/u.test(filename);
-
-const primitiveServiceTypes = new Set([
-  "TSAnyKeyword",
-  "TSBigIntKeyword",
-  "TSBooleanKeyword",
-  "TSLiteralType",
-  "TSNumberKeyword",
-  "TSStringKeyword",
-  "TSSymbolKeyword",
-  "TSUnknownKeyword",
-]);
-
-const serviceDeclaration = (superClass: ESTree.Expression | null) => {
-  if (superClass?.type !== "CallExpression") {
-    return null;
-  }
-
-  const factory = superClass.callee;
-
-  if (
-    factory.type !== "CallExpression" ||
-    factory.callee.type !== "MemberExpression" ||
-    staticPropertyName(factory.callee) !== "Service"
-  ) {
-    return null;
-  }
-
-  const [key] = superClass.arguments;
-
-  return {
-    key: key === undefined || key.type === "SpreadElement" ? null : key,
-    operations: factory.typeArguments?.params[1] ?? null,
-  };
-};
-
-const staticLayerOf = (body: ESTree.ClassBody) =>
-  body.body.find(
-    (member) =>
-      member.type === "PropertyDefinition" &&
-      member.static &&
-      member.key.type === "Identifier" &&
-      member.key.name === "layer"
-  );
-
-const learnSnippetIdiom = defineRule({
-  create(context) {
-    if (!isLearnSnippet(workspacePath(context.filename))) {
-      return {};
-    }
-
-    const checkService = (node: ESTree.Class) => {
-      const service = serviceDeclaration(node.superClass);
-
-      if (service === null) {
-        return;
-      }
-
-      if (
-        service.operations !== null &&
-        primitiveServiceTypes.has(service.operations.type)
-      ) {
-        context.report({ messageId: "operations", node: service.operations });
-      }
-
-      const key = service.key === null ? null : stringValue(service.key);
-
-      if (key === null || !key.includes("/")) {
-        context.report({
-          messageId: "namespacedKey",
-          node: service.key ?? node,
-        });
-      }
-
-      const layer = staticLayerOf(node.body);
-
-      const className = node.id?.name;
-
-      const usesOf =
-        layer !== undefined &&
-        className !== undefined &&
-        context.sourceCode.getText(layer).includes(`${className}.of(`);
-
-      if (!usesOf) {
-        context.report({ messageId: "staticLayer", node: layer ?? node });
-      }
-    };
-
-    return {
-      CallExpression(node) {
-        if (
-          node.callee.type === "MemberExpression" &&
-          staticPropertyName(node.callee)?.startsWith("provideService") === true
-        ) {
-          context.report({ messageId: "provideLayer", node });
-        }
-      },
-      ClassDeclaration: checkService,
-      ClassExpression: checkService,
-    };
-  },
-  meta: {
-    docs: {
-      description:
-        "Keep learn card snippets on the installed effect/AGENTS.md service idiom.",
-    },
-    messages: {
-      namespacedKey:
-        'This service key has no namespace. Two services with the same bare key share one identifier. Fix: give the service a namespaced key such as `"myapp/Greeter"`.',
-      operations:
-        "This service holds a primitive value instead of operations. A service is a set of effectful operations, and a primitive belongs in Config or a Context.Reference. Fix: shape the service as operations, for example `{ readonly greet: (name: string) => Effect.Effect<string> }`.",
-      provideLayer:
-        "This provides the service with provideService. A provideService call hides how the implementation is built. Fix: provide the service's static layer at the edge with `Effect.provide(Service.layer)`.",
-      staticLayer:
-        "This service has no static layer beside it. The implementation belongs beside the interface, where a reader finds both. Fix: attach `static readonly layer` to the service and build its value with `Service.of(...)`.",
-    },
-    type: "problem",
-  },
-});
-
-const rawSourceNames = new Set([
-  "frontmatter",
-  "markdown",
-  "rawText",
-  "source",
-  "sourceText",
-  "svx",
-]);
-
-const isRawSourceIdentifier = (node: ESTree.Node) =>
-  node.type === "Identifier" && rawSourceNames.has(node.name);
-
-const auditedExpressions = new Set(
-  auditedStringRegexes
-    .filter((entry) => entry.reason !== "")
-    .map((entry) => entry.expression)
-);
-
-const auditedContentRegex = defineRule({
-  create(context) {
-    const requireAudit = (node: ESTree.Node) => {
-      const expression = context.sourceCode.getText(node);
-
-      if (!auditedExpressions.has(expression)) {
-        context.report({ data: { expression }, messageId: "unaudited", node });
-      }
-    };
-
-    return {
-      CallExpression(node) {
-        const { callee } = node;
-
-        if (
-          callee.type !== "MemberExpression" ||
-          callee.property.type !== "Identifier"
-        ) {
-          return;
-        }
-
-        const method = callee.property.name;
-
-        const sourceArgument =
-          (method === "exec" || method === "test") &&
-          node.arguments.some(isRawSourceIdentifier);
-
-        const sourceReceiver =
-          (method === "match" ||
-            method === "matchAll" ||
-            method === "search") &&
-          isRawSourceIdentifier(callee.object);
-
-        if (sourceArgument || sourceReceiver) {
-          context.report({ messageId: "sourceRegex", node });
-        }
-      },
-      Literal(node) {
-        if ("regex" in node && node.regex !== undefined) {
-          requireAudit(node);
-        }
-      },
-      NewExpression(node) {
-        if (
-          node.callee.type === "Identifier" &&
-          node.callee.name === "RegExp"
-        ) {
-          requireAudit(node);
-        }
-      },
-    };
-  },
-  meta: {
-    docs: {
-      description:
-        "Keep regular expressions in the content pipeline to audited expressions over parsed values, never over svx source.",
-    },
-    messages: {
-      sourceRegex:
-        "A regular expression over raw svx source is forbidden. A regex over source breaks on the nesting, fences, and quoting the parser handles. Fix: parse the source with `apps/site/scripts/svx-ast.ts` and match parsed values instead.",
-      unaudited:
-        "Unaudited regular expression {{expression}}. Every content regex carries a recorded reason, so source matching stays reviewable. Fix: match a parsed value, or add the expression and its reason to `apps/site/scripts/source-regex-policy.ts`.",
-    },
-    type: "problem",
-  },
-});
-
-const flagRemovalDate = defineRule({
-  create(context) {
-    return {
-      CallExpression(node) {
-        const identity = importIdentity(
-          node.callee,
-          context.sourceCode.getScope(node),
-          context
-        );
-
-        const direct =
-          node.callee.type === "Identifier" &&
-          node.callee.name === "defineFlag";
-
-        if (
-          !direct &&
-          !(
-            identity?.name === "defineFlag" &&
-            /^@rat-stack\/(?:core\/flags|flags)$/u.test(identity.module)
-          )
-        ) {
-          return;
-        }
-
-        const options = node.arguments.at(2);
-
-        const removal =
-          options?.type === "ObjectExpression"
-            ? options.properties.find(
-                (property) =>
-                  property.type === "Property" &&
-                  staticPropertyKeyName(property) === "removeBy"
-              )
-            : undefined;
-
-        const date =
-          removal?.type === "Property" ? stringValue(removal.value) : null;
-
-        if (date === null || !/^\d{4}-\d{2}-\d{2}$/u.test(date)) {
-          context.report({ messageId: "removeBy", node });
-        }
-      },
-    };
-  },
-  meta: {
-    docs: {
-      description:
-        "Every feature flag declares its removal date at the call site.",
-    },
-    messages: {
-      removeBy:
-        'This defineFlag options object has no removeBy date literal. A flag without a removal date never gets cleaned up. Fix: add `removeBy: "YYYY-MM-DD"` as a string literal.',
-    },
-    type: "problem",
-  },
-});
-
-const retainNeedsStagePolicy = defineRule({
-  create(context) {
-    return {
-      CallExpression(node) {
-        if (node.arguments.length !== 0) {
-          return;
-        }
-
-        const identity = importIdentity(
-          node.callee,
-          context.sourceCode.getScope(node),
-          context
-        );
-
-        if (
-          identity?.name === "retain" &&
-          (identity.module === "alchemy/RemovalPolicy" ||
-            identity.module === "alchemy")
-        ) {
-          context.report({ messageId: "policy", node });
-        }
-      },
-    };
-  },
-  meta: {
-    docs: { description: "Resource retention needs an explicit stage policy." },
-    messages: {
-      policy:
-        'This retain call has no stage policy. Unconditional retention leaves destroyed non-production stages orphaned. Fix: pass `Stage.pipe(Effect.map((stage) => stage === "prod"))`, or add a reasoned `rat-stack-patterns/retain-needs-stage-policy` disable directive for shared irreplaceable resources.',
-    },
-    type: "problem",
   },
 });
 
@@ -1813,19 +1479,15 @@ const noHandRolledHex = defineRule({
 });
 
 export default definePlugin({
-  meta: { name: "rat-stack-patterns" },
+  meta: { name: "gds-patterns" },
   rules: {
     "acquire-release-constructs-in-acquire-body":
       acquireReleaseConstructsInAcquireBody,
-    "audited-content-regex": auditedContentRegex,
     "contract-binding-matches-name": contractBindingMatchesName,
-    "flag-removal-date": flagRemovalDate,
-    "learn-snippet-idiom": learnSnippetIdiom,
     "no-hand-rolled-hex": noHandRolledHex,
     "no-module-level-mutable-state": noModuleLevelMutableState,
     "no-shared-pending-cache": noSharedPendingCache,
     "no-sleep-in-loop": noSleepInLoop,
-    "retain-needs-stage-policy": retainNeedsStagePolicy,
     "shared-waiters": sharedWaiters,
     "watch-effect-actors": watchEffectActors,
   },

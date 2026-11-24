@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 
-const oxlint = path.join(repoRoot, "node_modules/.bin/oxlint");
+const oxlint = path.join(repoRoot, "node_modules/oxlint/bin/oxlint");
 
 const plugin = path.join(repoRoot, "scripts/oxlint-plugin-no-comments.ts");
 
@@ -27,11 +27,15 @@ const lintFixed = (name: string, source: string) => {
       })
     );
 
-    const fix = spawnSync(oxlint, ["-c", config, "--fix", file], {
-      encoding: "utf-8",
-    });
+    const fix = spawnSync(
+      process.execPath,
+      [oxlint, "-c", config, "--fix", file],
+      {
+        encoding: "utf-8",
+      }
+    );
 
-    const recheck = spawnSync(oxlint, ["-c", config, file], {
+    const recheck = spawnSync(process.execPath, [oxlint, "-c", config, file], {
       encoding: "utf-8",
     });
 
@@ -60,9 +64,13 @@ const lintReasons = (source: string) => {
       })
     );
 
-    const run = spawnSync(oxlint, ["-c", config, "-f", "json", file], {
-      encoding: "utf-8",
-    });
+    const run = spawnSync(
+      process.execPath,
+      [oxlint, "-c", config, "-f", "json", file],
+      {
+        encoding: "utf-8",
+      }
+    );
 
     return {
       lines: [...run.stdout.matchAll(/"line":\s*(?<line>\d+)/gu)].map((match) =>

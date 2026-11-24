@@ -309,11 +309,11 @@ await test("a bounded reader requires its own input or a real ancestor edge", (c
   context.after(() => {
     rmSync(root, { recursive: true, force: true });
   });
-  const source = "packages/core/test/cafe-people.test.ts";
-  const data = ".brain/data/cafe/people.json";
+  const source = "packages/core/test/no-comments-rule.test.ts";
+  const data = "scripts/oxlint-plugin-no-comments.ts";
 
   mkdirSync(path.join(root, "packages/core/test"), { recursive: true });
-  mkdirSync(path.join(root, ".brain/data/cafe"), { recursive: true });
+  mkdirSync(path.join(root, "scripts"), { recursive: true });
   writeFileSync(
     path.join(root, source),
     'import { readFileSync } from "node:fs"; export const value = readFileSync(process.argv[2]);'
@@ -321,7 +321,7 @@ await test("a bounded reader requires its own input or a real ancestor edge", (c
   writeFileSync(path.join(root, data), "[]");
   writeFileSync(
     path.join(root, "packages/probe/test/main.test.ts"),
-    'import "../../core/test/cafe-people.test.js";'
+    'import "../../core/test/no-comments-rule.test.js";'
   );
 
   const own = {
@@ -387,7 +387,7 @@ await test("a bounded reader requires its own input or a real ancestor edge", (c
   const throughOutput = {
     tasks: [
       ...without.map((task) => ({ ...task, dependencies: [ancestor.taskId] })),
-      { ...ancestor, inputs: {}, outputs: [".brain/data/cafe/**"] },
+      { ...ancestor, inputs: {}, outputs: ["scripts/**"] },
     ],
   };
 
@@ -661,171 +661,6 @@ await test("inherited alias settings are hashed and ambiguous base overrides fai
     audit(root, covered).failures.some((failure) =>
       failure.includes("cannot resolve local import")
     )
-  );
-});
-
-await test("generated imports need an untracked path, ancestor output and declared covered root", (context) => {
-  const { root, graph } = fixture();
-  context.after(() => {
-    rmSync(root, { recursive: true, force: true });
-  });
-  const source = "apps/web/test/reader-worker-first-head.test.ts";
-  const generated = "apps/web/dist/server/fetch.js";
-  mkdirSync(path.dirname(path.join(root, source)), { recursive: true });
-  mkdirSync(path.dirname(path.join(root, generated)), { recursive: true });
-  writeFileSync(
-    path.join(root, source),
-    'export const value = import(new URL("../dist/server/fetch.js", import.meta.url).href);'
-  );
-
-  writeFileSync(
-    path.join(root, "packages/probe/test/main.test.ts"),
-    'import "../../../apps/web/test/reader-worker-first-head.test.js";'
-  );
-
-  const producer = {
-    taskId: "@probe/producer#build",
-    directory: "",
-    command: "<NONEXISTENT>",
-    dependencies: [],
-    outputs: ["apps/web/dist/**"],
-    inputs: {},
-    resolvedTaskDefinition: { inputs: [] },
-  };
-
-  const consumer = graph().tasks.map((task) => ({
-    ...task,
-    dependencies: [producer.taskId],
-    inputs: { ...task.inputs, [path.relative(task.directory, source)]: "hash" },
-  }));
-
-  assert.deepEqual(
-    audit(root, { tasks: [...consumer, producer] }).failures,
-    []
-  );
-  writeFileSync(path.join(root, generated), "export default {};");
-  const positive = audit(root, { tasks: [...consumer, producer] });
-  assert.deepEqual(positive.failures, []);
-  assert.ok(
-    positive.listedReads.some((entry) =>
-      entry.includes("generated-artifact boundary:")
-    )
-  );
-
-  const noEdge = audit(root, {
-    tasks: [
-      ...consumer.map((task) => ({ ...task, dependencies: [] })),
-      producer,
-    ],
-  });
-
-  assert.ok(
-    noEdge.failures.some((failure) =>
-      failure.includes("The compiler did not load this source.")
-    )
-  );
-  writeFileSync(
-    path.join(root, "packages/probe/test/main.test.ts"),
-    'export const value = import(new URL("../../../apps/web/dist/server/fetch.js", import.meta.url).href);'
-  );
-  assert.ok(
-    audit(root, { tasks: [...consumer, producer] }).failures.some((failure) =>
-      failure.includes("The compiler did not load this source.")
-    )
-  );
-  writeFileSync(
-    path.join(root, "packages/probe/test/main.test.ts"),
-    'import "../../../apps/web/test/reader-worker-first-head.test.js";'
-  );
-  execFileSync("git", ["add", "--", generated], { cwd: root });
-  assert.ok(
-    audit(root, { tasks: [...consumer, producer] }).failures.some((failure) =>
-      failure.includes("The compiler did not load this source.")
-    )
-  );
-});
-
-await test("cold generated source imports require the declared producer even with JavaScript spelling", (context) => {
-  const { root, graph } = fixture();
-  context.after(() => {
-    rmSync(root, { recursive: true, force: true });
-  });
-  const names = ["bundled-content", "interest-pages", "rat-icons"];
-  writeFileSync(
-    path.join(root, "packages/probe/test/main.test.ts"),
-    names
-      .flatMap((name) =>
-        ["js", "ts"].map(
-          (extension) =>
-            `import "../../../apps/site/src/${name}.generated.${extension}";`
-        )
-      )
-      .join("\n")
-  );
-
-  const producer = {
-    taskId: "@rat-stack/site#generate",
-    directory: "apps/site",
-    command: "<NONEXISTENT>",
-    dependencies: [],
-    outputs: names.map((name) => `src/${name}.generated.ts`),
-    inputs: {},
-    resolvedTaskDefinition: { inputs: [] },
-  };
-
-  const consumer = graph().tasks.map((task) => ({
-    ...task,
-    dependencies: [producer.taskId],
-  }));
-
-  const positive = audit(root, { tasks: [...consumer, producer] });
-  assert.deepEqual(positive.failures, []);
-  assert.equal(
-    positive.listedReads.filter((entry) =>
-      entry.includes("generated-artifact boundary:")
-    ).length,
-    names.length
-  );
-  const noEdge = audit(root, { tasks: [...graph().tasks, producer] });
-
-  const wrongOutput = audit(root, {
-    tasks: [...consumer, { ...producer, outputs: ["dist/content/**"] }],
-  });
-
-  for (const result of [noEdge, wrongOutput]) {
-    for (const name of names) {
-      assert.ok(
-        result.failures.some((failure) =>
-          failure.includes(`${name}.generated.`)
-        )
-      );
-    }
-  }
-
-  writeFileSync(
-    path.join(root, "packages/probe/test/main.test.ts"),
-    'import "../../../apps/site/src/unknown.generated.js";'
-  );
-
-  const undeclared = audit(root, {
-    tasks: [...consumer, { ...producer, outputs: ["src/*.generated.ts"] }],
-  });
-
-  assert.ok(
-    undeclared.failures.some((failure) =>
-      failure.includes("unknown.generated.js")
-    )
-  );
-  mkdirSync(path.join(root, "apps/site/src"), { recursive: true });
-  const tracked = "apps/site/src/bundled-content.generated.ts";
-  writeFileSync(path.join(root, tracked), "export const value = 1;");
-  execFileSync("git", ["add", "--", tracked], { cwd: root });
-  writeFileSync(
-    path.join(root, "packages/probe/test/main.test.ts"),
-    'import "../../../apps/site/src/bundled-content.generated.js";'
-  );
-  assert.ok(
-    audit(root, { tasks: [...consumer, producer] }).failures.length > 0
   );
 });
 

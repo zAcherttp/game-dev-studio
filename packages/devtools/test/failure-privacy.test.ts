@@ -1,5 +1,5 @@
 import { expect, it } from "@effect/vitest";
-import { Approval, defineContract, implement } from "@rat-stack/capability";
+import { Approval, defineContract, implement } from "@gds/capability";
 import { Effect, Layer, Logger, Schema } from "effect";
 
 import { devtools, devtoolsLayer } from "../src/index.js";

@@ -9,7 +9,7 @@ export interface CallerService {
 }
 
 export const Caller = Context.Service<CallerService, CallerService>(
-  "@rat-stack/capability/test/Caller"
+  "@gds/capability/test/Caller"
 );
 
 export const RESOURCE_METADATA =
@@ -96,7 +96,7 @@ export interface RequestIdService {
 }
 
 export const RequestId = Context.Service<RequestIdService, RequestIdService>(
-  "@rat-stack/capability/test/RequestId"
+  "@gds/capability/test/RequestId"
 );
 
 export const MissingRequestId = Schema.TaggedStruct("MissingRequestId", {

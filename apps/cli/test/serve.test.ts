@@ -1,16 +1,8 @@
-import { NodeHttpServer, NodeServices } from "@effect/platform-node";
+import { NodeHttpServer } from "@effect/platform-node";
 import { describe, expect, it } from "@effect/vitest";
-import { CafeDirectory, FileInspector, PromptLibrary } from "@rat-stack/core";
-import { CafeData } from "@rat-stack/core/contracts";
-import { Flags, eventFlags } from "@rat-stack/core/flags";
-import {
-  ActorLog,
-  CallLog,
-  OutcomeSchema,
-  devtoolsLayer,
-} from "@rat-stack/devtools";
-import { Learner } from "@rat-stack/learn";
-import { Effect, FileSystem, Layer, Path, Schema } from "effect";
+import { CallLog, OutcomeSchema, devtoolsLayer } from "@gds/devtools";
+import { NotBuilt } from "@gds/model";
+import { Effect, Layer, Schema } from "effect";
 import { HttpClient, HttpRouter, HttpServer } from "effect/http";
 import { HttpApiClient } from "effect/http-api";
 
@@ -26,49 +18,12 @@ const decodeOpenApi = Schema.decodeUnknownSync(
   Schema.Struct({ paths: Schema.Record(Schema.String, Schema.Unknown) })
 );
 
-const noCafe = CafeDirectory.layer(
-  Schema.decodeSync(CafeData)({
-    news: [],
-    people: [],
-    projects: [],
-    rankedAt: "2026-10-09",
-  })
-);
-
 const AppLayer = HttpRouter.serve(routes, {
   disableListenLog: true,
   disableLogger: true,
-}).pipe(
-  Layer.provide(Flags.defaults(eventFlags)),
-  Layer.provide(Learner.layer(Effect.succeed([]))),
-  Layer.provideMerge(NodeHttpServer.layerTest),
-  Layer.provide(FileInspector.layer.pipe(Layer.provide(NodeServices.layer))),
-  Layer.provide(Layer.merge(PromptLibrary.layer([]), noCafe))
-);
+}).pipe(Layer.provideMerge(NodeHttpServer.layerTest));
 
 describe("serve routes", () => {
-  it.effect(
-    "evaluates declared flag defaults through the generated REST client",
-    () =>
-      Effect.gen(function* readsFlagOverHttp() {
-        const client = yield* HttpApiClient.make(http.api);
-        const flags = yield* client.capabilities.listFlags({ payload: {} });
-        expect(flags.map((flag) => flag.name)).toStrictEqual(
-          eventFlags.map((flag) => flag.name)
-        );
-        expect(
-          yield* client.capabilities.getFlag({
-            payload: { context: {}, name: "EVENTS_ENABLED" },
-          })
-        ).toBe(false);
-        expect(
-          yield* client.capabilities.getFlag({
-            payload: { context: {}, name: "EVENTS_IDENTITY_MODE" },
-          })
-        ).toBe("daily");
-      }).pipe(Effect.provide(AppLayer))
-  );
-
   it.effect("binds serve to the loopback interface only", () =>
     Effect.gen(function* bindsLoopback() {
       const server = yield* HttpServer.HttpServer;
@@ -76,13 +31,7 @@ describe("serve routes", () => {
       expect(HttpServer.formatAddress(server.address)).toMatch(
         /^http:\/\/127\.0\.0\.1:\d+$/u
       );
-    }).pipe(
-      Effect.provide(
-        serverLayer(0).pipe(
-          Layer.provide(Layer.merge(PromptLibrary.layer([]), noCafe))
-        )
-      )
-    )
+    }).pipe(Effect.provide(serverLayer(0)))
   );
 
   it.effect("publishes the OpenAPI document and the docs page", () =>
@@ -100,82 +49,42 @@ describe("serve routes", () => {
     }).pipe(Effect.provide(AppLayer))
   );
 
-  it.effect("runs a capability through the generated client", () =>
-    Effect.gen(function* runsCapability() {
-      const fileSystem = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const directory = yield* fileSystem.makeTempDirectoryScoped();
-      const file = path.join(directory, "notes.txt");
-      yield* fileSystem.writeFileString(file, "one two\nthree\n");
+  it.effect(
+    "returns the typed not-built failure through the generated client",
+    () =>
+      Effect.gen(function* failsNotBuilt() {
+        const client = yield* HttpApiClient.make(http.api);
 
-      const client = yield* HttpApiClient.make(http.api);
+        const error = yield* client.capabilities
+          .getAsset({ payload: { asset: "fireball", studio: "vfx" } })
+          .pipe(Effect.flip);
 
-      const stats = yield* client.capabilities.inspectFile({
-        payload: { path: file },
-      });
-
-      const error = yield* client.capabilities
-        .inspectFile({ payload: { path: `${directory}/missing.txt` } })
-        .pipe(Effect.flip);
-
-      expect(stats).toMatchObject({ lines: 2, path: file, words: 3 });
-      expect(error._tag).toBe("FileStatsError");
-    }).pipe(Effect.provide(AppLayer))
+        expect(error).toBeInstanceOf(NotBuilt);
+        expect(error).toMatchObject({ capability: "getAsset" });
+      }).pipe(Effect.provide(AppLayer))
   );
 
   it.effect("records REST calls when served with devtools", () =>
     Effect.gen(function* recordsRestCalls() {
-      const fileSystem = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const directory = yield* fileSystem.makeTempDirectoryScoped();
-      const file = path.join(directory, "notes.txt");
-      yield* fileSystem.writeFileString(file, "one two\nthree\n");
-
       const client = yield* HttpApiClient.make(http.api);
-      yield* client.capabilities.inspectFile({ payload: { path: file } });
+      yield* client.capabilities.listStudios({ payload: {} }).pipe(Effect.flip);
 
       const { entries } = yield* (yield* CallLog).snapshot;
-
       const [entry] = entries;
 
       expect(entries).toHaveLength(1);
-      expect(entry).toMatchObject({
-        capability: "inspectFile",
-        input: { path: file },
-      });
+      expect(entry).toMatchObject({ capability: "listStudios", input: {} });
       expect(
-        entry !== undefined && OutcomeSchema.guards.Succeeded(entry.outcome)
-          ? entry.outcome.output
-          : undefined
-      ).toMatchObject({ lines: 2, words: 3 });
-
-      const machine = yield* (yield* ActorLog).snapshot;
-
-      const root = machine.entries.filter(
-        (step) => step.machine === "inspectMachine"
-      );
-
-      expect(root.map((step) => step.state)).toEqual(["reading", "inspected"]);
-      expect(root.at(-1)?.status).toBe("done");
-      expect(
-        machine.entries
-          .filter((step) => step.machine !== "inspectMachine")
-          .map((step) => step.machine)
-      ).toEqual(["readStats", "readStats"]);
+        entry !== undefined && OutcomeSchema.guards.Failed(entry.outcome)
+      ).toBe(true);
     }).pipe(
       Effect.provide(
         HttpRouter.serve(devtoolsRoutes, {
           disableListenLog: true,
           disableLogger: true,
         }).pipe(
-          Layer.provide(Flags.defaults(eventFlags)),
-          Layer.provide(Learner.layer(Effect.succeed([]))),
           Layer.provideMerge(NodeHttpServer.layerTest),
-          Layer.provideMerge(devtoolsLayer()),
-          Layer.provide(Layer.merge(PromptLibrary.layer([]), noCafe)),
-          Layer.provide(
-            FileInspector.layer.pipe(Layer.provide(NodeServices.layer))
-          )
+          Layer.provideMerge(devtoolsLayer())
         )
       )
     )

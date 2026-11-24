@@ -12,11 +12,7 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     env:
-      TURBO_API: ${{ vars.TURBO_API }}
-      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_REMOTE_CACHE_SIGNATURE_KEY: ${{ secrets.TURBO_REMOTE_CACHE_SIGNATURE_KEY }}
-      TURBO_CACHE: local:w,remote:w
+      TURBO_CACHE: local:w
       TURBO_RUN_SUMMARY: "true"
     steps:
       - name: Check out main
@@ -32,8 +28,6 @@ jobs:
         run: corepack enable && corepack prepare pnpm@11.3.0 --activate
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Fetch pinned source objects
-        run: pnpm sources:fetch
       - name: Check and test without cache reads
         run: pnpm turbo run check test build --concurrency=1
       - name: Report Turbo cache story

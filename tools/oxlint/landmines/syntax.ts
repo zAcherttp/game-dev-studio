@@ -44,8 +44,6 @@ const binding = (source: SourceCode, identifier: ESTree.Node, name: string) => {
 
 type Reference = { readonly from: string; readonly names: readonly string[] };
 
-const alchemy = "@alchemy.run/test/Vitest";
-
 const constInitializer = (node: ESTree.Node) =>
   node.type === "VariableDeclarator" &&
   node.parent.type === "VariableDeclaration" &&
@@ -53,47 +51,17 @@ const constInitializer = (node: ESTree.Node) =>
     ? node.init
     : undefined;
 
-const alchemyBinding = (
-  source: SourceCode,
-  node: ESTree.Node,
-  name: string
-) => {
-  const init = constInitializer(node);
-  if (!init || node.type !== "VariableDeclarator") {
-    return undefined;
-  }
-  if (
-    init.type === "CallExpression" &&
-    matchesImport(imported(source, init.callee, false), [alchemy], "make")
-  ) {
-    if (node.id.type === "Identifier") {
-      return { from: alchemy, names: [] };
-    }
-    if (node.id.type === "ObjectPattern") {
-      const field = node.id.properties.find(
-        (prop) =>
-          prop.type === "Property" &&
-          prop.value.type === "Identifier" &&
-          prop.value.name === name
-      );
-      const key = field && keyName(field);
-      return key === undefined ? undefined : { from: alchemy, names: [key] };
-    }
-  }
-  return undefined;
-};
-
 export function imported(
   source: SourceCode,
   node: ESTree.Node,
-  followAlchemy = true
+  followBindings = true
 ): Reference | undefined {
   if (node.type === "MemberExpression") {
     const name = memberName(node);
     if (name === undefined) {
       return undefined;
     }
-    const ref = imported(source, node.object, followAlchemy);
+    const ref = imported(source, node.object, followBindings);
     return ref && { from: ref.from, names: [...ref.names, name] };
   }
   if (node.type !== "Identifier") {
@@ -101,10 +69,10 @@ export function imported(
   }
   const variable = binding(source, node, node.name);
   const definition = variable?.defs[0];
-  if (definition?.type === "Variable" && followAlchemy) {
-    return alchemyBinding(source, definition.node, node.name);
+  if (definition?.type === "Variable" && followBindings) {
+    return undefined;
   }
-  if (definition?.type === "Parameter" && followAlchemy) {
+  if (definition?.type === "Parameter" && followBindings) {
     const { node: callback } = definition;
     const invocation = callback.parent;
     if (
@@ -184,17 +152,13 @@ export const runner = (source: SourceCode, call: ESTree.CallExpression) => {
   }
   if (
     vitest.includes(ref.from) ||
-    ref.from === alchemy ||
     ref.from === "bun:test" ||
     ref.from === "node:test"
   ) {
     return {
       name,
       members,
-      alchemy: ref.from === alchemy,
-      live:
-        (ref.from === "@effect/vitest" && members.includes("live")) ||
-        (ref.from === alchemy && name === "test"),
+      live: ref.from === "@effect/vitest" && members.includes("live"),
     };
   }
   return undefined;
@@ -206,7 +170,7 @@ export const hasImport = (source: SourceCode, modules: readonly string[]) =>
       node.type === "ImportDeclaration" && modules.includes(node.source.value)
   );
 
-export const testModules = [...vitest, alchemy, "bun:test", "node:test"];
+export const testModules = [...vitest, "bun:test", "node:test"];
 
 export const effectMethod = (
   source: SourceCode,

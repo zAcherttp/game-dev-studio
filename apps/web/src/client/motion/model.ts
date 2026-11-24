@@ -1,5 +1,5 @@
-import { Spring, Tween } from "@rat-stack/motion";
-import * as Motion from "@rat-stack/motion/foldkit";
+import { Spring, Tween } from "@gds/motion";
+import * as Motion from "@gds/motion/foldkit";
 import { Schema } from "effect";
 
 export const stageWidth = 300;

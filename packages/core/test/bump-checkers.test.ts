@@ -24,9 +24,9 @@ interface Scenario {
 }
 
 const fixture = (scenario: Scenario = {}) => {
-  mkdirSync(path.join(repoRoot, ".rat"), { recursive: true });
+  mkdirSync(path.join(repoRoot, ".gds"), { recursive: true });
 
-  const directory = mkdtempSync(path.join(repoRoot, ".rat/checker-bump-test-"));
+  const directory = mkdtempSync(path.join(repoRoot, ".gds/checker-bump-test-"));
   const scripts = path.join(directory, "scripts");
   const bin = path.join(directory, "bin");
   mkdirSync(scripts);
@@ -83,13 +83,23 @@ process.exit(${scenario.ghExit ?? 0});
     { mode: 0o755 }
   );
 
+  for (const name of ["pnpm", "gh"]) {
+    writeFileSync(
+      path.join(bin, `${name}.cmd`),
+      `@"${process.execPath}" "%~dp0${name}" %*\r\n`
+    );
+  }
+
   return {
     directory,
     run: () =>
       spawnSync(process.execPath, [path.join(scripts, "bump-checkers.ts")], {
         cwd: directory,
         encoding: "utf-8",
-        env: { ...process.env, PATH: `${bin}:${process.env.PATH ?? ""}` },
+        env: {
+          ...process.env,
+          PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
+        },
       }),
   };
 };

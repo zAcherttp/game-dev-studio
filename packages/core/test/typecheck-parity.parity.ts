@@ -224,8 +224,8 @@ describe("compiler result normalization", () => {
 
 describe("workspace compiler parity", () => {
   it("rejects ordinary TypeScript errors even without Effect diagnostics", () => {
-    mkdirSync(path.join(repoRoot, ".rat"), { recursive: true });
-    const directory = mkdtempSync(path.join(repoRoot, ".rat/checker-parity-"));
+    mkdirSync(path.join(repoRoot, ".gds"), { recursive: true });
+    const directory = mkdtempSync(path.join(repoRoot, ".gds/checker-parity-"));
     const workspace = path.relative(repoRoot, directory);
     writeFileSync(
       path.join(directory, "tsconfig.json"),

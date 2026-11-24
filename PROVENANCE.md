@@ -1,5 +1,7 @@
 # Provenance
 
+game-dev-studio is made from [rat-stack](https://github.com/joelhooks/rat-stack) by Joel Hooks, MIT licensed; the `LICENSE` keeps that copyright. The trim removed rat-stack's cloud, site and product code; what stays carries rat-stack's fence, projections and tests.
+
 rat-stack bans comments in code (see AGENTS.md). Credit for borrowed code lives here instead.
 
 | Code | Origin | Notes |

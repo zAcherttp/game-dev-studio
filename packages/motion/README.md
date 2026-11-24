@@ -1,6 +1,6 @@
-# @rat-stack/motion
+# @gds/motion
 
-Easing, tweens, springs and interpolation for Foldkit apps. The core is plain TypeScript with no runtime dependencies. A separate entry, `@rat-stack/motion/foldkit`, wires it into a Foldkit program.
+Easing, tweens, springs and interpolation for Foldkit apps. The core is plain TypeScript with no runtime dependencies. A separate entry, `@gds/motion/foldkit`, wires it into a Foldkit program.
 
 ## Core
 
@@ -33,7 +33,7 @@ Times are milliseconds everywhere, to match Foldkit's frame delta. A spring that
 Keep a `Motion` value in the Model, with a `Clock` and the named tweens and springs:
 
 ```ts
-import * as Motion from "@rat-stack/motion/foldkit";
+import * as Motion from "@gds/motion/foldkit";
 import { Schema } from "effect";
 import { defineMessageUnion } from "foldkit/message";
 

@@ -54,7 +54,11 @@ class CheckerBumpError extends Schema.TaggedError<
 }
 
 const invoke = (command: string, args: readonly string[], step: string) => {
-  const result = spawnSync(command, args, { cwd: root, encoding: "utf-8" });
+  const result = spawnSync(command, args, {
+    cwd: root,
+    encoding: "utf-8",
+    shell: process.platform === "win32",
+  });
 
   if (result.error !== undefined || result.status !== 0) {
     throw new CheckerBumpError({
@@ -232,6 +236,7 @@ const run = () => {
 
     const result = spawnSync("pnpm", ["typecheck:parity"], {
       cwd: root,
+      shell: process.platform === "win32",
       stdio: "inherit",
     });
 

@@ -6,26 +6,12 @@
       {
         "name": "@effect/language-service",
         "allowedUnstableApis": [
-          "@effect/platform-node-shared/NodeCrypto",
           "@effect/platform-node/NodeFileSystem",
           "@effect/platform-node/NodePath",
-          "@effect/platform-node/NodeServices",
           "@effect/vitest",
           "effect/Arbitrary",
           "effect/FileSystem",
-          "effect/Path",
-          "effect/ai/McpProtocol",
-          "effect/ai/McpServer",
-          "effect/crypto/Digest",
-          "effect/http/FetchHttpClient",
-          "effect/http/HttpRouter",
-          "effect/http/HttpServerRequest",
-          "effect/http/HttpServerResponse",
-          "effect/process/ChildProcess",
-          "effect/process/ChildProcessSpawner",
-          "effect/rpc/RpcClient",
-          "effect/rpc/RpcSerialization",
-          "effect/rpc/RpcServer"
+          "effect/Path"
         ]
       }
     ],

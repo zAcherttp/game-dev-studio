@@ -1,6 +1,6 @@
 import { expect, it } from "@effect/vitest";
-import { Tween } from "@rat-stack/motion";
-import * as Motion from "@rat-stack/motion/foldkit";
+import { Tween } from "@gds/motion";
+import * as Motion from "@gds/motion/foldkit";
 import { Schema } from "effect";
 import * as Arbitrary from "effect/Arbitrary";
 

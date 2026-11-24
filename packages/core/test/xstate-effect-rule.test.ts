@@ -10,9 +10,7 @@ import { describe, expect, it } from "vitest";
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 
 const lintFixture = (source: string) => {
-  const directory = mkdtempSync(
-    path.join(tmpdir(), "rat-stack-xstate-effect-")
-  );
+  const directory = mkdtempSync(path.join(tmpdir(), "gds-xstate-effect-"));
 
   const config = path.join(directory, "oxlint.json");
   const file = path.join(directory, "fixture.ts");
@@ -35,8 +33,14 @@ const lintFixture = (source: string) => {
 
   try {
     const result = spawnSync(
-      path.join(repoRoot, "node_modules/.bin/oxlint"),
-      ["-c", config, "--no-ignore", file],
+      process.execPath,
+      [
+        path.join(repoRoot, "node_modules/oxlint/bin/oxlint"),
+        "-c",
+        config,
+        "--no-ignore",
+        file,
+      ],
       { cwd: repoRoot, encoding: "utf-8" }
     );
 

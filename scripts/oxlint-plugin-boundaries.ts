@@ -51,7 +51,7 @@ const surfaceConstructorNames = new Set([
 
 const browserContractModules = new Set([
   "packages/capability/rpc-group",
-  "packages/core/contracts",
+  "packages/model",
   "packages/devtools/contracts",
 ]);
 
@@ -69,14 +69,10 @@ const workspacePath = (filename: string) => {
 const isWithin = (filename: string, directory: string) =>
   filename === directory || filename.startsWith(`${directory}/`);
 
-const EVENTS_SEAM = "apps/site/src/events.ts";
-
 const isPackage = (filename: string) => isWithin(filename, "packages");
 
 const isCapabilityPackage = (filename: string) =>
   isWithin(filename, "packages/capability");
-
-const isInfraApp = (filename: string) => isWithin(filename, "apps/infra");
 
 const isFeature = (filename: string) =>
   /^apps\/[^/]+\/src\/(?:dev\/)?features\/.+/u.test(filename);
@@ -176,24 +172,6 @@ const importModule = (
 ) => {
   const target = normalizeWorkspacePath(filename, specifier);
 
-  if (
-    target !== null &&
-    isPackage(filename) &&
-    !isWithin(filename, "packages/events") &&
-    /^packages\/events\/(?:src\/)?basin(?:\.[cm]?[jt]s)?$/u.test(target)
-  ) {
-    context.report({ messageId: "eventsBasinOwner", node });
-  }
-
-  if (
-    target !== null &&
-    isWithin(target, "packages/events") &&
-    !isWithin(filename, "packages/events") &&
-    filename !== EVENTS_SEAM
-  ) {
-    context.report({ messageId: "eventsSeam", node });
-  }
-
   if (target !== null && isPackage(filename) && isWithin(target, "apps")) {
     context.report({ messageId: "packageApp", node });
   }
@@ -201,17 +179,9 @@ const importModule = (
   if (
     target !== null &&
     isCapabilityPackage(filename) &&
-    isWithin(target, "packages/core")
+    (isWithin(target, "packages/core") || isWithin(target, "packages/model"))
   ) {
     context.report({ messageId: "capabilityDomain", node });
-  }
-
-  if (
-    target !== null &&
-    !isInfraApp(filename) &&
-    isWithin(target, "apps/infra")
-  ) {
-    context.report({ messageId: "infraOwner", node });
   }
 };
 
@@ -242,9 +212,6 @@ const browserServerModule = (filename: string, specifier: string) => {
   return (
     isBuiltin(specifier) ||
     normalized.startsWith("node:") ||
-    /^alchemy(?:\/|$)/u.test(normalized) ||
-    normalized.startsWith("@alchemy.run/") ||
-    normalized === "cloudflare:workers" ||
     normalized === "@effect/platform-node" ||
     normalized.startsWith("@effect/platform-node/") ||
     normalized === "server-only" ||
@@ -252,7 +219,7 @@ const browserServerModule = (filename: string, specifier: string) => {
     normalized.includes("/httpserver") ||
     /(?:^|\/)server(?:\/|$)/u.test(normalized) ||
     /\.server(?:\.[^/]*)?$/u.test(normalized) ||
-    (target !== null && isWithin(target, "apps/infra"))
+    (target !== null && isWithin(target, "apps/cli"))
   );
 };
 
@@ -902,17 +869,11 @@ const noCrossLayerImports = defineRule({
   meta: {
     docs: {
       description:
-        "Keep package, capability, and infrastructure imports inside their owning layers.",
+        "Keep package and capability imports inside their owning layers.",
     },
     messages: {
       capabilityDomain:
-        "packages/capability cannot import packages/core domain code. Core depends on capability, so this import makes a cycle. Fix: move the shared type into `packages/capability`, or pass the value in as a parameter.",
-      eventsBasinOwner:
-        "This imports shared Basin infrastructure from the events cartridge. Deleting the cartridge would then break every other Basin user. Fix: import it from `@rat-stack/basin`.",
-      eventsSeam:
-        "This module reaches the events cartridge directly. Removing the cartridge must stay a one-line change. Fix: import from `apps/site/src/events.ts`, the only file that may import `@rat-stack/events/site`.",
-      infraOwner:
-        "This module imports Stack wiring from apps/infra. The Stack owns its wiring, and outside imports braid deploy code into runtime code. Fix: import the capability or service contract the Stack provides, for example from `@rat-stack/core/contracts`.",
+        "packages/capability cannot import packages/core or packages/model domain code. Both depend on capability, so this import makes a cycle. Fix: move the shared type into `packages/capability`, or pass the value in as a parameter.",
       packageApp:
         "Packages cannot import application code. Dependencies run from apps to packages, so this import makes a cycle. Fix: move the shared code into a package under `packages/`, or have the app pass it in.",
     },
@@ -924,7 +885,10 @@ const noCoreAdapters = defineRule({
   create(context) {
     const filename = workspacePath(context.filename);
 
-    if (!isWithin(filename, "packages/core/src")) {
+    if (
+      !isWithin(filename, "packages/core/src") &&
+      !isWithin(filename, "packages/model/src")
+    ) {
       return {};
     }
 
@@ -940,6 +904,7 @@ const noCoreAdapters = defineRule({
       const domainModule =
         target !== null &&
         (isWithin(target, "packages/core") ||
+          isWithin(target, "packages/model") ||
           isWithin(target, "packages/capability"));
 
       const domainLibrary = /^(?:effect|xstate|@xstate\/effect)(?:\/|$)/u.test(
@@ -964,11 +929,11 @@ const noCoreAdapters = defineRule({
   meta: {
     docs: {
       description:
-        "Core owns ports and domain logic; HTTP clients and vendor implementations belong in adapter cartridges.",
+        "Core and model own ports and domain logic; engines, games, HTTP clients and vendor implementations belong in adapter packages.",
     },
     messages: {
       coreAdapter:
-        "Core cannot import HTTP clients or adapters. Core owns job-shaped ports, so a provider inside it cannot be swapped or removed. Fix: declare a port in `packages/core`, implement it in an adapter package such as `packages/subscriber-delivery`, and provide it from the composition root.",
+        "Core and model cannot import an engine, a game, an HTTP client or an adapter. They own job-shaped ports, so a provider inside them cannot be swapped or removed, and the dev studio stays engine agnostic. Fix: declare a port in `packages/model`, implement it in an adapter package, and provide it from the composition root in `apps/cli`.",
     },
     type: "problem",
   },
@@ -1001,13 +966,13 @@ const noBrowserServerImports = defineRule({
   meta: {
     docs: {
       description:
-        "Keep Node, Alchemy, Worker, infrastructure, and server-only modules out of browser zones.",
+        "Keep Node, CLI, and server-only modules out of browser zones.",
     },
     messages: {
       capabilityImport:
-        "Feature and client modules can import only browser-safe contract entry points. Capability handlers and domain implementation would ship server code to the browser. Fix: import from `@rat-stack/core/contracts` or `@rat-stack/capability/rpc-group`, and reach the handler through the `RpcClient`.",
+        "Feature and client modules can import only browser-safe contract entry points. Capability handlers and domain implementation would ship server code to the browser. Fix: import from `@gds/core/contracts` or `@gds/capability/rpc-group`, and reach the handler through the `RpcClient`.",
       serverImport:
-        "Feature and client modules cannot import Node, Alchemy, Worker, infra, or server-only modules. The browser bundle would fail to build or leak server code. Fix: put the work behind a capability and call it from a named `Command.define` in `apps/web/src/client`.",
+        "Feature and client modules cannot import Node, CLI, or server-only modules. The browser bundle would fail to build or leak server code. Fix: put the work behind a capability and call it from a named `Command.define` in `apps/web/src/client`.",
     },
     type: "problem",
   },
@@ -1421,15 +1386,14 @@ const noBrowserGlobalsOnServer = defineRule({
     },
     messages: {
       browserGlobal:
-        "{{name}} exists only in a browser. Server, Worker, and package code runs without it, so this throws at runtime. Fix: move the code into `apps/*/src/client` or `apps/*/src/features`, or pass the value in from the browser.",
+        "{{name}} exists only in a browser. Server, CLI, and package code runs without it, so this throws at runtime. Fix: move the code into `apps/*/src/client` or `apps/*/src/features`, or pass the value in from the browser.",
     },
     type: "problem",
   },
 });
 
 const isDevtoolsModule = (target: string) =>
-  isWithin(target, "packages/devtools") ||
-  /^packages\/auth\/(?:(?:src|dist)\/)?devtools(?:\/|\.|$)/u.test(target);
+  isWithin(target, "packages/devtools");
 
 const devFolderOf = (target: string) =>
   /^(?<folder>apps\/[^/]+\/src\/dev)(?:\/|$)/u.exec(target)?.groups?.folder;
@@ -1477,80 +1441,23 @@ const noDevtoolsInProduction = defineRule({
   meta: {
     docs: {
       description:
-        "Keep devtools and test people out of anything a production entry can reach.",
+        "Keep devtools out of anything a production entry can reach.",
     },
     messages: {
       devFolder:
         "Only modules inside {{folder}} may import it. The dev composition is an entry of its own, and production code must not reach it. Fix: move the importing module under `{{folder}}`, or import a production module instead.",
       devtools:
-        "Devtools and test people (@rat-stack/devtools, @rat-stack/auth/devtools) belong in apps/*/src/dev/**, apps/cli, or tests. The rat_call and rat_test_person capabilities bypass per-request auth and create accounts with a fixed password, so a production composition must never include them. Fix: move this import into `apps/<app>/src/dev/`, `apps/cli`, or a test file.",
-    },
-    type: "problem",
-  },
-});
-
-const noCodeSnippetsInRuntime = defineRule({
-  create(context) {
-    const filename = workspacePath(context.filename);
-    const runtime = /^(?:apps|packages)\/[^/]+\/src\//u.test(filename);
-
-    const check = (node: ESTree.Node, source: ESTree.Expression) => {
-      const specifier = isStringModule(source);
-
-      if (specifier === null) {
-        return;
-      }
-
-      const target = normalizeWorkspacePath(filename, specifier);
-
-      const snippets =
-        target !== null && isWithin(target, "packages/code-snippets");
-
-      const engine =
-        specifier === "shiki" ||
-        specifier.startsWith("shiki/") ||
-        specifier.startsWith("@shikijs/");
-
-      if (
-        runtime &&
-        !isWithin(filename, "packages/code-snippets") &&
-        (snippets || engine)
-      ) {
-        context.report({ messageId: "buildOnly", node });
-      }
-
-      if (
-        isWithin(filename, "packages/code-snippets/src") &&
-        !filename.endsWith("/shiki.ts") &&
-        engine
-      ) {
-        context.report({ messageId: "adapterOnly", node });
-      }
-    };
-
-    return moduleSourceVisitors(context, check);
-  },
-  meta: {
-    docs: {
-      description:
-        "Keep code snippets build-only and Shiki behind its adapter.",
-    },
-    messages: {
-      adapterOnly:
-        "Code-snippets core cannot import Shiki. Core stays adapter-free so the highlighter can be swapped or removed. Fix: depend on the `Highlighter` port and provide the adapter from `@rat-stack/code-snippets/shiki`.",
-      buildOnly:
-        "Code snippets and Shiki are build-only and cannot reach runtime src modules. They would add megabytes to the Worker startup bundle. Fix: run the import from a build script under `apps/site/scripts` and read its generated output at runtime.",
+        "Devtools (@gds/devtools) belong in apps/*/src/dev/**, apps/cli, or tests. The rat_call capability dispatches any capability call, so a production composition must never include it. Fix: move this import into `apps/<app>/src/dev/`, `apps/cli`, or a test file.",
     },
     type: "problem",
   },
 });
 
 export default definePlugin({
-  meta: { name: "rat-stack-boundaries" },
+  meta: { name: "gds-boundaries" },
   rules: {
     "no-browser-globals-on-server": noBrowserGlobalsOnServer,
     "no-browser-server-imports": noBrowserServerImports,
-    "no-code-snippets-in-runtime": noCodeSnippetsInRuntime,
     "no-core-adapters": noCoreAdapters,
     "no-cross-layer-imports": noCrossLayerImports,
     "no-devtools-in-production": noDevtoolsInProduction,

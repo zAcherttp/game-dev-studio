@@ -72,6 +72,6 @@ const debtLedger = defineRule({
 });
 
 export default definePlugin({
-  meta: { name: "rat-stack-debt" },
+  meta: { name: "gds-debt" },
   rules: { "debt-ledger": debtLedger },
 });
