@@ -1,11 +1,13 @@
-import { NodeHttpServer } from "@effect/platform-node";
+import { NodeHttpServer, NodeServices } from "@effect/platform-node";
 import { describe, expect, it } from "@effect/vitest";
 import { CallLog, OutcomeSchema, devtoolsLayer } from "@gds/devtools";
-import { NotBuilt } from "@gds/model";
+import { UnknownAsset } from "@gds/model";
+import { GameFolder } from "@gds/store";
 import { Effect, Layer, Schema } from "effect";
 import { HttpClient, HttpRouter, HttpServer } from "effect/http";
 import { HttpApiClient } from "effect/http-api";
 
+import { studioLayer } from "../src/studio-layer.js";
 import {
   capabilities,
   devtoolsRoutes,
@@ -14,6 +16,12 @@ import {
   serverLayer,
 } from "../src/surfaces.js";
 
+const fixtureGame = `${import.meta.dirname}/fixtures/game`;
+
+const game = studioLayer(GameFolder.at(fixtureGame)).pipe(
+  Layer.provideMerge(NodeServices.layer)
+);
+
 const decodeOpenApi = Schema.decodeUnknownSync(
   Schema.Struct({ paths: Schema.Record(Schema.String, Schema.Unknown) })
 );
@@ -21,7 +29,7 @@ const decodeOpenApi = Schema.decodeUnknownSync(
 const AppLayer = HttpRouter.serve(routes, {
   disableListenLog: true,
   disableLogger: true,
-}).pipe(Layer.provideMerge(NodeHttpServer.layerTest));
+}).pipe(Layer.provide(game), Layer.provideMerge(NodeHttpServer.layerTest));
 
 describe("serve routes", () => {
   it.effect("binds serve to the loopback interface only", () =>
@@ -50,30 +58,40 @@ describe("serve routes", () => {
   );
 
   it.effect(
-    "returns the typed not-built failure through the generated client",
+    "reads an asset and returns a typed failure through the generated client",
     () =>
-      Effect.gen(function* failsNotBuilt() {
+      Effect.gen(function* readsAsset() {
         const client = yield* HttpApiClient.make(http.api);
+
+        const asset = yield* client.capabilities.getAsset({
+          payload: { asset: "fire", studio: "vfx" },
+        });
 
         const error = yield* client.capabilities
           .getAsset({ payload: { asset: "fireball", studio: "vfx" } })
           .pipe(Effect.flip);
 
-        expect(error).toBeInstanceOf(NotBuilt);
-        expect(error).toMatchObject({ capability: "getAsset" });
+        expect(asset.mix).toEqual({ core: "core-2" });
+        expect(error).toBeInstanceOf(UnknownAsset);
+        expect(error).toMatchObject({ asset: "fireball" });
       }).pipe(Effect.provide(AppLayer))
   );
 
   it.effect("records REST calls when served with devtools", () =>
     Effect.gen(function* recordsRestCalls() {
       const client = yield* HttpApiClient.make(http.api);
-      yield* client.capabilities.listStudios({ payload: {} }).pipe(Effect.flip);
+      yield* client.capabilities
+        .getAsset({ payload: { asset: "ice", studio: "vfx" } })
+        .pipe(Effect.flip);
 
       const { entries } = yield* (yield* CallLog).snapshot;
       const [entry] = entries;
 
       expect(entries).toHaveLength(1);
-      expect(entry).toMatchObject({ capability: "listStudios", input: {} });
+      expect(entry).toMatchObject({
+        capability: "getAsset",
+        input: { asset: "ice", studio: "vfx" },
+      });
       expect(
         entry !== undefined && OutcomeSchema.guards.Failed(entry.outcome)
       ).toBe(true);
@@ -83,6 +101,7 @@ describe("serve routes", () => {
           disableListenLog: true,
           disableLogger: true,
         }).pipe(
+          Layer.provide(game),
           Layer.provideMerge(NodeHttpServer.layerTest),
           Layer.provideMerge(devtoolsLayer())
         )

@@ -31,6 +31,7 @@ const temporary = (
 
 const parameterizedReadBoundaries = new Map(
   Object.entries<readonly ReadBoundary[]>({
+    "apps/cli/test/cli.e2e.test.ts": temporary(),
     "apps/web/test/accent.test.ts": hashed("apps/web/src/**"),
     "packages/core/test/bump-checkers.test.ts": [
       ...hashed(
@@ -62,6 +63,10 @@ const parameterizedReadBoundaries = new Map(
     "packages/motion/test/vendoring.test.ts": hashed(
       "packages/motion/src/*.pure.ts"
     ),
+    "packages/store/src/file-store.ts": temporary(
+      "<GDS_GAME: a test-created game folder, or apps/cli/test/fixtures/game hashed by @gds/cli>/**"
+    ),
+    "packages/store/test/file-store.test.ts": temporary(),
   })
 );
 
