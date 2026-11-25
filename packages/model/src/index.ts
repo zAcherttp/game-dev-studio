@@ -46,4 +46,4 @@ export { UnknownStudio } from "./unknown-studio.js";
 
 export { UnknownVariant } from "./unknown-variant.js";
 
-export { GateResult, Render, Variant } from "./variant.js";
+export { GateResult, Render, RenderBeat, Variant } from "./variant.js";
