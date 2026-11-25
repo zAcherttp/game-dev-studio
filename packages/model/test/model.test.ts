@@ -25,6 +25,20 @@ describe("model", () => {
     }
   );
 
+  it("decodes an asset file written before layers kept rounds", () => {
+    const asset = Schema.decodeSync(AssetFile)(
+      JSON.stringify({
+        id: "fire",
+        layers: { core: { picks: [], variants: [] } },
+        mix: {},
+        studio: "vfx",
+        title: "Fire",
+      })
+    );
+
+    expect(asset.layers.core).toEqual({ picks: [], variants: [] });
+  });
+
   it("decodes a studio definition and refuses an unknown render kind", () => {
     const studio = {
       gates: ["budget"],

@@ -4,6 +4,7 @@ import type { Effect } from "effect";
 import type { AdapterFailed } from "./adapter-failed.js";
 import type { Asset } from "./asset.js";
 import type { Pick } from "./pick.js";
+import type { RoundRequest } from "./round.js";
 import type { StudioDef } from "./studio.js";
 import type { UnknownAsset } from "./unknown-asset.js";
 import type { UnknownStudio } from "./unknown-studio.js";
@@ -36,6 +37,14 @@ export class Store extends Context.Service<
       studio: string,
       asset: string,
       pick: typeof Pick.Type
+    ) => Effect.Effect<
+      typeof Asset.Type,
+      UnknownStudio | UnknownAsset | AdapterFailed
+    >;
+    readonly round: (
+      studio: string,
+      asset: string,
+      request: typeof RoundRequest.Type
     ) => Effect.Effect<
       typeof Asset.Type,
       UnknownStudio | UnknownAsset | AdapterFailed
