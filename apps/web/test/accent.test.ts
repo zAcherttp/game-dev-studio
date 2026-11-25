@@ -2,7 +2,7 @@ import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { expect, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path } from "effect";
 
-const allowed = new Set(["focus"]);
+const allowed = new Set(["focus", "picked"]);
 
 const pink = /#(?:ff1493|c8006e)\b/giu;
 
