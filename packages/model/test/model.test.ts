@@ -56,8 +56,8 @@ describe("model", () => {
     ).toThrow();
   });
 
-  it("names nine distinct contracts and lets each one fail as not built", () => {
-    expect(new Set(contracts.map((contract) => contract.name)).size).toBe(9);
+  it("names ten distinct contracts and lets each one fail as not built", () => {
+    expect(new Set(contracts.map((contract) => contract.name)).size).toBe(10);
 
     for (const contract of contracts) {
       const encoded = Schema.encodeUnknownSync(contract.failure)(

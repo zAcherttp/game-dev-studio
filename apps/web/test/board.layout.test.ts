@@ -71,12 +71,40 @@ it("the fire kit board shows every layer, every take, and one pick wire per pick
       .toSorted()
   ).toEqual(
     Object.entries(asset?.mix ?? {})
-      .map(([, variant]) => `variant:fire/${variant}`)
+      .map(([layer, variant]) => `variant:fire/${layer}/${variant}`)
       .toSorted()
   );
   expect(graph.edges.filter((edge) => edge.kind === "lineage")).toHaveLength(
     takes.filter((take) => take.parent !== undefined).length
   );
+});
+
+it("node ids stay unique when layers reuse take letters, as EasyVFX kits do", () => {
+  const lettered = fireFlags.assets.map((entry) => ({
+    ...entry,
+    asset: {
+      ...entry.asset,
+      layers: Object.fromEntries(
+        Object.entries(entry.asset.layers).map(([id, layer]) => [
+          id,
+          {
+            ...layer,
+            variants: layer.variants.map(({ parent, ...variant }) => {
+              const byLetter = { ...variant, id: variant.label };
+
+              return parent === undefined
+                ? byLetter
+                : { ...byLetter, parent: parent.split("-").at(-1) ?? parent };
+            }),
+          },
+        ])
+      ),
+    },
+  }));
+
+  const ids = layout(fireFlags.studio, lettered).nodes.map((node) => node.id);
+
+  expect(new Set(ids).size).toBe(ids.length);
 });
 
 it("fit puts the whole board inside the viewport, and zooming keeps the point under the cursor still", () => {

@@ -7,6 +7,7 @@ import { Message } from "../../client/board/message.js";
 import type { BoardMessage } from "../../client/board/message.js";
 import type { BoardModel, OpenLayerValue } from "../../client/board/model.js";
 import {
+  mediaSrc,
   openedLayer,
   referenceOf,
   syncClips,
@@ -49,7 +50,7 @@ const media = (
 
     return h.img([
       h.Key(`${variant.id}:wait`),
-      h.Src(render.still),
+      h.Src(mediaSrc(render.still)),
       h.Alt(pickerCopy.loop(variant.label)),
       h.Class(cls(pickerStyles.stage, pickerStyles.waiting)),
       h.DataAttribute("cycle", "waiting"),
@@ -58,7 +59,7 @@ const media = (
 
   return h.img([
     h.Key(`${variant.id}:${cycle}`),
-    h.Src(loopSrc(render.path, cycle)),
+    h.Src(loopSrc(mediaSrc(render.path), cycle)),
     h.Alt(pickerCopy.loop(variant.label)),
     h.Class(cls(pickerStyles.stage)),
     h.DataAttribute("cycle", String(cycle)),
@@ -140,7 +141,7 @@ const variantColumn =
               [h.Class(cls(pickerStyles.stillRow))],
               [
                 h.img([
-                  h.Src(variant.render.still),
+                  h.Src(mediaSrc(variant.render.still)),
                   h.Alt(pickerCopy.still(variant.label, beat)),
                   h.Class(cls(pickerStyles.still)),
                 ]),
@@ -181,7 +182,7 @@ const referenceColumn = (
           ),
           h.img([
             h.Key(`reference:${cycleOf(plan, model.clock)}`),
-            h.Src(loopSrc(file.path, cycleOf(plan, model.clock))),
+            h.Src(loopSrc(mediaSrc(file.path), cycleOf(plan, model.clock))),
             h.Alt(pickerCopy.reference),
             h.Class(cls(pickerStyles.stage)),
           ]),

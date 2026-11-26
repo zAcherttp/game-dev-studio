@@ -1,10 +1,11 @@
 import { toRpcGroup } from "@gds/capability/rpc-group";
 import {
   getAssetContract,
+  layersOfContract,
   listAssetsContract,
   listStudiosContract,
 } from "@gds/model";
-import { Config, Effect, Layer, Schema } from "effect";
+import { Config, Effect, Exit, Layer, Schema } from "effect";
 import { FetchHttpClient } from "effect/http";
 import { RpcClient, RpcSerialization } from "effect/rpc";
 
@@ -14,6 +15,7 @@ import type { FlagsValue } from "../client/board/model.js";
 const loadGroup = toRpcGroup([
   listStudiosContract,
   listAssetsContract,
+  layersOfContract,
   getAssetContract,
 ]).group;
 
@@ -61,11 +63,25 @@ export const loadBoardFlags = Effect.fn("web.loadBoardFlags")(
         )
       );
 
+      const given = yield* Effect.all(
+        summaries.map(({ id }) =>
+          client.layersOf({ asset: id, studio: studio.id }).pipe(Effect.exit)
+        )
+      );
+
       const flags: FlagsValue = {
-        assets: assets.map((asset) => ({
-          asset,
-          layers: layersOf(studio, asset),
-        })),
+        assets: assets.map((asset, index) => {
+          const kit = given[index];
+
+          return {
+            asset,
+            layers: layersOf(
+              studio,
+              asset,
+              kit !== undefined && Exit.isSuccess(kit) ? kit.value.layers : []
+            ),
+          };
+        }),
         by,
         studio,
       };

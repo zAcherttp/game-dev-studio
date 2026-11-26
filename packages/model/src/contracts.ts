@@ -7,7 +7,7 @@ import { LayerBusy } from "./layer-busy.js";
 import { NoPick } from "./no-pick.js";
 import { NotBuilt } from "./not-built.js";
 import { CheckShot, RoundRequest } from "./round.js";
-import { PackDef, StudioDef } from "./studio.js";
+import { LayerDef, PackDef, StudioDef } from "./studio.js";
 import { UnknownAsset } from "./unknown-asset.js";
 import { UnknownLayer } from "./unknown-layer.js";
 import { UnknownStudio } from "./unknown-studio.js";
@@ -51,6 +51,15 @@ export const listAssetsContract = defineContract("listAssets", {
   failure: Schema.Union([NotBuilt, UnknownStudio, AdapterFailed]),
   input: Schema.Struct({ studio: studioField }),
   output: Schema.Struct({ assets: Schema.Array(AssetSummary) }),
+});
+
+export const layersOfContract = defineContract("layersOf", {
+  annotations: readOnly,
+  description:
+    "List an asset's layers in its own order, with titles and render kinds. A kit that names its own layers gives them here; the studio's layers are the default for an asset that does not.",
+  failure: Schema.Union([NotBuilt, UnknownStudio, UnknownAsset, AdapterFailed]),
+  input: Schema.Struct({ asset: assetField, studio: studioField }),
+  output: Schema.Struct({ layers: Schema.Array(LayerDef) }),
 });
 
 export const getAssetContract = defineContract("getAsset", {
@@ -166,6 +175,7 @@ export const openCheckContract = defineContract("openCheck", {
 export const contracts = [
   listStudiosContract,
   listAssetsContract,
+  layersOfContract,
   getAssetContract,
   addVariantsContract,
   renderContract,
