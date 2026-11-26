@@ -78,6 +78,60 @@ export const RenderTake = Command.define("RenderTake", {
   messages: [Message.RenderedTake, Message.FailedRender],
 });
 
+export const RenderSolo = Command.define("RenderSolo", {
+  args: {
+    asset: Schema.String,
+    layer: Schema.String,
+    studio: Schema.String,
+    variant: Schema.String,
+  },
+  execute: (input) =>
+    Effect.gen(function* renderSolo() {
+      const api = yield* BoardApi;
+
+      const where = {
+        asset: input.asset,
+        layer: input.layer,
+        variant: input.variant,
+      };
+
+      return yield* api.render({ ...input, mix: {} }).pipe(
+        Effect.map((render) => Message.RenderedSolo({ ...where, render })),
+        Effect.catchTag("BoardApiFailed", (failure) =>
+          Effect.succeed(
+            Message.FailedRender({ ...where, message: failure.message })
+          )
+        )
+      );
+    }),
+  messages: [Message.RenderedSolo, Message.FailedRender],
+});
+
+export const RenderComposed = Command.define("RenderComposed", {
+  args: {
+    asset: Schema.String,
+    key: Schema.String,
+    layer: Schema.String,
+    mix: Schema.Record(Schema.String, Schema.String),
+    studio: Schema.String,
+    variant: Schema.String,
+  },
+  execute: ({ key, ...input }) =>
+    Effect.gen(function* renderComposed() {
+      const api = yield* BoardApi;
+
+      return yield* api.render(input).pipe(
+        Effect.map((render) => Message.RenderedComposed({ key, render })),
+        Effect.catchTag("BoardApiFailed", (failure) =>
+          Effect.succeed(
+            Message.FailedCompose({ key, message: failure.message })
+          )
+        )
+      );
+    }),
+  messages: [Message.RenderedComposed, Message.FailedCompose],
+});
+
 type CanvasMessage =
   | ReturnType<typeof Message.MeasuredCanvas>
   | ReturnType<typeof Message.WheeledCanvas>;

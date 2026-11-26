@@ -22,14 +22,14 @@ export const FIT_MIN_ZOOM = 0.4;
 
 const FIT_PADDING = 48;
 
-const MIX_HEADER = 62;
+const MIX_HEADER = 212;
 
 const MIX_LINE = 17;
 
 export const nodeSize = {
   asset: { height: 96, width: 190 },
   layer: { height: 134, width: 176 },
-  mix: { height: 150, width: 200 },
+  mix: { height: 300, width: 240 },
   studio: { height: 96, width: 190 },
   variant: { height: 124, width: 164 },
 } as const;

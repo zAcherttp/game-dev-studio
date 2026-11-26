@@ -2,10 +2,18 @@ import { expect, it } from "@effect/vitest";
 import { Schema } from "effect";
 import * as Arbitrary from "effect/Arbitrary";
 
+import { Message } from "../src/client/board/message.js";
 import { CatalogEntry, initialModel } from "../src/client/board/model.js";
 import { switcherEntries } from "../src/client/board/switcher.js";
-import { prerenderPicks } from "../src/client/board/update.js";
+import { prerenderBoard, update } from "../src/client/board/update.js";
 import { fireFlags } from "./fixtures/fire-kit.js";
+
+const render = {
+  kind: "gif" as const,
+  ms: 900,
+  path: "E:/game/.cache/devstudio/vfx/fire/x.gif",
+  still: "E:/game/.cache/devstudio/vfx/fire/x.still.png",
+};
 
 const Catalog = Schema.Array(CatalogEntry).check(Schema.isMaxLength(60));
 
@@ -36,52 +44,28 @@ it.prop(
   }
 );
 
-it("page load renders each picked take that has no render yet, once", () => {
+it("page load renders each shown take alone and the whole mix once, and nothing again once they are in", () => {
   const model = initialModel(fireFlags);
-  const asset = fireFlags.assets[0]?.asset;
+  const commands = prerenderBoard(model);
+  const solos = commands.filter((command) => command.name === "RenderSolo");
 
-  const missing = Object.entries(asset?.mix ?? {}).filter(([layer, picked]) => {
-    const variant = asset?.layers[layer]?.variants.find(
-      ({ id }) => id === picked
-    );
-
-    return variant !== undefined && variant.render === undefined;
-  });
-
-  const withoutRenders = {
-    ...model,
-    assets: model.assets.map((entry) => ({
-      ...entry,
-      asset: {
-        ...entry.asset,
-        layers: Object.fromEntries(
-          Object.entries(entry.asset.layers).map(([id, layer]) => [
-            id,
-            {
-              ...layer,
-              variants: layer.variants.map(
-                ({ render: _drop, ...variant }) => variant
-              ),
-            },
-          ])
-        ),
-      },
-    })),
-  };
-
-  expect(prerenderPicks(model)).toHaveLength(missing.length);
-  expect(prerenderPicks(withoutRenders).map(({ args }) => args)).toEqual(
-    Object.entries(asset?.mix ?? {})
-      .filter(
-        ([layer, picked]) =>
-          asset?.layers[layer]?.variants.some(({ id }) => id === picked) ===
-          true
-      )
-      .map(([layer, variant]) => ({
-        asset: "fire",
-        layer,
-        studio: "vfx",
-        variant,
-      }))
+  const composed = commands.filter(
+    (command) => command.name === "RenderComposed"
   );
+
+  expect(solos.length).toBeGreaterThan(0);
+  expect(composed).toHaveLength(1);
+
+  let filled = model;
+
+  for (const command of commands) {
+    filled = update(
+      filled,
+      command.name === "RenderSolo"
+        ? Message.RenderedSolo({ ...command.args, render })
+        : Message.RenderedComposed({ key: command.args.key, render })
+    ).model;
+  }
+
+  expect(prerenderBoard(filled)).toEqual([]);
 });

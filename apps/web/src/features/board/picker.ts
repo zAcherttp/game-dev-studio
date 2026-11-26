@@ -123,9 +123,13 @@ const variantColumn =
     const beat = model.studio.sync?.beat ?? "start";
     const isPicked = variant.id === picked;
 
-    const isRendering = Option.exists(model.open, (open) =>
-      model.rendering.includes(takeKey(open.asset, open.layer, variant.id))
-    );
+    const isRendering = Option.exists(model.open, (open) => {
+      const key = takeKey(open.asset, open.layer, variant.id);
+
+      return model.pickerMode === "solo"
+        ? model.solo[key] === undefined
+        : model.rendering.includes(key);
+    });
 
     return h.figure(
       [
@@ -272,6 +276,27 @@ const footer = (h: HtmlBuilder<BoardMessage>, model: BoardModel): Html =>
     ]
   );
 
+const modeButton = (
+  h: HtmlBuilder<BoardMessage>,
+  model: BoardModel,
+  mode: BoardModel["pickerMode"],
+  label: string
+): Html =>
+  h.button(
+    [
+      h.Type("button"),
+      h.Class(
+        cls(
+          pickerStyles.ghost,
+          model.pickerMode === mode && pickerStyles.pressed
+        )
+      ),
+      h.AriaPressed(String(model.pickerMode === mode)),
+      h.OnClick(Message.SwitchedPickerMode({ mode })),
+    ],
+    [label]
+  );
+
 export const pickerView = (
   model: BoardModel,
   open: OpenLayerValue,
@@ -279,7 +304,16 @@ export const pickerView = (
 ): Html =>
   Option.match(openedLayer(model.assets, open), {
     onNone: () => h.empty,
-    onSome: ({ asset, history, layer, picked, variants }) => {
+    onSome: ({ asset, history, layer, picked, variants: takes }) => {
+      const variants =
+        model.pickerMode === "solo"
+          ? takes.map(({ render: _mix, ...take }) => {
+              const solo = model.solo[takeKey(asset.id, layer.id, take.id)];
+
+              return solo === undefined ? take : { ...take, render: solo };
+            })
+          : takes;
+
       const plan = syncPlan(syncClips(model.studio, variants));
       const beat = model.studio.sync?.beat ?? "start";
 
@@ -307,6 +341,8 @@ export const pickerView = (
                     [h.Class(cls(pickerStyles.sub))],
                     [pickerCopy.history(history.length)]
                   ),
+                  modeButton(h, model, "mix", pickerCopy.inMix),
+                  modeButton(h, model, "solo", pickerCopy.alone),
                   h.span([h.Class(cls(pickerStyles.spacer))]),
                   h.p(
                     [

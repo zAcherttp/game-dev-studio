@@ -14,6 +14,7 @@ export interface RenderRequest {
   readonly layer: string;
   readonly variant: typeof Variant.Type;
   readonly mix: typeof Mix.Type;
+  readonly exact?: boolean;
 }
 
 export class Renderer extends Context.Service<

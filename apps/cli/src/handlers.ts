@@ -174,8 +174,14 @@ export const render = implement(
       return yield* new UnknownVariant({ asset, layer, studio, variant });
     }
 
+    const request = { asset, layer, studio, variant: found };
+
     return yield* Renderer.use((renderer) =>
-      renderer.render({ asset, layer, mix: stored.mix, studio, variant: found })
+      renderer.render(
+        input.mix === undefined
+          ? { ...request, mix: stored.mix }
+          : { ...request, exact: true, mix: input.mix }
+      )
     );
   })
 );

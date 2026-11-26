@@ -13,6 +13,7 @@ import {
   cachedRender,
   easyvfxSource,
   evfxRenderer,
+  picksFor,
   renderKeyText,
 } from "../src/index.js";
 
@@ -61,6 +62,47 @@ const settings = (cache: string) => ({
   python: "unused",
   size: [360, 240] as const,
   workers: 1,
+});
+
+const KitLayers = Schema.Array(
+  Schema.Literals(["Flames", "Smoke", "Sparks", "Glow", "Decal"])
+).check(Schema.isMinLength(1));
+
+describe("exact mix", () => {
+  it.prop(
+    "draws the variant and exactly the mix's layers, leaves every other kit layer out, and keeps the asset's mix when not exact",
+    {
+      chosen: Arbitrary.schema(KitLayers),
+      kitLayers: Arbitrary.schema(KitLayers),
+    },
+    ({ chosen, kitLayers }) => {
+      const kit = {
+        layers: [...new Set(["Flames", ...kitLayers])].map((name) => ({
+          name,
+          variants: [] as const,
+        })),
+        picks: [] as const,
+        preset: "fire_pit",
+      };
+
+      const mix = Object.fromEntries(
+        [...new Set(chosen)].flatMap((name) =>
+          name === "Flames" ? [] : [[name, "A"] as const]
+        )
+      );
+
+      const exact = picksFor({ ...request("A"), exact: true, mix }, kit);
+
+      for (const { name } of kit.layers) {
+        if (name !== "Flames") {
+          expect(exact[name]).toBe(mix[name] ?? "-");
+        }
+      }
+
+      expect(exact.Flames).toBeUndefined();
+      expect(picksFor({ ...request("A"), mix }, kit)).toEqual(mix);
+    }
+  );
 });
 
 describe("render cache key", () => {

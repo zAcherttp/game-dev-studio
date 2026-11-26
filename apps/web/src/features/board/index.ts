@@ -5,13 +5,21 @@ import { createLazy } from "foldkit/html";
 import type { Document, Html, HtmlBuilder } from "foldkit/html";
 
 import { WatchCanvas } from "../../client/board/command.js";
+import {
+  composeKey,
+  pickedTakes,
+  takeName,
+} from "../../client/board/compose.js";
+import { gridStyle } from "../../client/board/grid.js";
 import { layout } from "../../client/board/layout.js";
 import type { Graph, GraphEdge, GraphNode } from "../../client/board/layout.js";
 import { Message } from "../../client/board/message.js";
 import type { BoardMessage } from "../../client/board/message.js";
 import type { BoardModel } from "../../client/board/model.js";
+import { takeKey } from "../../client/board/model.js";
 import { mediaSrc } from "../../client/board/picker.js";
 import { boardStyles } from "./board.stylex.js";
+import { composeView } from "./compose.js";
 import { boardCopy } from "./copy.js";
 import { pickerView } from "./picker.js";
 import { switcherView } from "./switcher.js";
@@ -114,7 +122,26 @@ const assetNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"asset">) =>
     ]
   );
 
-const layerNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"layer">) =>
+interface Renders {
+  readonly solo: BoardModel["solo"];
+  readonly composed: BoardModel["composed"];
+}
+
+const soloOf = (
+  renders: Renders,
+  asset: string,
+  layer: string,
+  variant: VariantValue | undefined
+) =>
+  variant === undefined
+    ? undefined
+    : (renders.solo[takeKey(asset, layer, variant.id)] ?? variant.render);
+
+const layerNode = (
+  h: HtmlBuilder<BoardMessage>,
+  node: NodeOf<"layer">,
+  renders: Renders
+) =>
   h.button(
     [
       h.Key(node.id),
@@ -139,11 +166,19 @@ const layerNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"layer">) =>
         h.span([h.Class(cls(boardStyles.meta))], [`${node.count} takes`])
       ),
       h.div([h.Class(cls(boardStyles.title))], [node.layer.title]),
-      preview(h, node.pick?.render, `${node.layer.title} pick still`),
+      preview(
+        h,
+        soloOf(renders, node.asset.id, node.layer.id, node.pick),
+        `${node.layer.title} pick still, layer alone`
+      ),
     ]
   );
 
-const variantNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"variant">) =>
+const variantNode = (
+  h: HtmlBuilder<BoardMessage>,
+  node: NodeOf<"variant">,
+  renders: Renders
+) =>
   h.button(
     [
       h.Key(node.id),
@@ -169,18 +204,50 @@ const variantNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"variant">) =>
       ),
       preview(
         h,
-        node.variant.render,
-        `${node.layer.title} ${node.variant.label} still`
+        soloOf(renders, node.asset.id, node.layer.id, node.variant),
+        `${node.layer.title} ${node.variant.label} still, layer alone`
       ),
     ]
   );
 
-const mixNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"mix">) =>
-  h.div(
+const mixNode = (
+  h: HtmlBuilder<BoardMessage>,
+  node: NodeOf<"mix">,
+  renders: Renders
+) => {
+  const picks = pickedTakes(node.asset, node.layers);
+  const loop = renders.composed[composeKey(node.asset.id, picks)];
+
+  return h.div(
     [h.Key(node.id), h.Class(cls(boardStyles.node)), h.Style(place(node))],
     [
       header(h, "mix"),
       h.div([h.Class(cls(boardStyles.title))], [node.asset.title]),
+      h.button(
+        [
+          h.Type("button"),
+          h.Class(cls(boardStyles.mixLoop, boardStyles.focus)),
+          h.AriaLabel(boardCopy.openCompose(node.asset.title)),
+          h.OnClick(Message.OpenedCompose({ asset: node.asset.id })),
+        ],
+        [
+          loop === undefined
+            ? h.span(
+                [h.Class(cls(boardStyles.mixLoopEmpty))],
+                [
+                  Object.keys(picks).length === 0
+                    ? boardCopy.noPicks
+                    : boardCopy.composing,
+                ]
+              )
+            : h.img([
+                h.Src(mediaSrc(loop.path)),
+                h.Alt(boardCopy.mixLoop(node.asset.title)),
+                h.Class(cls(boardStyles.preview)),
+                h.Draggable(false),
+              ]),
+        ]
+      ),
       h.ul(
         [
           h.Class(cls(boardStyles.mixList)),
@@ -188,16 +255,28 @@ const mixNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"mix">) =>
         ],
         node.layers.map((layer) => {
           const picked = node.asset.layers[layer.id]?.variants.find(
-            (variant) => variant.id === node.asset.mix[layer.id]
+            (variant) => variant.id === picks[layer.id]
           );
 
           return h.li(
-            [h.Key(layer.id), h.Class(cls(boardStyles.mixRow))],
             [
-              h.span([], [layer.title]),
+              h.Key(layer.id),
+              h.Class(
+                cls(
+                  boardStyles.mixRow,
+                  picked === undefined && boardStyles.mixOff
+                )
+              ),
+            ],
+            [
+              h.span([h.Class(cls(boardStyles.mixName))], [layer.title]),
               h.span(
                 [h.Class(cls(boardStyles.mixValue))],
-                [picked?.label ?? "-"]
+                [
+                  picked === undefined
+                    ? boardCopy.notInMix
+                    : takeName(layer.title, picked),
+                ]
               ),
             ]
           );
@@ -205,8 +284,13 @@ const mixNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"mix">) =>
       ),
     ]
   );
+};
 
-const nodeView = (h: HtmlBuilder<BoardMessage>, node: GraphNode): Html => {
+const nodeView = (
+  h: HtmlBuilder<BoardMessage>,
+  node: GraphNode,
+  renders: Renders
+): Html => {
   if (node.kind === "studio") {
     return studioNode(h, node);
   }
@@ -216,14 +300,14 @@ const nodeView = (h: HtmlBuilder<BoardMessage>, node: GraphNode): Html => {
   }
 
   if (node.kind === "layer") {
-    return layerNode(h, node);
+    return layerNode(h, node, renders);
   }
 
   if (node.kind === "variant") {
-    return variantNode(h, node);
+    return variantNode(h, node, renders);
   }
 
-  return mixNode(h, node);
+  return mixNode(h, node, renders);
 };
 
 const toolButton = (
@@ -270,8 +354,11 @@ const toolbar = (model: BoardModel, h: HtmlBuilder<BoardMessage>): Html =>
 const graphView = (
   studio: BoardModel["studio"],
   assets: BoardModel["assets"],
+  solo: BoardModel["solo"],
+  composed: BoardModel["composed"],
   h: HtmlBuilder<BoardMessage>
 ): Html => {
+  const renders = { composed, solo };
   const graph = layout(studio, assets);
 
   return h.div(
@@ -279,7 +366,7 @@ const graphView = (
       h.Class(cls(boardStyles.graph)),
       h.Style({ height: `${graph.height}px`, width: `${graph.width}px` }),
     ],
-    [wires(graph, h), ...graph.nodes.map((node) => nodeView(h, node))]
+    [wires(graph, h), ...graph.nodes.map((node) => nodeView(h, node, renders))]
   );
 };
 
@@ -299,6 +386,7 @@ export const view = (
         h.div(
           [
             h.Class(cls(boardStyles.canvas)),
+            h.Style(gridStyle(camera)),
             h.Role("region"),
             h.AriaLabel(boardCopy.canvasLabel(model.studio.title)),
             h.OnMount(WatchCanvas()),
@@ -327,13 +415,25 @@ export const view = (
                   transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`,
                 }),
               ],
-              [lazyGraph(graphView, [model.studio, model.assets, h])]
+              [
+                lazyGraph(graphView, [
+                  model.studio,
+                  model.assets,
+                  model.solo,
+                  model.composed,
+                  h,
+                ]),
+              ]
             ),
           ]
         ),
         Option.match(model.open, {
           onNone: () => h.empty,
           onSome: (open) => pickerView(model, open, h),
+        }),
+        Option.match(model.compose, {
+          onNone: () => h.empty,
+          onSome: (compose) => composeView(model, compose, h),
         }),
       ]
     ),

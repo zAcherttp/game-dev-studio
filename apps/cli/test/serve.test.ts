@@ -96,7 +96,7 @@ describe("serve routes", () => {
         .pipe(Effect.flip);
 
       expect(asset.mix).toEqual({ core: "core-2" });
-      expect(assets).toEqual([{ id: "fire", title: "Fire" }]);
+      expect(assets).toEqual([{ id: "fire", picks: 1, title: "Fire" }]);
       expect(error).toBeInstanceOf(UnknownAsset);
     }).pipe(
       Effect.scoped,

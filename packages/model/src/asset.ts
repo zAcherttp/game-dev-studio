@@ -34,5 +34,11 @@ export const Asset = Schema.Struct({
 
 export const AssetSummary = Schema.Struct({
   id: Schema.String,
+  picks: Schema.optionalKey(
+    Schema.Int.annotate({
+      description:
+        "How many picks the asset's history holds; absent when the studio has no picks file for it yet.",
+    })
+  ),
   title: Schema.String,
 });

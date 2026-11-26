@@ -7,6 +7,8 @@ import time
 
 _WORKER = {}
 
+_FRAMES = {}
+
 
 def _setup(easyvfx):
     sys.path.insert(0, os.path.join(easyvfx, "tools"))
@@ -76,10 +78,11 @@ def render_job(pool, job):
     exported = time.perf_counter()
 
     width, height = job.get("size", [360, 240])
-    cam = core.views(timeline, (width, height))["ground"]
+    framed = framing(core, variants, job, (width, height))
+    cam = framed[0] if framed else core.views(timeline, (width, height))["ground"]
     camera = {"eye": cam.eye, "target": cam.target, "fov": 30, "size": (width, height)}
     step = 1 / 25
-    span = max(variants.span(timeline), 0.5)
+    span = max(variants.span(timeline), framed[1] if framed else 0, 0.5)
     times = [k * step for k in range(int(span / step) + 1)]
     path = os.path.join(folder, tid + ".json")
     order = sorted(times, key=lambda t: -_weight(timeline, t))
@@ -89,7 +92,10 @@ def render_job(pool, job):
     painted = time.perf_counter()
 
     beat = sync_beat(beats, job, drawn, step)
-    still = min(len(drawn) - 1, max(0, round(beat["t"] / step)))
+    held = beat["t"] / step
+    if framed:
+        held = max(range(len(drawn)), key=lambda k: drawn[k]["mean"])
+    still = min(len(drawn) - 1, max(0, round(held)))
     with open(job["still"], "wb") as f:
         f.write(drawn[still]["png"])
     loop = [_image(Image, frame) for frame in drawn] + [_image(Image, blank)] * 8
@@ -104,6 +110,20 @@ def render_job(pool, job):
         "saveMs": round((done - painted) * 1000),
         "ms": round((done - started) * 1000),
     }
+
+
+def framing(core, variants, job, size):
+    frame = job.get("frame")
+    if not frame:
+        return None
+    key = json.dumps([job["kit"], frame, list(size)], sort_keys=True)
+    if key not in _FRAMES:
+        kit = job["kit"]
+        tid = f"kit__{kit}__{frame['layer']}__{frame['take']}__in"
+        folder = os.path.join(job["work"], "frame")
+        timeline = core.load(tid, folder=folder, fresh=True, fps=60, env={"EVFX_KIT_PICKS": json.dumps({kit: frame["picks"]})})
+        _FRAMES[key] = (core.views(timeline, size)["ground"], variants.span(timeline))
+    return _FRAMES[key]
 
 
 def sync_beat(beats, job, drawn, step):

@@ -1,4 +1,4 @@
-import { Asset, LayerDef, StudioDef } from "@gds/model";
+import { Asset, LayerDef, Render, StudioDef } from "@gds/model";
 import { Option, Schema } from "effect";
 
 export const BoardAsset = Schema.Struct({
@@ -15,6 +15,13 @@ export const CatalogEntry = Schema.Struct({
 });
 
 export type CatalogEntryValue = typeof CatalogEntry.Type;
+
+export const ComposeState = Schema.Struct({
+  asset: Schema.String,
+  off: Schema.Array(Schema.String),
+});
+
+export type ComposeStateValue = typeof ComposeState.Type;
 
 export const Flags = Schema.Struct({
   assets: Schema.Array(BoardAsset),
@@ -62,12 +69,16 @@ export const Model = Schema.Struct({
   camera: Camera,
   catalog: Schema.Array(CatalogEntry),
   clock: Schema.Finite,
+  compose: Schema.Option(ComposeState),
+  composed: Schema.Record(Schema.String, Render),
   drag: Schema.Option(Point),
   fitted: Schema.Boolean,
   note: Schema.String,
   open: Schema.Option(OpenLayer),
+  pickerMode: Schema.Literals(["mix", "solo"]),
   rendering: Schema.Array(Schema.String),
   roundNote: Schema.String,
+  solo: Schema.Record(Schema.String, Render),
   status: Status,
   studio: StudioDef,
   switcherOpen: Schema.Boolean,
@@ -91,12 +102,16 @@ export const initialModel = (flags: FlagsValue): BoardModel => ({
   camera: { x: 0, y: 0, zoom: 1 },
   catalog: flags.catalog,
   clock: 0,
+  compose: Option.none(),
+  composed: {},
   drag: Option.none(),
   fitted: false,
   note: "",
   open: Option.none(),
+  pickerMode: "mix",
   rendering: [],
   roundNote: "",
+  solo: {},
   status: idleStatus,
   studio: flags.studio,
   switcherOpen: false,

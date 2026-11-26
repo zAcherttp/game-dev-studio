@@ -12,6 +12,7 @@ import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import { RobloxConfig } from "./config.js";
 import type { RorSettings } from "./config.js";
 import { EasyvfxKits } from "./easyvfx-kits.js";
+import { picksFor } from "./exact-mix.js";
 import { cachedRender } from "./render-cache.js";
 import type { RenderPaths } from "./render-cache.js";
 import { brightest, sheetBeat } from "./sync-beat.js";
@@ -291,14 +292,16 @@ export const rorRenderer = Layer.effect(
               )
               .pipe(
                 Effect.flatMap(({ kit }) =>
-                  Effect.flatMap(localTextures(ror), (textures) =>
-                    cachedRender(
+                  Effect.flatMap(localTextures(ror), (textures) => {
+                    const drawn = { ...request, mix: picksFor(request, kit) };
+
+                    return cachedRender(
                       `${ROR_BACKEND} ${JSON.stringify(textures)}`,
-                      request,
+                      drawn,
                       kit,
-                      draw(ror, request, kit.preset, textures)
-                    )
-                  )
+                      draw(ror, drawn, kit.preset, textures)
+                    );
+                  })
                 ),
                 Effect.provide(services)
               ),

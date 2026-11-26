@@ -26,6 +26,7 @@ export interface RenderInput {
   readonly asset: string;
   readonly layer: string;
   readonly variant: string;
+  readonly mix?: Readonly<Record<string, string>>;
 }
 
 type AssetValue = typeof Asset.Type;
