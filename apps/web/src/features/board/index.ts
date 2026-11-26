@@ -231,13 +231,13 @@ const mixNode = (
           h.OnClick(Message.OpenedCompose({ asset: node.asset.id })),
         ],
         [
-          loop === undefined
+          loop === undefined || loop.pending !== undefined
             ? h.span(
                 [h.Class(cls(boardStyles.mixLoopEmpty))],
                 [
                   Object.keys(picks).length === 0
                     ? boardCopy.noPicks
-                    : boardCopy.composing,
+                    : (loop?.pending ?? boardCopy.composing),
                 ]
               )
             : h.img([

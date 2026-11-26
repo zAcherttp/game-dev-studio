@@ -22,7 +22,7 @@ The store never replaces a variant, so results go to `GateLedger`: `<GDS_GAME>/.
 
 ## Wiring
 
-`apps/cli/src/command-studios.ts`: a studio whose file has `commands.assets` lists through this adapter, a layer whose renderer is `command:<verb>` draws through it, `Apply` runs `apply`, and every render runs the layer's variant gates whichever renderer drew it.
+`apps/cli/src/command-studios.ts`: a studio whose file has `commands.assets` lists through this adapter, a layer whose renderer is `command:<verb>` draws through it, `Apply` runs `apply`, and every render runs the layer's variant gates whichever renderer drew it. A `renderMix` request carries `whole: true`; it draws the whole mix and runs no gates, because gates judge one variant. A renderer that cannot draw yet (no Studio slot free) prints a `Render` with `pending` set to the reason; the board shows it as waiting, not failed.
 
 ## Checks
 

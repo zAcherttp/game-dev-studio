@@ -4,6 +4,7 @@ import { modifyFields } from "foldkit/struct";
 
 import type { BoardApi } from "./api.js";
 import {
+  LoadAsset,
   PickVariant,
   RenderComposed,
   RenderSolo,
@@ -12,9 +13,10 @@ import {
 } from "./command.js";
 import {
   composeKey,
-  composeRequest,
+  failingGates,
+  gateValue,
+  isWaiting,
   pickedTakes,
-  withoutLayers,
 } from "./compose.js";
 import type { Picks } from "./compose.js";
 import { fit, layout, nodeId, panTo, shownTakes, zoomAt } from "./layout.js";
@@ -45,30 +47,66 @@ const centre = (model: BoardModel) => ({
   y: model.viewport.height / 2,
 });
 
+const variantOf = (
+  model: BoardModel,
+  where: { readonly asset: string; readonly layer: string },
+  variant: string
+) =>
+  model.assets
+    .find((entry) => entry.asset.id === where.asset)
+    ?.asset.layers[where.layer]?.variants.find(({ id }) => id === variant);
+
+const refusal = (label: string, failing: ReturnType<typeof failingGates>) =>
+  `${label} fails ${failing
+    .map((gate) => `${gate.id} (${gateValue(gate.value)})`)
+    .join(
+      ", "
+    )}, so it cannot be picked. Fix: make a variant that passes, or fix the gate, and render again.`;
+
+const pickOn = (
+  model: BoardModel,
+  where: { readonly asset: string; readonly layer: string },
+  variant: string
+): UpdateReturn => {
+  if (model.status.state === "saving") {
+    return { model };
+  }
+
+  const found = variantOf(model, where, variant);
+  const failing = found === undefined ? [] : failingGates(found);
+
+  if (found !== undefined && failing.length > 0) {
+    return {
+      model: modifyFields(model, {
+        status: () => ({
+          message: refusal(found.label, failing),
+          state: "failed" as const,
+        }),
+      }),
+    };
+  }
+
+  return {
+    commands: [
+      PickVariant({
+        asset: where.asset,
+        by: model.by,
+        layer: where.layer,
+        note: model.note.trim(),
+        studio: model.studio.id,
+        variant,
+      }),
+    ],
+    model: modifyFields(model, {
+      status: () => ({ message: "", state: "saving" as const }),
+    }),
+  };
+};
+
 const pick = (model: BoardModel, variant: string): UpdateReturn =>
   Option.match(model.open, {
     onNone: () => ({ model }),
-    onSome: (open) => {
-      if (model.status.state === "saving") {
-        return { model };
-      }
-
-      return {
-        commands: [
-          PickVariant({
-            asset: open.asset,
-            by: model.by,
-            layer: open.layer,
-            note: model.note.trim(),
-            studio: model.studio.id,
-            variant,
-          }),
-        ],
-        model: modifyFields(model, {
-          status: () => ({ message: "", state: "saving" as const }),
-        }),
-      };
-    },
+    onSome: (open) => pickOn(model, open, variant),
   });
 
 const pickByKey = (model: BoardModel, index: number): UpdateReturn =>
@@ -174,17 +212,76 @@ const soloMissing = (
 
 const composedMissing = (model: BoardModel, asset: string, picks: Picks) => {
   const key = composeKey(asset, picks);
-  const request = composeRequest(picks);
+  const known = model.composed[key];
 
-  return request === undefined || model.composed[key] !== undefined
+  return Object.keys(picks).length === 0 ||
+    (known !== undefined && !isWaiting(known))
     ? []
-    : [RenderComposed({ ...request, asset, key, studio: model.studio.id })];
+    : [RenderComposed({ asset, key, studio: model.studio.id })];
+};
+
+const takesMissing = (model: BoardModel, asset: string) => {
+  const entry = model.assets.find((candidate) => candidate.asset.id === asset);
+
+  return (entry?.layers ?? []).flatMap((layer) =>
+    (entry?.asset.layers[layer.id]?.variants ?? []).flatMap((variant) =>
+      (variant.render !== undefined && !isWaiting(variant.render)) ||
+      model.rendering.includes(takeKey(asset, layer.id, variant.id))
+        ? []
+        : [
+            {
+              command: RenderTake({
+                asset,
+                layer: layer.id,
+                studio: model.studio.id,
+                variant: variant.id,
+              }),
+              key: takeKey(asset, layer.id, variant.id),
+            },
+          ]
+    )
+  );
 };
 
 const allPicks = (model: BoardModel, asset: string): Picks => {
   const entry = model.assets.find((candidate) => candidate.asset.id === asset);
 
   return entry === undefined ? {} : pickedTakes(entry.asset, entry.layers);
+};
+
+const withGates = (
+  shown: BoardAssetValue["asset"],
+  loaded: BoardAssetValue["asset"]
+): BoardAssetValue["asset"] => ({
+  ...shown,
+  layers: Object.fromEntries(
+    Object.entries(shown.layers).map(([id, layer]) => [
+      id,
+      {
+        ...layer,
+        variants: layer.variants.map((variant) => {
+          const gates = loaded.layers[id]?.variants.find(
+            (candidate) => candidate.id === variant.id
+          )?.gates;
+
+          return gates === undefined ? variant : { ...variant, gates };
+        }),
+      },
+    ])
+  ),
+});
+
+const afterTake = (model: BoardModel, asset: string): UpdateReturn => {
+  const composing = Option.exists(
+    model.compose,
+    (compose) => compose.asset === asset
+  );
+
+  const settled = !model.rendering.some((key) => key.startsWith(`${asset}/`));
+
+  return composing && settled
+    ? { commands: [LoadAsset({ asset, studio: model.studio.id })], model }
+    : { model };
 };
 
 export const prerenderBoard = (model: BoardModel) =>
@@ -202,13 +299,6 @@ export const prerenderBoard = (model: BoardModel) =>
     ),
     ...composedMissing(model, asset.id, pickedTakes(asset, layers)),
   ]);
-
-const composeView = (model: BoardModel) =>
-  Option.match(model.compose, {
-    onNone: () => [],
-    onSome: ({ asset, off }) =>
-      composedMissing(model, asset, withoutLayers(allPicks(model, asset), off)),
-  });
 
 const round = (model: BoardModel): UpdateReturn =>
   Option.match(model.open, {
@@ -269,16 +359,18 @@ export const update = (
         status: () => ({ message: reason, state: "failed" as const }),
       }),
     }),
-    FailedRender: ({ asset, layer, message: reason, variant }) => ({
-      model: modifyFields(model, {
-        rendering: (current) =>
-          current.filter((key) => key !== takeKey(asset, layer, variant)),
-        status: () => ({
-          message: `Take ${variant} did not render. ${reason}`,
-          state: "failed" as const,
+    FailedRender: ({ asset, layer, message: reason, variant }) =>
+      afterTake(
+        modifyFields(model, {
+          rendering: (current) =>
+            current.filter((key) => key !== takeKey(asset, layer, variant)),
+          status: () => ({
+            message: `Take ${variant} did not render. ${reason}`,
+            state: "failed" as const,
+          }),
         }),
-      }),
-    }),
+        asset
+      ),
     FailedRound: ({ message: reason }) => ({
       model: modifyFields(model, {
         status: () => ({ message: reason, state: "failed" as const }),
@@ -319,12 +411,24 @@ export const update = (
     ReleasedPointer: () => ({
       model: modifyFields(model, { drag: () => Option.none() }),
     }),
-    RenderedTake: ({ asset, layer, render, variant }) => ({
+    RenderedTake: ({ asset, layer, render, variant }) =>
+      afterTake(
+        modifyFields(model, {
+          assets: (assets) =>
+            withRender(assets, { asset, layer, variant }, render),
+          rendering: (current) =>
+            current.filter((key) => key !== takeKey(asset, layer, variant)),
+        }),
+        asset
+      ),
+    LoadedAsset: ({ asset }) => ({
       model: modifyFields(model, {
         assets: (assets) =>
-          withRender(assets, { asset, layer, variant }, render),
-        rendering: (current) =>
-          current.filter((key) => key !== takeKey(asset, layer, variant)),
+          assets.map((entry) =>
+            entry.asset.id === asset.id
+              ? { ...entry, asset: withGates(entry.asset, asset) }
+              : entry
+          ),
       }),
     }),
     SubmittedRound: () => round(model),
@@ -347,11 +451,18 @@ export const update = (
         ([layer, take]) => before?.asset.mix[layer] !== take
       );
 
+      const composing = Option.exists(
+        model.compose,
+        (compose) => compose.asset === asset.id
+      );
+
       return {
         commands: [
-          ...changed.flatMap(([layer, take]) =>
-            soloMissing(next, asset.id, layer, [take])
-          ),
+          ...(composing
+            ? []
+            : changed.flatMap(([layer, take]) =>
+                soloMissing(next, asset.id, layer, [take])
+              )),
           ...composedMissing(next, asset.id, allPicks(next, asset.id)),
         ],
         model: next,
@@ -383,27 +494,68 @@ export const update = (
       return { commands: mode === "solo" ? solos : [], model: next };
     },
     OpenedCompose: ({ asset }) => {
-      const next = modifyFields(model, {
-        compose: () => Option.some({ asset, off: [] }),
-      });
+      const takes = takesMissing(model, asset);
 
-      return { commands: composeView(next), model: next };
+      return {
+        commands: [
+          ...composedMissing(model, asset, allPicks(model, asset)),
+          ...takes.map(({ command }) => command),
+        ],
+        model: modifyFields(model, {
+          compose: () =>
+            Option.some({
+              asset,
+              compare: Option.none(),
+              mixCamera: Option.none(),
+            }),
+          rendering: (current) => [...current, ...takes.map(({ key }) => key)],
+          status: () => idleStatus,
+        }),
+      };
     },
-    ToggledComposeLayer: ({ layer }) => {
-      const next = modifyFields(model, {
+    ChoseComposeVariant: ({ layer, variant }) =>
+      Option.match(model.compose, {
+        onNone: () => ({ model }),
+        onSome: ({ asset }) =>
+          model.assets.find((entry) => entry.asset.id === asset)?.asset.mix[
+            layer
+          ] === variant
+            ? { model }
+            : pickOn(model, { asset, layer }, variant),
+      }),
+    ChoseMixCamera: ({ camera }) => ({
+      model: modifyFields(model, {
         compose: (compose) =>
           compose.pipe(
             Option.map((current) => ({
               ...current,
-              off: current.off.includes(layer)
-                ? current.off.filter((id) => id !== layer)
-                : [...current.off, layer],
+              mixCamera: Option.some(camera),
             }))
           ),
-      });
-
-      return { commands: composeView(next), model: next };
-    },
+      }),
+    }),
+    OpenedCamera: ({ camera, layer }) => ({
+      model: modifyFields(model, {
+        compose: (compose) =>
+          compose.pipe(
+            Option.map((current) => ({
+              ...current,
+              compare: Option.some({ camera, layer }),
+            }))
+          ),
+      }),
+    }),
+    ClosedCamera: () => ({
+      model: modifyFields(model, {
+        compose: (compose) =>
+          compose.pipe(
+            Option.map((current) => ({
+              ...current,
+              compare: Option.none(),
+            }))
+          ),
+      }),
+    }),
     ClosedCompose: () => ({
       model: modifyFields(model, { compose: () => Option.none() }),
     }),

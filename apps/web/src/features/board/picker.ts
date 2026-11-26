@@ -3,6 +3,7 @@ import * as stylex from "@stylexjs/stylex";
 import { Option } from "effect";
 import type { Html, HtmlBuilder } from "foldkit/html";
 
+import { isPickable } from "../../client/board/compose.js";
 import { Message } from "../../client/board/message.js";
 import type { BoardMessage } from "../../client/board/message.js";
 import { takeKey } from "../../client/board/model.js";
@@ -170,7 +171,7 @@ const variantColumn =
           [
             h.Type("button"),
             h.Class(cls(pickerStyles.button)),
-            h.Disabled(model.status.state === "saving"),
+            h.Disabled(model.status.state === "saving" || !isPickable(variant)),
             h.OnClick(Message.ChoseVariant({ variant: variant.id })),
           ],
           [pickerCopy.pick(variant.label)]

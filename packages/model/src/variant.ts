@@ -24,6 +24,12 @@ export const Render = Schema.Struct({
   kind: RenderKind,
   ms: Schema.Finite,
   path: Schema.String,
+  pending: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "Set while the render waits for something it needs, such as a free Studio slot, and says what. path and views are not drawn yet. A waiting render is not a failure; ask again later.",
+    })
+  ),
   still: Schema.optionalKey(Schema.String).annotate({
     description: "An image held at the sync beat, beside a timed render.",
   }),

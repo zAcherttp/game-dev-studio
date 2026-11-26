@@ -1,6 +1,11 @@
-import type { Asset, LayerDef } from "@gds/model";
+import type { Asset, LayerDef, Render, Variant } from "@gds/model";
+import { Option, Predicate, Schema } from "effect";
 
 type AssetValue = typeof Asset.Type;
+
+type VariantValue = typeof Variant.Type;
+
+type RenderValue = typeof Render.Type;
 
 export type Picks = Readonly<Record<string, string>>;
 
@@ -22,11 +27,6 @@ export const pickedTakes = (
     })
   );
 
-export const withoutLayers = (picks: Picks, off: readonly string[]): Picks =>
-  Object.fromEntries(
-    Object.entries(picks).filter(([layer]) => !off.includes(layer))
-  );
-
 export const takeName = (
   layerTitle: string,
   variant: { readonly id: string; readonly label: string }
@@ -41,12 +41,81 @@ export const composeKey = (asset: string, picks: Picks) =>
     .map(([layer, take]) => `${layer}=${take}`)
     .join(",")}`;
 
-export const composeRequest = (picks: Picks) => {
-  const [first, ...rest] = Object.entries(picks).toSorted(([left], [right]) =>
-    left.localeCompare(right)
+export const failingGates = (variant: VariantValue) =>
+  (variant.gates ?? []).filter((gate) => !gate.ok);
+
+export const isPickable = (variant: VariantValue) =>
+  failingGates(variant).length === 0;
+
+export const isWaiting = (render: RenderValue | undefined) =>
+  render?.pending !== undefined;
+
+export const gateValue = (value: Schema.Json): string =>
+  Predicate.isString(value) ? value : JSON.stringify(value);
+
+export const viewsOf = (render: RenderValue | undefined) =>
+  render === undefined || isWaiting(render) ? [] : (render.views ?? []);
+
+export const viewOf = (render: RenderValue | undefined, camera: string) =>
+  Option.fromNullishOr(viewsOf(render).find((view) => view.camera === camera));
+
+const RowEdit = Schema.Struct({
+  file: Schema.String,
+  path: Schema.String,
+  value: Schema.Json,
+});
+
+const decodeRows = Schema.decodeUnknownOption(Schema.Array(RowEdit));
+
+export type RowEditValue = typeof RowEdit.Type;
+
+export const rowsOf = (variant: VariantValue): readonly RowEditValue[] =>
+  Option.getOrElse(decodeRows(variant.params.rows), () => []);
+
+export const hasRows = (variant: VariantValue) => rowsOf(variant).length > 0;
+
+const isJsonObject = Schema.is(Schema.Record(Schema.String, Schema.Json));
+
+const sortedKeys = (_key: string, item: Schema.Json): Schema.Json =>
+  isJsonObject(item) && !Array.isArray(item)
+    ? Object.fromEntries(
+        Object.entries(item).toSorted(([left], [right]) =>
+          left.localeCompare(right)
+        )
+      )
+    : item;
+
+const canonical = (value: Schema.Json) => JSON.stringify(value, sortedKeys);
+
+const sameJson = (left: Schema.Json, right: Schema.Json) =>
+  canonical(left) === canonical(right);
+
+export interface RowChange {
+  readonly file: string;
+  readonly path: string;
+  readonly from: Option.Option<Schema.Json>;
+  readonly to: Schema.Json;
+}
+
+const rowId = (row: { readonly file: string; readonly path: string }) =>
+  JSON.stringify([row.file, row.path]);
+
+export const rowDiff = (
+  current: VariantValue | undefined,
+  variant: VariantValue
+): readonly RowChange[] => {
+  const before = new Map(
+    (current === undefined ? [] : rowsOf(current)).map((row) => [
+      rowId(row),
+      row.value,
+    ])
   );
 
-  return first === undefined
-    ? undefined
-    : { layer: first[0], mix: Object.fromEntries(rest), variant: first[1] };
+  return rowsOf(variant).flatMap((row) => {
+    const from = Option.fromNullishOr(before.get(rowId(row)));
+
+    return Option.exists(from, (value) => sameJson(value, row.value))
+      ? []
+      : [{ file: row.file, from, path: row.path, to: row.value }];
+  });
 };

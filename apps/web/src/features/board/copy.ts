@@ -6,7 +6,7 @@ export const boardCopy = {
   noPicks: "No layer picked yet",
   notInMix: "not in mix",
   openCompose: (asset: string) =>
-    `Compose the ${asset} mix: turn layers on and off`,
+    `Compose the ${asset} mix: change any layer's pick`,
   fit: "Fit",
   hint: "Drag to pan, wheel to zoom, open a layer to pick",
   noPick: "no pick yet",
@@ -16,12 +16,28 @@ export const boardCopy = {
 };
 
 export const composeCopy = {
+  camera: (camera: string) => `Open camera ${camera}`,
+  cameraDialog: (layer: string, camera: string) => `${layer}: ${camera}`,
+  cameras: (label: string) => `${label} cameras`,
   close: "Close",
+  current: "current pick",
   dialog: (asset: string) => `Compose ${asset}`,
-  empty: "Turn on at least one picked layer.",
-  layers: "Layers in this view",
+  empty: "No layer is picked yet. Pick a variant on any layer.",
+  fails: (gate: string, value: string) => `fails ${gate} (${value})`,
+  gates: (label: string) => `${label} gates`,
+  layer: (layer: string) => `${layer} variants`,
+  mix: (asset: string) => `${asset} mix`,
+  mixCameras: "Mix cameras",
+  noCamera: (label: string) => `${label} has no view from this camera.`,
   noPick: "no pick",
+  notRendered: "not rendered yet",
+  pick: (label: string) => `Pick ${label}`,
+  picked: (label: string) => `picked ${label}`,
   rendering: "Rendering…",
+  rows: (label: string) => `${label} rows against the current pick`,
+  sameRows: "same rows as the current pick",
+  unset: "unset",
+  waiting: (why: string) => `Waiting: ${why}`,
 };
 
 export const switcherCopy = {

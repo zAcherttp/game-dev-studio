@@ -1,4 +1,3 @@
-import { PLAN_BACKEND } from "@gds/adapter-roblox";
 import { implement } from "@gds/capability/implement";
 import {
   AdapterFailed,
@@ -17,7 +16,6 @@ import {
   layersOfContract,
   listAssetsContract,
   listStudiosContract,
-  notBuilt,
   openCheckContract,
   pickContract,
   renderContract,
@@ -196,10 +194,6 @@ export const renderMix = implement(
   Effect.fn("renderMix")(function* renderMix({ asset, studio }) {
     const def = yield* studioDef(studio);
 
-    if (def.renderer !== PLAN_BACKEND) {
-      return yield* notBuilt(renderMixContract.name);
-    }
-
     const stored = yield* getStoredAsset(studio, asset);
 
     const order = [
@@ -232,6 +226,7 @@ export const renderMix = implement(
         mix: stored.mix,
         studio,
         variant: found,
+        whole: true,
       })
     );
   })

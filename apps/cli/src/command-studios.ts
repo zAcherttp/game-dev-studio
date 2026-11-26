@@ -141,6 +141,10 @@ export const GatedRenderer = Layer.effect(
 
           const render = yield* draw(studio, request);
 
+          if (request.whole === true) {
+            return render;
+          }
+
           const results = yield* runGates(studio, request, render).pipe(
             Effect.provideContext(services)
           );

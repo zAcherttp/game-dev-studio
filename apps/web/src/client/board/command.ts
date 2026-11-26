@@ -111,16 +111,13 @@ export const RenderComposed = Command.define("RenderComposed", {
   args: {
     asset: Schema.String,
     key: Schema.String,
-    layer: Schema.String,
-    mix: Schema.Record(Schema.String, Schema.String),
     studio: Schema.String,
-    variant: Schema.String,
   },
   execute: ({ key, ...input }) =>
     Effect.gen(function* renderComposed() {
       const api = yield* BoardApi;
 
-      return yield* api.render(input).pipe(
+      return yield* api.renderMix(input).pipe(
         Effect.map((render) => Message.RenderedComposed({ key, render })),
         Effect.catchTag("BoardApiFailed", (failure) =>
           Effect.succeed(
@@ -130,6 +127,22 @@ export const RenderComposed = Command.define("RenderComposed", {
       );
     }),
   messages: [Message.RenderedComposed, Message.FailedCompose],
+});
+
+export const LoadAsset = Command.define("LoadAsset", {
+  args: { asset: Schema.String, studio: Schema.String },
+  execute: (input) =>
+    Effect.gen(function* loadAsset() {
+      const api = yield* BoardApi;
+
+      return yield* api.getAsset(input).pipe(
+        Effect.map((asset) => Message.LoadedAsset({ asset })),
+        Effect.catchTag("BoardApiFailed", (failure) =>
+          Effect.succeed(Message.FailedPick({ message: failure.message }))
+        )
+      );
+    }),
+  messages: [Message.LoadedAsset, Message.FailedPick],
 });
 
 type CanvasMessage =

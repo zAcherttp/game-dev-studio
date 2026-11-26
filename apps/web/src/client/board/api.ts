@@ -21,6 +21,11 @@ export interface RoundInput {
   readonly note: string;
 }
 
+export interface MixInput {
+  readonly studio: string;
+  readonly asset: string;
+}
+
 export interface RenderInput {
   readonly studio: string;
   readonly asset: string;
@@ -43,6 +48,12 @@ export class BoardApi extends Context.Service<
     readonly render: (
       input: RenderInput
     ) => Effect.Effect<typeof Render.Type, BoardApiFailed>;
+    readonly renderMix: (
+      input: MixInput
+    ) => Effect.Effect<typeof Render.Type, BoardApiFailed>;
+    readonly getAsset: (
+      input: MixInput
+    ) => Effect.Effect<AssetValue, BoardApiFailed>;
   }
 >()("@gds/web/BoardApi") {}
 
@@ -104,7 +115,12 @@ export const withPick = (
   };
 };
 
-export const memoryBoardApi = (initial: readonly BoardAssetValue[]) =>
+export type MixRenders = (asset: AssetValue) => typeof Render.Type | undefined;
+
+export const memoryBoardApi = (
+  initial: readonly BoardAssetValue[],
+  mixRenders?: MixRenders
+) =>
   Layer.effect(
     BoardApi,
     Effect.gen(function* makeMemoryBoardApi() {
@@ -169,6 +185,38 @@ export const memoryBoardApi = (initial: readonly BoardAssetValue[]) =>
         return found.render;
       });
 
-      return { pick, render, round };
+      const renderMix = Effect.fn("BoardApi.memory.renderMix")(
+        function* renderMix(input: MixInput) {
+          const asset = (yield* Ref.get(store)).get(input.asset);
+
+          if (asset === undefined || asset.studio !== input.studio) {
+            return yield* failed(`No asset ${input.asset} in ${input.studio}.`);
+          }
+
+          const drawn = mixRenders?.(asset);
+
+          if (drawn === undefined) {
+            return yield* failed(
+              `No mix render for ${input.asset} in the fixture.`
+            );
+          }
+
+          return drawn;
+        }
+      );
+
+      const getAsset = Effect.fn("BoardApi.memory.getAsset")(function* getAsset(
+        input: MixInput
+      ) {
+        const asset = (yield* Ref.get(store)).get(input.asset);
+
+        if (asset === undefined || asset.studio !== input.studio) {
+          return yield* failed(`No asset ${input.asset} in ${input.studio}.`);
+        }
+
+        return asset;
+      });
+
+      return { getAsset, pick, render, renderMix, round };
     })
   );
