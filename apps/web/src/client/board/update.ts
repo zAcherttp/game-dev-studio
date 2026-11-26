@@ -1,0 +1,227 @@
+import { Option } from "effect";
+import type { Update } from "foldkit";
+import { modifyFields } from "foldkit/struct";
+
+import type { BoardApi } from "./api.js";
+import { PickVariant, RequestRound } from "./command.js";
+import { fit, layout, zoomAt } from "./layout.js";
+import { Message } from "./message.js";
+import type { BoardMessage } from "./message.js";
+import { idleStatus } from "./model.js";
+import type { BoardModel, CameraValue } from "./model.js";
+import { openedLayer } from "./picker.js";
+
+type UpdateReturn = Update.Return<BoardModel, BoardMessage, BoardApi>;
+
+const MAX_FRAME_MS = 100;
+
+const WHEEL_SENSITIVITY = 0.0015;
+
+export const graphOf = (model: BoardModel) =>
+  layout(model.studio, model.assets);
+
+const fitted = (model: BoardModel) => fit(graphOf(model), model.viewport);
+
+const sameCamera = (left: CameraValue, right: CameraValue) =>
+  Math.abs(left.x - right.x) < 0.5 &&
+  Math.abs(left.y - right.y) < 0.5 &&
+  Math.abs(left.zoom - right.zoom) < 1e-6;
+
+const centre = (model: BoardModel) => ({
+  x: model.viewport.width / 2,
+  y: model.viewport.height / 2,
+});
+
+const pick = (model: BoardModel, variant: string): UpdateReturn =>
+  Option.match(model.open, {
+    onNone: () => ({ model }),
+    onSome: (open) => {
+      if (model.status.state === "saving") {
+        return { model };
+      }
+
+      return {
+        commands: [
+          PickVariant({
+            asset: open.asset,
+            by: model.by,
+            layer: open.layer,
+            note: model.note.trim(),
+            studio: model.studio.id,
+            variant,
+          }),
+        ],
+        model: modifyFields(model, {
+          status: () => ({ message: "", state: "saving" as const }),
+        }),
+      };
+    },
+  });
+
+const pickByKey = (model: BoardModel, index: number): UpdateReturn =>
+  Option.match(
+    model.open.pipe(Option.flatMap((open) => openedLayer(model.assets, open))),
+    {
+      onNone: () => ({ model }),
+      onSome: ({ variants }) => {
+        const variant = variants[index - 1];
+
+        return variant === undefined ? { model } : pick(model, variant.id);
+      },
+    }
+  );
+
+const round = (model: BoardModel): UpdateReturn =>
+  Option.match(model.open, {
+    onNone: () => ({ model }),
+    onSome: (open) => {
+      const axis = model.axis.trim();
+
+      if (axis === "") {
+        return {
+          model: modifyFields(model, {
+            status: () => ({
+              message: "Name the axis the next round should explore.",
+              state: "failed" as const,
+            }),
+          }),
+        };
+      }
+
+      return {
+        commands: [
+          RequestRound({
+            asset: open.asset,
+            axis,
+            layer: open.layer,
+            note: model.roundNote.trim(),
+            studio: model.studio.id,
+          }),
+        ],
+        model: modifyFields(model, {
+          status: () => ({ message: "", state: "saving" as const }),
+        }),
+      };
+    },
+  });
+
+export const update = (
+  model: BoardModel,
+  message: BoardMessage
+): UpdateReturn =>
+  Message.match<UpdateReturn>(message, {
+    ChoseVariant: ({ variant }) => pick(model, variant),
+    ClickedFit: () => ({
+      model: modifyFields(model, { camera: () => fitted(model) }),
+    }),
+    ClickedZoom: ({ factor }) => ({
+      model: modifyFields(model, {
+        camera: (camera) => zoomAt(camera, factor, centre(model)),
+      }),
+    }),
+    ClosedPicker: () => ({
+      model: modifyFields(model, {
+        open: () => Option.none(),
+        status: () => idleStatus,
+      }),
+    }),
+    FailedPick: ({ message: reason }) => ({
+      model: modifyFields(model, {
+        status: () => ({ message: reason, state: "failed" as const }),
+      }),
+    }),
+    FailedRound: ({ message: reason }) => ({
+      model: modifyFields(model, {
+        status: () => ({ message: reason, state: "failed" as const }),
+      }),
+    }),
+    MeasuredCanvas: ({ height, width }) => {
+      const viewport = { height, width };
+      const measured = { ...model, viewport };
+
+      const untouched =
+        !model.fitted || sameCamera(model.camera, fitted(model));
+
+      return {
+        model: untouched
+          ? { ...measured, camera: fitted(measured), fitted: true }
+          : measured,
+      };
+    },
+    MovedPointer: ({ x, y }) =>
+      Option.match(model.drag, {
+        onNone: () => ({ model }),
+        onSome: (from) => ({
+          model: modifyFields(model, {
+            camera: (camera) =>
+              modifyFields(camera, {
+                x: (left) => left + x - from.x,
+                y: (top) => top + y - from.y,
+              }),
+            drag: () => Option.some({ x, y }),
+          }),
+        }),
+      }),
+    OpenedLayer: ({ asset, layer }) => ({
+      model: modifyFields(model, {
+        axis: () => "",
+        clock: () => 0,
+        drag: () => Option.none(),
+        note: () => "",
+        open: () => Option.some({ asset, layer }),
+        roundNote: () => "",
+        status: () => idleStatus,
+      }),
+    }),
+    PressedCanvas: ({ x, y }) => ({
+      model: modifyFields(model, { drag: () => Option.some({ x, y }) }),
+    }),
+    PressedPickKey: ({ index }) => pickByKey(model, index),
+    ReleasedPointer: () => ({
+      model: modifyFields(model, { drag: () => Option.none() }),
+    }),
+    SubmittedRound: () => round(model),
+    SucceededPick: ({ asset }) => ({
+      model: modifyFields(model, {
+        assets: (assets) =>
+          assets.map((entry) =>
+            entry.asset.id === asset.id ? { ...entry, asset } : entry
+          ),
+        note: () => "",
+        status: () => ({
+          message: "Picked. The mix now uses it.",
+          state: "done" as const,
+        }),
+      }),
+    }),
+    SucceededRound: ({ request }) => ({
+      model: modifyFields(model, {
+        axis: () => "",
+        roundNote: () => "",
+        status: () => ({
+          message: `Round asked: more along ${request.axis}.`,
+          state: "done" as const,
+        }),
+      }),
+    }),
+    TickedClock: ({ elapsed }) => ({
+      model: modifyFields(model, {
+        clock: (clock) => clock + Math.min(MAX_FRAME_MS, Math.max(0, elapsed)),
+      }),
+    }),
+    UpdatedAxis: ({ value }) => ({
+      model: modifyFields(model, { axis: () => value }),
+    }),
+    UpdatedNote: ({ value }) => ({
+      model: modifyFields(model, { note: () => value }),
+    }),
+    UpdatedRoundNote: ({ value }) => ({
+      model: modifyFields(model, { roundNote: () => value }),
+    }),
+    WheeledCanvas: ({ deltaY, x, y }) => ({
+      model: modifyFields(model, {
+        camera: (camera) =>
+          zoomAt(camera, Math.exp(-deltaY * WHEEL_SENSITIVITY), { x, y }),
+      }),
+    }),
+  });

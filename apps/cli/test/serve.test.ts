@@ -1,11 +1,18 @@
 import { NodeHttpServer, NodeServices } from "@effect/platform-node";
 import { describe, expect, it } from "@effect/vitest";
+import { toRpcGroup } from "@gds/capability/rpc-group";
 import { CallLog, OutcomeSchema, devtoolsLayer } from "@gds/devtools";
-import { UnknownAsset } from "@gds/model";
+import { UnknownAsset, contracts } from "@gds/model";
 import { GameFolder } from "@gds/store";
 import { Effect, Layer, Schema } from "effect";
-import { HttpClient, HttpRouter, HttpServer } from "effect/http";
+import {
+  FetchHttpClient,
+  HttpClient,
+  HttpRouter,
+  HttpServer,
+} from "effect/http";
 import { HttpApiClient } from "effect/http-api";
+import { RpcClient, RpcSerialization } from "effect/rpc";
 
 import { studioLayer } from "../src/studio-layer.js";
 import {
@@ -13,6 +20,7 @@ import {
   devtoolsRoutes,
   http,
   routes,
+  RPC_PATH,
   serverLayer,
 } from "../src/surfaces.js";
 
@@ -75,6 +83,38 @@ describe("serve routes", () => {
         expect(error).toBeInstanceOf(UnknownAsset);
         expect(error).toMatchObject({ asset: "fireball" });
       }).pipe(Effect.provide(AppLayer))
+  );
+
+  it.effect("serves every contract over RPC with typed failures", () =>
+    Effect.gen(function* servesRpc() {
+      const client = yield* RpcClient.make(toRpcGroup(contracts).group);
+      const asset = yield* client.getAsset({ asset: "fire", studio: "vfx" });
+      const { assets } = yield* client.listAssets({ studio: "vfx" });
+
+      const error = yield* client
+        .getAsset({ asset: "fireball", studio: "vfx" })
+        .pipe(Effect.flip);
+
+      expect(asset.mix).toEqual({ core: "core-2" });
+      expect(assets).toEqual([{ id: "fire", title: "Fire" }]);
+      expect(error).toBeInstanceOf(UnknownAsset);
+    }).pipe(
+      Effect.scoped,
+      Effect.provide(
+        Layer.unwrap(
+          HttpServer.HttpServer.use((server) =>
+            Effect.succeed(
+              RpcClient.layerProtocolHttp({
+                url: `${HttpServer.formatAddress(server.address)}${RPC_PATH}`,
+              })
+            )
+          )
+        ).pipe(
+          Layer.provide([RpcSerialization.layerJson, FetchHttpClient.layer]),
+          Layer.provideMerge(AppLayer)
+        )
+      )
+    )
   );
 
   it.effect("records REST calls when served with devtools", () =>

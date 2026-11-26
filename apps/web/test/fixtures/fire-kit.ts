@@ -1,0 +1,1187 @@
+import type { Asset, LayerDef, StudioDef } from "@gds/model";
+
+import type { FlagsValue } from "../../src/client/board/model.js";
+
+export const fireStudio: typeof StudioDef.Type = {
+  check: "roblox.vfxlab",
+  gates: ["easyvfx.audit", "easyvfx.beats"],
+  id: "vfx",
+  layers: [
+    {
+      id: "flash",
+      order: 1,
+      renderKind: "gif",
+      title: "Flash and wash",
+    },
+    {
+      id: "path",
+      order: 2,
+      renderKind: "gif",
+      title: "Path",
+    },
+    {
+      id: "release",
+      order: 3,
+      renderKind: "gif",
+      title: "Release",
+    },
+    {
+      id: "aftermath",
+      order: 4,
+      renderKind: "gif",
+      title: "Aftermath",
+    },
+  ],
+  pack: {
+    files: [
+      {
+        path: "/fixture/vfx/fire/Reference/fire.gif",
+        why: "Placeholder for the fire kit's target clip, the reference the picker shows first.",
+      },
+      {
+        path: "docs/vfx-bible.md",
+        why: "The style and budgets every effect follows.",
+      },
+    ],
+  },
+  renderKinds: ["gif", "image"],
+  renderer: "roblox.evfx",
+  sync: {
+    beat: "contact",
+  },
+  title: "VFX",
+};
+
+export const fireLayers: readonly (typeof LayerDef.Type)[] = [
+  {
+    id: "Anticipation",
+    order: 1,
+    renderKind: "gif",
+    title: "Anticipation",
+  },
+  {
+    id: "Streaks",
+    order: 2,
+    renderKind: "gif",
+    title: "Streaks",
+  },
+  {
+    id: "ImpactFlash",
+    order: 3,
+    renderKind: "gif",
+    title: "Impact flash",
+  },
+  {
+    id: "Fireball",
+    order: 4,
+    renderKind: "gif",
+    title: "Fireball",
+  },
+  {
+    id: "FireLoop",
+    order: 5,
+    renderKind: "gif",
+    title: "Fire loop",
+  },
+  {
+    id: "EmberBurst",
+    order: 6,
+    renderKind: "gif",
+    title: "Ember burst",
+  },
+  {
+    id: "CrackDecal",
+    order: 7,
+    renderKind: "gif",
+    title: "Crack decal",
+  },
+  {
+    id: "GroundGlow",
+    order: 8,
+    renderKind: "gif",
+    title: "Ground glow",
+  },
+];
+
+export const fireKit: typeof Asset.Type = {
+  id: "fire",
+  layers: {
+    Anticipation: {
+      picks: [
+        {
+          at: "2026-10-24T12:18:08",
+          by: "Phát",
+          layer: "Anticipation",
+          note: "",
+          variant: "Anticipation-B",
+        },
+      ],
+      variants: [
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f8",
+              ok: true,
+              value: 8,
+            },
+          ],
+          generator: "easyvfx",
+          id: "Anticipation-A",
+          label: "A",
+          layer: "Anticipation",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.4,
+            },
+            kind: "gif",
+            ms: 800,
+            path: "/fixture/vfx/fire/Anticipation/A.gif",
+            still: "/fixture/vfx/fire/Anticipation/A.beat.png",
+          },
+          seed: 1000,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f10",
+              ok: true,
+              value: 10,
+            },
+          ],
+          generator: "easyvfx",
+          id: "Anticipation-B",
+          label: "B",
+          layer: "Anticipation",
+          note: "slower gather",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.5,
+            },
+            kind: "gif",
+            ms: 1000,
+            path: "/fixture/vfx/fire/Anticipation/B.gif",
+            still: "/fixture/vfx/fire/Anticipation/B.beat.png",
+          },
+          seed: 1001,
+        },
+      ],
+    },
+    Streaks: {
+      picks: [
+        {
+          at: "2026-10-24T12:19:09",
+          by: "Phát",
+          layer: "Streaks",
+          note: "where it originate from",
+          variant: "Streaks-A",
+        },
+        {
+          at: "2026-10-24T13:48:01",
+          by: "Phát",
+          layer: "Streaks",
+          note: "said in chat",
+          variant: "Streaks-C",
+        },
+        {
+          at: "2026-10-24T20:30:00",
+          by: "Phát",
+          layer: "Streaks",
+          note: "strike removed (Phát: add back if needed)",
+          variant: "Streaks-D",
+        },
+      ],
+      variants: [
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f6",
+              ok: true,
+              value: 6,
+            },
+          ],
+          generator: "easyvfx",
+          id: "Streaks-A",
+          label: "A",
+          layer: "Streaks",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.3,
+            },
+            kind: "gif",
+            ms: 700,
+            path: "/fixture/vfx/fire/Streaks/A.gif",
+            still: "/fixture/vfx/fire/Streaks/A.beat.png",
+          },
+          seed: 1000,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f7",
+              ok: true,
+              value: 7,
+            },
+          ],
+          generator: "easyvfx",
+          id: "Streaks-C",
+          label: "C",
+          layer: "Streaks",
+          note: "where it originates from",
+          params: {},
+          parent: "Streaks-A",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.35,
+            },
+            kind: "gif",
+            ms: 900,
+            path: "/fixture/vfx/fire/Streaks/C.gif",
+            still: "/fixture/vfx/fire/Streaks/C.beat.png",
+          },
+          seed: 1001,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "2 rows over budget",
+              ok: false,
+              value: 2,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f7",
+              ok: true,
+              value: 7,
+            },
+          ],
+          generator: "easyvfx",
+          id: "Streaks-D",
+          label: "D",
+          layer: "Streaks",
+          note: "strike removed",
+          params: {},
+          parent: "Streaks-C",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.35,
+            },
+            kind: "gif",
+            ms: 900,
+            path: "/fixture/vfx/fire/Streaks/D.gif",
+            still: "/fixture/vfx/fire/Streaks/D.beat.png",
+          },
+          seed: 1002,
+        },
+      ],
+    },
+    ImpactFlash: {
+      picks: [
+        {
+          at: "2026-10-24T12:19:41",
+          by: "Phát",
+          layer: "ImpactFlash",
+          note: "",
+          variant: "ImpactFlash-A",
+        },
+        {
+          at: "2026-10-25T12:40:55",
+          by: "Phát",
+          layer: "ImpactFlash",
+          note: "the horizontal hot flash",
+          variant: "ImpactFlash-B",
+        },
+      ],
+      variants: [
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f4",
+              ok: true,
+              value: 4,
+            },
+          ],
+          generator: "easyvfx",
+          id: "ImpactFlash-A",
+          label: "A",
+          layer: "ImpactFlash",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.2,
+            },
+            kind: "gif",
+            ms: 600,
+            path: "/fixture/vfx/fire/ImpactFlash/A.gif",
+            still: "/fixture/vfx/fire/ImpactFlash/A.beat.png",
+          },
+          seed: 1000,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f4",
+              ok: true,
+              value: 4,
+            },
+          ],
+          generator: "easyvfx",
+          id: "ImpactFlash-B",
+          label: "B",
+          layer: "ImpactFlash",
+          note: "the horizontal hot flash",
+          params: {},
+          parent: "ImpactFlash-A",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.2,
+            },
+            kind: "gif",
+            ms: 600,
+            path: "/fixture/vfx/fire/ImpactFlash/B.gif",
+            still: "/fixture/vfx/fire/ImpactFlash/B.beat.png",
+          },
+          seed: 1001,
+        },
+      ],
+    },
+    Fireball: {
+      picks: [
+        {
+          at: "2026-10-24T21:30:00",
+          by: "Phát",
+          layer: "Fireball",
+          note: "flung in all directions for volume",
+          variant: "Fireball-A",
+        },
+        {
+          at: "2026-10-25T09:00:00",
+          by: "Phát",
+          layer: "Fireball",
+          note: "flames fan out along their flight",
+          variant: "Fireball-C",
+        },
+        {
+          at: "2026-10-25T13:57:26",
+          by: "Phát",
+          layer: "Fireball",
+          note: "",
+          variant: "Fireball-H",
+        },
+        {
+          at: "2026-10-25T14:35:33",
+          by: "Phát",
+          layer: "Fireball",
+          note: "they look good, let's go (the toroidal blast, wider and higher)",
+          variant: "Fireball-J",
+        },
+      ],
+      variants: [
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f8",
+              ok: true,
+              value: 8,
+            },
+          ],
+          generator: "easyvfx",
+          id: "Fireball-A",
+          label: "A",
+          layer: "Fireball",
+          note: "lumpy and strand flames flung out",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.4,
+            },
+            kind: "gif",
+            ms: 1200,
+            path: "/fixture/vfx/fire/Fireball/A.gif",
+            still: "/fixture/vfx/fire/Fireball/A.beat.png",
+          },
+          seed: 1000,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f8",
+              ok: true,
+              value: 8,
+            },
+          ],
+          generator: "easyvfx",
+          id: "Fireball-C",
+          label: "C",
+          layer: "Fireball",
+          note: "fan out along their flight",
+          params: {},
+          parent: "Fireball-A",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.4,
+            },
+            kind: "gif",
+            ms: 1300,
+            path: "/fixture/vfx/fire/Fireball/C.gif",
+            still: "/fixture/vfx/fire/Fireball/C.beat.png",
+          },
+          seed: 1001,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "2 rows over budget",
+              ok: false,
+              value: 2,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f9",
+              ok: true,
+              value: 9,
+            },
+          ],
+          generator: "easyvfx",
+          id: "Fireball-H",
+          label: "H",
+          layer: "Fireball",
+          params: {},
+          parent: "Fireball-C",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.45,
+            },
+            kind: "gif",
+            ms: 1400,
+            path: "/fixture/vfx/fire/Fireball/H.gif",
+            still: "/fixture/vfx/fire/Fireball/H.beat.png",
+          },
+          seed: 1002,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f9",
+              ok: true,
+              value: 9,
+            },
+          ],
+          generator: "easyvfx",
+          id: "Fireball-J",
+          label: "J",
+          layer: "Fireball",
+          note: "toroidal blast, wider and higher",
+          params: {},
+          parent: "Fireball-H",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.45,
+            },
+            kind: "gif",
+            ms: 1500,
+            path: "/fixture/vfx/fire/Fireball/J.gif",
+            still: "/fixture/vfx/fire/Fireball/J.beat.png",
+          },
+          seed: 1003,
+        },
+      ],
+    },
+    FireLoop: {
+      picks: [
+        {
+          at: "2026-10-24T12:23:12",
+          by: "Phát",
+          layer: "FireLoop",
+          note: "",
+          variant: "FireLoop-B",
+        },
+        {
+          at: "2026-10-24T13:28:36",
+          by: "Phát",
+          layer: "FireLoop",
+          note: "smoke C, flame F",
+          variant: "FireLoop-F",
+        },
+        {
+          at: "2026-10-24T22:30:00",
+          by: "Phát",
+          layer: "FireLoop",
+          note: "single-tone flames spread round the core",
+          variant: "FireLoop-G",
+        },
+        {
+          at: "2026-10-25T09:00:00",
+          by: "Phát",
+          layer: "FireLoop",
+          note: "ring of leaning flames round a tall core",
+          variant: "FireLoop-H",
+        },
+        {
+          at: "2026-10-25T09:05:00",
+          by: "Phát",
+          layer: "FireLoop",
+          note: "the particle-built fire (I, J and K in one) replaces H",
+          variant: "FireLoop-L",
+        },
+      ],
+      variants: [
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f10",
+              ok: true,
+              value: 10,
+            },
+          ],
+          generator: "easyvfx",
+          id: "FireLoop-A",
+          label: "A",
+          layer: "FireLoop",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.5,
+            },
+            kind: "gif",
+            ms: 1000,
+            path: "/fixture/vfx/fire/FireLoop/A.gif",
+            still: "/fixture/vfx/fire/FireLoop/A.beat.png",
+          },
+          seed: 1000,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f10",
+              ok: true,
+              value: 10,
+            },
+          ],
+          generator: "easyvfx",
+          id: "FireLoop-B",
+          label: "B",
+          layer: "FireLoop",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.5,
+            },
+            kind: "gif",
+            ms: 1100,
+            path: "/fixture/vfx/fire/FireLoop/B.gif",
+            still: "/fixture/vfx/fire/FireLoop/B.beat.png",
+          },
+          seed: 1001,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "2 rows over budget",
+              ok: false,
+              value: 2,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f10",
+              ok: true,
+              value: 10,
+            },
+          ],
+          generator: "easyvfx",
+          id: "FireLoop-F",
+          label: "F",
+          layer: "FireLoop",
+          params: {},
+          parent: "FireLoop-B",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.5,
+            },
+            kind: "gif",
+            ms: 1100,
+            path: "/fixture/vfx/fire/FireLoop/F.gif",
+            still: "/fixture/vfx/fire/FireLoop/F.beat.png",
+          },
+          seed: 1002,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f11",
+              ok: true,
+              value: 11,
+            },
+          ],
+          generator: "easyvfx",
+          id: "FireLoop-G",
+          label: "G",
+          layer: "FireLoop",
+          note: "single-tone flames round the core",
+          params: {},
+          parent: "FireLoop-F",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.55,
+            },
+            kind: "gif",
+            ms: 1200,
+            path: "/fixture/vfx/fire/FireLoop/G.gif",
+            still: "/fixture/vfx/fire/FireLoop/G.beat.png",
+          },
+          seed: 1003,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f12",
+              ok: true,
+              value: 12,
+            },
+          ],
+          generator: "easyvfx",
+          id: "FireLoop-H",
+          label: "H",
+          layer: "FireLoop",
+          note: "ring of leaning flames",
+          params: {},
+          parent: "FireLoop-G",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.6,
+            },
+            kind: "gif",
+            ms: 1300,
+            path: "/fixture/vfx/fire/FireLoop/H.gif",
+            still: "/fixture/vfx/fire/FireLoop/H.beat.png",
+          },
+          seed: 1004,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "2 rows over budget",
+              ok: false,
+              value: 2,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f12",
+              ok: true,
+              value: 12,
+            },
+          ],
+          generator: "easyvfx",
+          id: "FireLoop-L",
+          label: "L",
+          layer: "FireLoop",
+          note: "particle-built fire, I J K in one",
+          params: {},
+          parent: "FireLoop-H",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.6,
+            },
+            kind: "gif",
+            ms: 1400,
+            path: "/fixture/vfx/fire/FireLoop/L.gif",
+            still: "/fixture/vfx/fire/FireLoop/L.beat.png",
+          },
+          seed: 1005,
+        },
+      ],
+    },
+    EmberBurst: {
+      picks: [
+        {
+          at: "2026-10-25T10:30:00",
+          by: "Phát",
+          layer: "EmberBurst",
+          note: "burst embers fountain up and fall slowly",
+          variant: "EmberBurst-A",
+        },
+        {
+          at: "2026-10-25T11:00:00",
+          by: "Phát",
+          layer: "EmberBurst",
+          note: "D's low spray, fewer, tighter, A's bright cores",
+          variant: "EmberBurst-G",
+        },
+      ],
+      variants: [
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f6",
+              ok: true,
+              value: 6,
+            },
+          ],
+          generator: "easyvfx",
+          id: "EmberBurst-A",
+          label: "A",
+          layer: "EmberBurst",
+          note: "fountain up, fall slowly",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.3,
+            },
+            kind: "gif",
+            ms: 1100,
+            path: "/fixture/vfx/fire/EmberBurst/A.gif",
+            still: "/fixture/vfx/fire/EmberBurst/A.beat.png",
+          },
+          seed: 1000,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f6",
+              ok: true,
+              value: 6,
+            },
+          ],
+          generator: "easyvfx",
+          id: "EmberBurst-D",
+          label: "D",
+          layer: "EmberBurst",
+          note: "low spray",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.3,
+            },
+            kind: "gif",
+            ms: 900,
+            path: "/fixture/vfx/fire/EmberBurst/D.gif",
+            still: "/fixture/vfx/fire/EmberBurst/D.beat.png",
+          },
+          seed: 1001,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "2 rows over budget",
+              ok: false,
+              value: 2,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f6",
+              ok: true,
+              value: 6,
+            },
+          ],
+          generator: "easyvfx",
+          id: "EmberBurst-G",
+          label: "G",
+          layer: "EmberBurst",
+          note: "D's low spray, A's bright cores",
+          params: {},
+          parent: "EmberBurst-D",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.3,
+            },
+            kind: "gif",
+            ms: 1000,
+            path: "/fixture/vfx/fire/EmberBurst/G.gif",
+            still: "/fixture/vfx/fire/EmberBurst/G.beat.png",
+          },
+          seed: 1002,
+        },
+      ],
+    },
+    CrackDecal: {
+      picks: [
+        {
+          at: "2026-10-24T23:45:00",
+          by: "Phát",
+          layer: "CrackDecal",
+          note: "larger, 9.5 studs",
+          variant: "CrackDecal-B",
+        },
+        {
+          at: "2026-10-25T10:11:09",
+          by: "Phát",
+          layer: "CrackDecal",
+          note: "lava plates revealed along the seams, shrunk by 40%",
+          variant: "CrackDecal-C",
+        },
+      ],
+      variants: [
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f5",
+              ok: true,
+              value: 5,
+            },
+          ],
+          generator: "easyvfx",
+          id: "CrackDecal-A",
+          label: "A",
+          layer: "CrackDecal",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.25,
+            },
+            kind: "gif",
+            ms: 800,
+            path: "/fixture/vfx/fire/CrackDecal/A.gif",
+            still: "/fixture/vfx/fire/CrackDecal/A.beat.png",
+          },
+          seed: 1000,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f5",
+              ok: true,
+              value: 5,
+            },
+          ],
+          generator: "easyvfx",
+          id: "CrackDecal-B",
+          label: "B",
+          layer: "CrackDecal",
+          note: "larger, 9.5 studs",
+          params: {},
+          parent: "CrackDecal-A",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.25,
+            },
+            kind: "gif",
+            ms: 800,
+            path: "/fixture/vfx/fire/CrackDecal/B.gif",
+            still: "/fixture/vfx/fire/CrackDecal/B.beat.png",
+          },
+          seed: 1001,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "2 rows over budget",
+              ok: false,
+              value: 2,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f5",
+              ok: true,
+              value: 5,
+            },
+          ],
+          generator: "easyvfx",
+          id: "CrackDecal-C",
+          label: "C",
+          layer: "CrackDecal",
+          note: "lava plates along the seams",
+          params: {},
+          parent: "CrackDecal-B",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.25,
+            },
+            kind: "gif",
+            ms: 900,
+            path: "/fixture/vfx/fire/CrackDecal/C.gif",
+            still: "/fixture/vfx/fire/CrackDecal/C.beat.png",
+          },
+          seed: 1002,
+        },
+      ],
+    },
+    GroundGlow: {
+      picks: [
+        {
+          at: "2026-10-25T11:25:15",
+          by: "Phát",
+          layer: "GroundGlow",
+          note: "the reference's red-pink floor tint",
+          variant: "GroundGlow-A",
+        },
+        {
+          at: "2026-10-25T11:33:41",
+          by: "Phát",
+          layer: "GroundGlow",
+          note: "B's colour, size between A and B",
+          variant: "GroundGlow-D",
+        },
+      ],
+      variants: [
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f7",
+              ok: true,
+              value: 7,
+            },
+          ],
+          generator: "easyvfx",
+          id: "GroundGlow-A",
+          label: "A",
+          layer: "GroundGlow",
+          note: "red-pink floor tint",
+          params: {},
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.35,
+            },
+            kind: "gif",
+            ms: 1000,
+            path: "/fixture/vfx/fire/GroundGlow/A.gif",
+            still: "/fixture/vfx/fire/GroundGlow/A.beat.png",
+          },
+          seed: 1000,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "all rows pass",
+              ok: true,
+              value: 0,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f7",
+              ok: true,
+              value: 7,
+            },
+          ],
+          generator: "easyvfx",
+          id: "GroundGlow-B",
+          label: "B",
+          layer: "GroundGlow",
+          params: {},
+          parent: "GroundGlow-A",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.35,
+            },
+            kind: "gif",
+            ms: 1000,
+            path: "/fixture/vfx/fire/GroundGlow/B.gif",
+            still: "/fixture/vfx/fire/GroundGlow/B.beat.png",
+          },
+          seed: 1001,
+        },
+        {
+          gates: [
+            {
+              id: "easyvfx.audit",
+              note: "2 rows over budget",
+              ok: false,
+              value: 2,
+            },
+            {
+              id: "easyvfx.beats",
+              note: "contact at f7",
+              ok: true,
+              value: 7,
+            },
+          ],
+          generator: "easyvfx",
+          id: "GroundGlow-D",
+          label: "D",
+          layer: "GroundGlow",
+          note: "B's colour, size between A and B",
+          params: {},
+          parent: "GroundGlow-A",
+          render: {
+            beat: {
+              name: "contact",
+              t: 0.35,
+            },
+            kind: "gif",
+            ms: 1000,
+            path: "/fixture/vfx/fire/GroundGlow/D.gif",
+            still: "/fixture/vfx/fire/GroundGlow/D.beat.png",
+          },
+          seed: 1002,
+        },
+      ],
+    },
+  },
+  mix: {
+    Anticipation: "Anticipation-B",
+    Streaks: "Streaks-D",
+    ImpactFlash: "ImpactFlash-B",
+    Fireball: "Fireball-J",
+    FireLoop: "FireLoop-L",
+    EmberBurst: "EmberBurst-G",
+    CrackDecal: "CrackDecal-C",
+    GroundGlow: "GroundGlow-D",
+  },
+  studio: "vfx",
+  title: "Fire kit",
+};
+
+export const fireFlags: FlagsValue = {
+  assets: [{ asset: fireKit, layers: fireLayers }],
+  by: "Phát",
+  studio: fireStudio,
+};

@@ -60,21 +60,35 @@ const mixOf = (layers: AssetValue["layers"]): AssetValue["mix"] =>
     })
   );
 
-const withStudioLayers = (
-  studio: StudioValue,
-  asset: AssetValue
-): AssetValue => ({
-  ...asset,
-  layers: {
-    ...Object.fromEntries(studio.layers.map((layer) => [layer.id, emptyLayer])),
-    ...asset.layers,
-  },
-});
+const isStudioLayer = (studio: StudioValue, layer: string) =>
+  studio.layers.some((entry) => entry.id === layer);
 
-const freshAsset = (studio: StudioValue, id: string): AssetValue =>
+export const ownsLayers = (
+  studio: StudioValue,
+  layers: readonly string[]
+): boolean => layers.some((layer) => !isStudioLayer(studio, layer));
+
+const withStudioLayers = (studio: StudioValue, asset: AssetValue): AssetValue =>
+  ownsLayers(studio, Object.keys(asset.layers))
+    ? asset
+    : {
+        ...asset,
+        layers: {
+          ...Object.fromEntries(
+            studio.layers.map((layer) => [layer.id, emptyLayer])
+          ),
+          ...asset.layers,
+        },
+      };
+
+const freshAsset = (
+  studio: StudioValue,
+  id: string,
+  firstLayer: string
+): AssetValue =>
   withStudioLayers(studio, {
     id,
-    layers: {},
+    layers: { [firstLayer]: emptyLayer },
     mix: {},
     studio: studio.id,
     title: id,
@@ -245,7 +259,7 @@ export const FileStore = Layer.effect(
     const change = (
       studio: string,
       asset: string,
-      create: boolean,
+      firstLayer: string | undefined,
       update: (current: AssetValue) => Effect.Effect<AssetValue, AdapterFailed>
     ) =>
       writes.withPermits(1)(
@@ -253,12 +267,16 @@ export const FileStore = Layer.effect(
           const def = yield* studioById(studio);
           const found = yield* readAsset(def, asset);
 
-          if (Option.isNone(found) && !create) {
+          if (Option.isSome(found)) {
+            return yield* writeAsset(yield* update(found.value));
+          }
+
+          if (firstLayer === undefined) {
             return yield* new UnknownAsset({ asset, studio });
           }
 
           return yield* writeAsset(
-            yield* update(Option.getOrElse(found, () => freshAsset(def, asset)))
+            yield* update(freshAsset(def, asset, firstLayer))
           );
         })
       );
@@ -270,7 +288,7 @@ export const FileStore = Layer.effect(
         layer: string,
         variants: readonly (typeof Variant.Type)[]
       ) {
-        return yield* change(studio, asset, true, (current) => {
+        return yield* change(studio, asset, layer, (current) => {
           const known = new Set(
             (current.layers[layer]?.variants ?? []).map(({ id }) => id)
           );
@@ -300,7 +318,7 @@ export const FileStore = Layer.effect(
       asset: string,
       chosen: typeof Pick.Type
     ) {
-      return yield* change(studio, asset, false, (current) =>
+      return yield* change(studio, asset, undefined, (current) =>
         Effect.succeed(
           updateLayer(current, chosen.layer, (entry) => ({
             ...entry,
@@ -315,7 +333,7 @@ export const FileStore = Layer.effect(
       asset: string,
       request: typeof RoundRequest.Type
     ) {
-      return yield* change(studio, asset, false, (current) =>
+      return yield* change(studio, asset, undefined, (current) =>
         Effect.succeed(
           updateLayer(current, request.layer, (entry) => ({
             ...entry,

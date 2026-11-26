@@ -18,7 +18,13 @@ import {
   roundContract,
 } from "@gds/model";
 import type { Asset } from "@gds/model";
-import { addToLayer, factsOf, pickOnLayer, roundOnLayer } from "@gds/store";
+import {
+  addToLayer,
+  factsOf,
+  ownsLayers,
+  pickOnLayer,
+  roundOnLayer,
+} from "@gds/store";
 import { DateTime, Effect } from "effect";
 
 interface Where {
@@ -85,8 +91,10 @@ export const addVariants = implement(
     );
 
     const known =
+      stored === undefined ||
+      stored.layers[layer] !== undefined ||
       def.layers.some((entry) => entry.id === layer) ||
-      stored?.layers[layer] !== undefined;
+      ownsLayers(def, Object.keys(stored.layers));
 
     const stray = variants.find((variant) => variant.layer !== layer);
 

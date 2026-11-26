@@ -1,18 +1,21 @@
 import { Runtime } from "foldkit";
 
-import { view } from "../features/home/index.js";
-import { Message } from "./motion/message.js";
-import { initialModel, Model } from "./motion/model.js";
-import { subscriptions } from "./motion/subscriptions.js";
-import { update } from "./motion/update.js";
+import { view } from "../features/board/index.js";
+import { Message } from "./board/message.js";
+import { Flags, initialModel, Model } from "./board/model.js";
+import { rpcBoardApi, STUDIO_RPC_PATH } from "./board/rpc-api.js";
+import { subscriptions } from "./board/subscriptions.js";
+import { update } from "./board/update.js";
 
 import "../../styles/studio.css";
 
 const application = Runtime.makeApplication({
+  Flags,
   Model,
   container: document.querySelector("#root"),
   devTools: import.meta.env.DEV ? { Message } : false,
-  init: () => ({ model: initialModel }),
+  init: (flags) => ({ model: initialModel(flags) }),
+  resources: rpcBoardApi(new URL(STUDIO_RPC_PATH, location.origin).href),
   subscriptions,
   update,
   view,

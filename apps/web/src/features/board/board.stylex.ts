@@ -1,0 +1,202 @@
+import * as stylex from "@stylexjs/stylex";
+
+import { accent } from "../tokens.stylex.js";
+
+const ink = "#e8e8ec";
+
+const muted = "#8b8b97";
+
+const faint = "#5a5a66";
+
+const card = "#18181d";
+
+const cardRaised = "#202027";
+
+const line = "#2c2c35";
+
+const canvas = "#0e0e11";
+
+const sans =
+  "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
+
+const mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+
+export const boardStyles = stylex.create({
+  root: {
+    backgroundColor: canvas,
+    color: ink,
+    display: "grid",
+    fontFamily: sans,
+    fontSize: "13px",
+    gridTemplateRows: "auto 1fr",
+    height: "100dvh",
+    inset: 0,
+    overflow: "hidden",
+    position: "fixed",
+  },
+  toolbar: {
+    alignItems: "center",
+    backgroundColor: "#121216",
+    borderBottomColor: line,
+    borderBottomStyle: "solid",
+    borderBottomWidth: "1px",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "12px",
+    paddingBlock: "8px",
+    paddingInline: "14px",
+  },
+  brand: {
+    fontSize: "13px",
+    fontWeight: 600,
+    letterSpacing: "0.02em",
+    margin: 0,
+  },
+  crumb: { color: muted },
+  spacer: { flexGrow: 1 },
+  hint: {
+    color: faint,
+    "@media (max-width: 900px)": { display: "none" },
+  },
+  tool: {
+    backgroundColor: { default: cardRaised, ":hover": "#2a2a33" },
+    borderColor: line,
+    borderRadius: "6px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: ink,
+    cursor: "pointer",
+    fontFamily: sans,
+    fontSize: "12px",
+    minWidth: "30px",
+    paddingBlock: "4px",
+    paddingInline: "10px",
+  },
+  canvas: {
+    backgroundColor: canvas,
+    backgroundImage: "radial-gradient(#2a2a33 1px, transparent 1px)",
+    backgroundSize: "22px 22px",
+    cursor: { default: "grab", ":active": "grabbing" },
+    overflow: "hidden",
+    position: "relative",
+    touchAction: "none",
+    userSelect: "none",
+  },
+  world: {
+    left: 0,
+    position: "absolute",
+    top: 0,
+    transformOrigin: "0 0",
+  },
+  graph: { position: "relative" },
+  wires: {
+    left: 0,
+    overflow: "visible",
+    pointerEvents: "none",
+    position: "absolute",
+    top: 0,
+  },
+  wire: { fill: "none", stroke: "#3b3b46", strokeWidth: 1.5 },
+  lineage: { fill: "none", stroke: "#6b6b78", strokeWidth: 1.75 },
+  picked: { fill: "none", stroke: accent.accent, strokeWidth: 2.5 },
+  node: {
+    backgroundColor: card,
+    borderColor: line,
+    borderRadius: "12px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.35)",
+    boxSizing: "border-box",
+    color: ink,
+    display: "flex",
+    flexDirection: "column",
+    fontFamily: sans,
+    gap: "4px",
+    overflow: "hidden",
+    padding: "8px",
+    position: "absolute",
+    textAlign: "start",
+  },
+  nodeButton: {
+    cursor: "pointer",
+    borderColor: { default: line, ":hover": "#4a4a56" },
+  },
+  nodeHeader: {
+    alignItems: "baseline",
+    display: "flex",
+    gap: "6px",
+    justifyContent: "space-between",
+  },
+  kind: {
+    color: muted,
+    fontFamily: mono,
+    fontSize: "10px",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+  title: {
+    fontSize: "13px",
+    fontWeight: 600,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  meta: {
+    color: muted,
+    fontFamily: mono,
+    fontSize: "11px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  preview: {
+    backgroundColor: "#0a0a0c",
+    borderRadius: "8px",
+    display: "block",
+    flexGrow: 1,
+    minHeight: 0,
+    objectFit: "cover",
+    width: "100%",
+  },
+  emptyPreview: {
+    alignItems: "center",
+    backgroundColor: "#0a0a0c",
+    borderRadius: "8px",
+    color: faint,
+    display: "flex",
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  badge: {
+    backgroundColor: "#f2f2f5",
+    borderRadius: "999px",
+    color: "#111114",
+    fontFamily: mono,
+    fontSize: "10px",
+    fontWeight: 700,
+    paddingInline: "6px",
+  },
+  mixList: {
+    display: "grid",
+    fontFamily: mono,
+    fontSize: "11px",
+    gap: "3px",
+    listStyle: "none",
+    margin: 0,
+    overflow: "hidden",
+    padding: 0,
+  },
+  mixRow: {
+    color: muted,
+    display: "flex",
+    gap: "6px",
+    justifyContent: "space-between",
+  },
+  mixValue: { color: ink },
+  focus: {
+    outline: {
+      default: "none",
+      ":focus-visible": `2px solid ${accent.accent}`,
+    },
+  },
+});

@@ -9,11 +9,13 @@ import {
   toHttpApi,
   toToolkit,
 } from "@gds/capability";
+import { toRpc } from "@gds/capability/rpc";
 import { devtools, devtoolsLayer } from "@gds/devtools";
 import { Effect, Layer, Logger } from "effect";
 import { McpServer } from "effect/ai";
 import { HttpRouter } from "effect/http";
 import { HttpApiBuilder, HttpApiScalar } from "effect/http-api";
+import { RpcSerialization, RpcServer } from "effect/rpc";
 
 import { studioCapabilities } from "./handlers.js";
 import { mcpProtocols } from "./mcp-protocols.js";
@@ -31,11 +33,27 @@ export const tools = toToolkit(cliCapabilities);
 
 export const codeMode = toCodeMode(cliCapabilities);
 
-export const routes = Layer.merge(
+export const RPC_PATH = "/rpc";
+
+const rpcRoute = <const Caps extends readonly AnyCapability[]>(all: Caps) => {
+  const projected = toRpc(all);
+
+  return RpcServer.layerHttp({
+    group: projected.group,
+    path: RPC_PATH,
+    protocol: "http",
+  }).pipe(
+    Layer.provide(projected.layer),
+    Layer.provide(RpcSerialization.layerJson)
+  );
+};
+
+export const routes = Layer.mergeAll(
   HttpApiBuilder.layer(http.api, { openapiPath: "/openapi.json" }).pipe(
     Layer.provide(http.layer)
   ),
-  HttpApiScalar.layer(http.api, { path: "/docs" })
+  HttpApiScalar.layer(http.api, { path: "/docs" }),
+  rpcRoute(capabilities)
 );
 
 export const SERVE_HOST = "127.0.0.1";
@@ -87,6 +105,7 @@ export const devtoolsRoutes = withDevtools(
         Layer.provide(api.layer)
       ),
       HttpApiScalar.layer(api.api, { path: "/docs" }),
+      rpcRoute(recorded),
       toolkitServer(all).pipe(
         Layer.provide(
           McpServer.layerHttp({
