@@ -21,7 +21,7 @@ export {
   roundContract,
 } from "./contracts.js";
 
-export { GateDef, GatePass } from "./gate.js";
+export { GateDef, GatePass, judge, readPath, ruleText } from "./gate.js";
 
 export { LayerBusy } from "./layer-busy.js";
 

@@ -1,18 +1,30 @@
+import { CommandConfig, commandStudio } from "@gds/adapter-command";
 import {
   EVFX_BACKEND,
   EasyvfxKits,
   PLAN_BACKEND,
   ROR_BACKEND,
   RobloxConfig,
+  SHOT_BACKEND,
+  SHOT_QUALITY,
   VFXLAB_CHECK,
+  WORLDPLACE_CHECK,
   VILLAGE_CAMERAS,
   easyvfxSource,
   evfxRenderer,
   planRenderer,
   rorRenderer,
+  shotRenderer,
+  shotStudio,
   vfxlabCheck,
+  worldplaceCheck,
 } from "@gds/adapter-roblox";
-import type { PlanSettings, RobloxSettings } from "@gds/adapter-roblox";
+import type {
+  PlanSettings,
+  RobloxSettings,
+  ShotSettings,
+  ShotStudio,
+} from "@gds/adapter-roblox";
 import {
   AdapterFailed,
   Check,
@@ -29,6 +41,7 @@ import {
   Context,
   Effect,
   Layer,
+  Duration,
   Option,
   Ref,
   Scope,
@@ -44,6 +57,7 @@ const ROBLOX_RENDERERS: ReadonlySet<string> = new Set([
   EVFX_BACKEND,
   PLAN_BACKEND,
   ROR_BACKEND,
+  SHOT_BACKEND,
 ]);
 
 export const isRobloxStudio = (studio: StudioValue): boolean =>
@@ -69,6 +83,19 @@ const ROR_SECONDS = 1.5;
 const PLAN_SIZE = [960, 540] as const;
 
 const PLAN_PROJECT = "fresh.project.json";
+
+const SHOT_APPLY_TIMEOUT = Duration.minutes(5);
+
+const SHOT_LAYER = "mood";
+
+export const shotLayerOf = (studio: StudioValue): string =>
+  studio.layers.find((layer) => layer.renderer === SHOT_BACKEND)?.id ??
+  SHOT_LAYER;
+
+export const checkOf = (studio: StudioValue): string | undefined =>
+  studio.check === VFXLAB_CHECK || studio.check === WORLDPLACE_CHECK
+    ? studio.check
+    : undefined;
 
 export const extraKits = (listed: string): readonly string[] =>
   listed
@@ -100,9 +127,17 @@ const planRendererOr = (plan: PlanSettings | undefined) =>
       )
     : planRenderer(plan);
 
-const rendererFor = (renderer: string, plan: PlanSettings | undefined) => {
+const rendererFor = (
+  renderer: string,
+  plan: PlanSettings | undefined,
+  shots: Layer.Layer<ShotStudio>
+) => {
   if (renderer === PLAN_BACKEND) {
     return planRendererOr(plan);
+  }
+
+  if (renderer === SHOT_BACKEND) {
+    return shotRenderer.pipe(Layer.provide(shots));
   }
 
   return renderer === ROR_BACKEND ? rorRenderer : evfxRenderer;
@@ -128,6 +163,11 @@ export class RobloxStudios extends Context.Service<
       >();
 
       const built = yield* Ref.make(new Map<string, RobloxBackend>());
+
+      const shotStudios = yield* Ref.make(
+        new Map<string, Context.Context<ShotStudio>>()
+      );
+
       const building = yield* Semaphore.make(1);
 
       const settingsFor = Effect.fnUntraced(function* settingsFor(
@@ -187,9 +227,43 @@ export class RobloxStudios extends Context.Service<
           Option.getOrUndefined
         );
 
+        const applyAt: ShotSettings["apply"] = (where, request) =>
+          commandStudio(studio).pipe(
+            Effect.flatMap(({ apply }) => apply.apply(request)),
+            Effect.provide(
+              CommandConfig.layer(
+                Effect.succeed({ root: where, timeout: SHOT_APPLY_TIMEOUT })
+              )
+            ),
+            Effect.provideContext(platform)
+          );
+
+        const shots: ShotSettings = {
+          apply: applyAt,
+          cache: roblox.cache,
+          cameras:
+            studio.cameras === undefined
+              ? path.join(
+                  root,
+                  "tools",
+                  "devstudio",
+                  "studios",
+                  `${studio.id}-cameras.json`
+                )
+              : path.join(root, studio.cameras),
+          gameRoot: root,
+          gates: studio.gates,
+          project: PLAN_PROJECT,
+          python: env.python,
+          quality: SHOT_QUALITY,
+          shotLayer: shotLayerOf(studio),
+          slot: Option.getOrUndefined(env.slot),
+        };
+
         return {
           plan,
           roblox,
+          shots,
           vfxlab: {
             gameRoot: root,
             slot: Option.getOrUndefined(env.slot),
@@ -197,19 +271,48 @@ export class RobloxStudios extends Context.Service<
         };
       });
 
-      const build = Effect.fnUntraced(function* build(studio: StudioValue) {
-        const { plan, roblox, vfxlab } = yield* settingsFor(studio);
+      const shotsFor = (studio: StudioValue, settings: ShotSettings) =>
+        Effect.gen(function* shotsForStudio() {
+          const known = (yield* Ref.get(shotStudios)).get(studio.id);
 
-        const renderer = rendererFor(studio.renderer, plan);
+          if (known !== undefined) {
+            return Layer.succeedContext(known);
+          }
+
+          const made = yield* Layer.buildWithScope(
+            shotStudio(settings),
+            scope
+          ).pipe(Effect.provideContext(platform));
+
+          yield* Ref.update(
+            shotStudios,
+            (all) => new Map([...all, [studio.id, made]])
+          );
+
+          return Layer.succeedContext(made);
+        });
+
+      const build = Effect.fnUntraced(function* build(studio: StudioValue) {
+        const { plan, roblox, shots, vfxlab } = yield* settingsFor(studio);
+        const shotLayer = yield* shotsFor(studio, shots);
+
+        const renderer = rendererFor(studio.renderer, plan, shotLayer);
+
+        const check =
+          studio.check === WORLDPLACE_CHECK
+            ? worldplaceCheck.pipe(
+                Layer.provide(shotLayer),
+                Layer.provideMerge(renderer)
+              )
+            : vfxlabCheck(vfxlab).pipe(Layer.provideMerge(renderer));
 
         const kits = EasyvfxKits.layer.pipe(
           Layer.provideMerge(RobloxConfig.layer(roblox))
         );
 
-        const layer = Layer.mergeAll(
-          easyvfxSource(studio.id),
-          vfxlabCheck(vfxlab).pipe(Layer.provideMerge(renderer))
-        ).pipe(Layer.provide(kits));
+        const layer = Layer.mergeAll(easyvfxSource(studio.id), check).pipe(
+          Layer.provide(kits)
+        );
 
         const context = yield* Layer.buildWithScope(layer, scope).pipe(
           Effect.provideContext(platform)
@@ -341,12 +444,12 @@ export const StudioCheck = Layer.effect(
             Effect.fail(noStudio("check", problem))
           ),
           Effect.flatMap((studio) =>
-            studio.check === VFXLAB_CHECK && isRobloxStudio(studio)
+            checkOf(studio) !== undefined && isRobloxStudio(studio)
               ? roblox.backend(studio)
               : Effect.fail(
                   new AdapterFailed({
                     adapter: "check",
-                    message: `Studio ${studio.id} names check "${studio.check ?? "none"}", which no adapter in this dev studio opens. Fix: set "check" in \`tools/devstudio/studios/${studio.id}.json\` to "${VFXLAB_CHECK}" with a Roblox renderer.`,
+                    message: `Studio ${studio.id} names check "${studio.check ?? "none"}", which no adapter in this dev studio opens. Fix: set "check" in \`tools/devstudio/studios/${studio.id}.json\` to "${VFXLAB_CHECK}" or "${WORLDPLACE_CHECK}" with a Roblox renderer.`,
                   })
                 )
           ),

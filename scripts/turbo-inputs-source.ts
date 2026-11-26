@@ -85,6 +85,13 @@ const parameterizedReadBoundaries = new Map(
           "reads the game's assets/assets.md, art/vfx/out and kit folders RobloxConfig names at run time to draw local textures; no test reads them",
       },
     ],
+    "packages/adapter-roblox/src/shot-studio.ts": [
+      {
+        kind: "unbounded",
+        reason:
+          "reads the studio's camera file, the game's Rojo project in its scratch worktree and its own shot notes under the game's cache at run time; tests write a camera file in a test-created temporary directory",
+      },
+    ],
     "packages/adapter-roblox/src/sync-beat.ts": [
       {
         kind: "unbounded",

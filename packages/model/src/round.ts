@@ -1,5 +1,7 @@
 import { Schema } from "effect";
 
+import { GateResult, RenderView } from "./variant.js";
+
 export const RoundRequest = Schema.Struct({
   asset: Schema.String,
   at: Schema.String,
@@ -16,6 +18,17 @@ export const RoundRequest = Schema.Struct({
 });
 
 export const CheckShot = Schema.Struct({
+  gates: Schema.optionalKey(
+    Schema.Array(GateResult).annotate({
+      description:
+        "The studio's check gates, each read inside the engine and judged by its rule.",
+    })
+  ),
   note: Schema.String,
   shot: Schema.String,
+  views: Schema.optionalKey(
+    Schema.Array(RenderView).annotate({
+      description: "One engine shot per named camera. shot is the first.",
+    })
+  ),
 });
