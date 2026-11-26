@@ -18,6 +18,7 @@ export const studioLayer = (game: Layer.Layer<GameFolder>) => {
 
   return Layer.mergeAll(StudioPack, StudioRenderer, StudioCheck).pipe(
     Layer.provideMerge(store),
+    Layer.provideMerge(source),
     Layer.provide(backends),
     Layer.provide(game)
   );
