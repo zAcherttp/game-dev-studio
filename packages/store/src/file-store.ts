@@ -205,6 +205,30 @@ export const FileStore = Layer.effect(
       return asset;
     });
 
+    const listAssets = Effect.fn("FileStore.listAssets")(function* listAssets(
+      studio: string
+    ) {
+      const def = yield* studioById(studio);
+      const dir = path.dirname(yield* assetPath(studio, "_"));
+
+      if (!(yield* fs.exists(dir).pipe(io(`check ${dir}`)))) {
+        return [];
+      }
+
+      const ids = (yield* fs.readDirectory(dir).pipe(io(`list ${dir}`)))
+        .filter((name) => name.endsWith(".json"))
+        .map((name) => path.basename(name, ".json"))
+        .toSorted();
+
+      const found = yield* Effect.all(ids.map((id) => readAsset(def, id)));
+
+      return found.flatMap((entry) =>
+        Option.isSome(entry)
+          ? [{ id: entry.value.id, title: entry.value.title }]
+          : []
+      );
+    });
+
     const getAsset = Effect.fn("FileStore.getAsset")(function* getAsset(
       studio: string,
       asset: string
@@ -313,6 +337,7 @@ export const FileStore = Layer.effect(
     return Store.of({
       getAsset,
       history,
+      listAssets,
       listStudios,
       pick,
       putVariants,

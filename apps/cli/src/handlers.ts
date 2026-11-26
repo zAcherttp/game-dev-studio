@@ -10,6 +10,7 @@ import {
   addVariantsContract,
   getAssetContract,
   getPackContract,
+  listAssetsContract,
   listStudiosContract,
   openCheckContract,
   pickContract,
@@ -59,6 +60,12 @@ const now = DateTime.now.pipe(Effect.map(DateTime.formatIso));
 export const listStudios = implement(listStudiosContract, () =>
   Store.use((store) => store.listStudios).pipe(
     Effect.map((studios) => ({ studios }))
+  )
+);
+
+export const listAssets = implement(listAssetsContract, ({ studio }) =>
+  Store.use((store) => store.listAssets(studio)).pipe(
+    Effect.map((assets) => ({ assets }))
   )
 );
 
@@ -173,6 +180,7 @@ export const openCheck = implement(
 
 export const studioCapabilities = [
   listStudios,
+  listAssets,
   getAsset,
   addVariants,
   render,
