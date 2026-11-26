@@ -242,7 +242,16 @@ export const toCommand = <C extends AnyCapability>(
     Flag.Flag<unknown> | Argument.Argument<unknown>
   > = {};
 
-  for (const [name, field] of Object.entries(contract.input.fields)) {
+  const inputFields = Object.entries(contract.input.fields);
+
+  const ordered = [
+    ...(options?.positional ?? []).flatMap((name) =>
+      inputFields.filter(([field]) => field === name)
+    ),
+    ...inputFields.filter(([name]) => !positional.has(name)),
+  ];
+
+  for (const [name, field] of ordered) {
     config[name] = positional.has(name)
       ? argumentFor(name, field)
       : flagFor(name, field);

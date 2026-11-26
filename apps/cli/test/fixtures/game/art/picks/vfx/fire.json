@@ -1,0 +1,55 @@
+{
+  "id": "fire",
+  "layers": {
+    "core": {
+      "picks": [
+        {
+          "at": "2026-11-24T10:00:00.000Z",
+          "by": "phat",
+          "layer": "core",
+          "note": "warmest",
+          "variant": "core-2"
+        }
+      ],
+      "variants": [
+        {
+          "generator": "fixture",
+          "id": "core-1",
+          "label": "Core 1",
+          "layer": "core",
+          "params": {
+            "hue": 0.05
+          }
+        },
+        {
+          "generator": "fixture",
+          "id": "core-2",
+          "label": "Core 2",
+          "layer": "core",
+          "params": {
+            "hue": 0.08
+          }
+        }
+      ]
+    },
+    "sparks": {
+      "picks": [],
+      "variants": [
+        {
+          "generator": "fixture",
+          "id": "sparks-1",
+          "label": "Sparks 1",
+          "layer": "sparks",
+          "params": {
+            "count": 12
+          }
+        }
+      ]
+    }
+  },
+  "mix": {
+    "core": "core-2"
+  },
+  "studio": "vfx",
+  "title": "Fire"
+}

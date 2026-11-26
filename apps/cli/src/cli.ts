@@ -5,6 +5,7 @@ import { Approval } from "@gds/capability";
 import { Console, Effect, Layer } from "effect";
 
 import { runCommand } from "./command.js";
+import { configuredStudioLayer } from "./studio-layer.js";
 
 const [first, ...rest] = process.argv.slice(2);
 
@@ -15,7 +16,11 @@ const program = runCommand(args).pipe(
   Effect.catchTag("NotBuilt", (error) =>
     Console.error(error.message).pipe(Effect.andThen(Effect.fail(error)))
   ),
-  Effect.provide(Layer.mergeAll(NodeServices.layer, Approval.denyAll))
+  Effect.provide(
+    Layer.mergeAll(configuredStudioLayer, Approval.denyAll).pipe(
+      Layer.provideMerge(NodeServices.layer)
+    )
+  )
 );
 
 NodeRuntime.runMain(program);
