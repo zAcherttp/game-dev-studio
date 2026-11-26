@@ -2,7 +2,7 @@ import { Context } from "effect";
 import type { Effect } from "effect";
 
 import type { AdapterFailed } from "./adapter-failed.js";
-import type { Asset } from "./asset.js";
+import type { Asset, AssetSummary } from "./asset.js";
 import type { Pick } from "./pick.js";
 import type { RoundRequest } from "./round.js";
 import type { StudioDef } from "./studio.js";
@@ -16,6 +16,12 @@ export class Store extends Context.Service<
     readonly listStudios: Effect.Effect<
       readonly (typeof StudioDef.Type)[],
       AdapterFailed
+    >;
+    readonly listAssets: (
+      studio: string
+    ) => Effect.Effect<
+      readonly (typeof AssetSummary.Type)[],
+      UnknownStudio | AdapterFailed
     >;
     readonly getAsset: (
       studio: string,

@@ -2,7 +2,7 @@ import { defineContract } from "@gds/capability/contract";
 import { Schema } from "effect";
 
 import { AdapterFailed } from "./adapter-failed.js";
-import { Asset } from "./asset.js";
+import { Asset, AssetSummary } from "./asset.js";
 import { LayerBusy } from "./layer-busy.js";
 import { NoPick } from "./no-pick.js";
 import { NotBuilt } from "./not-built.js";
@@ -42,6 +42,15 @@ export const listStudiosContract = defineContract("listStudios", {
   failure: Schema.Union([NotBuilt, AdapterFailed]),
   input: Schema.Struct({}),
   output: Schema.Struct({ studios: Schema.Array(StudioDef) }),
+});
+
+export const listAssetsContract = defineContract("listAssets", {
+  annotations: readOnly,
+  description:
+    "List every asset a studio has picks for, by id and title, sorted by id.",
+  failure: Schema.Union([NotBuilt, UnknownStudio, AdapterFailed]),
+  input: Schema.Struct({ studio: studioField }),
+  output: Schema.Struct({ assets: Schema.Array(AssetSummary) }),
 });
 
 export const getAssetContract = defineContract("getAsset", {
@@ -156,6 +165,7 @@ export const openCheckContract = defineContract("openCheck", {
 
 export const contracts = [
   listStudiosContract,
+  listAssetsContract,
   getAssetContract,
   addVariantsContract,
   renderContract,

@@ -9,6 +9,7 @@ export {
   contracts,
   getAssetContract,
   getPackContract,
+  listAssetsContract,
   listStudiosContract,
   openCheckContract,
   pickContract,
