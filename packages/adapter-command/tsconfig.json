@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "allowedUnstableApis": [
+          "@effect/platform-node/NodeServices",
+          "@effect/vitest",
+          "effect/Arbitrary",
+          "effect/FileSystem",
+          "effect/Path",
+          "effect/process/ChildProcess",
+          "effect/process/ChildProcessSpawner"
+        ]
+      }
+    ]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import { NodeServices } from "@effect/platform-node";
 import { describe, expect, it } from "@effect/vitest";
 import { invokerFor } from "@gds/capability";
@@ -383,6 +385,104 @@ const callFor = (
 
   return invoke("round", roundInput);
 };
+
+const commandScript = fileURLToPath(
+  new URL("fixtures/command-studio.ts", import.meta.url)
+);
+
+const run = (verb: string): [string, ...string[]] => [
+  process.execPath,
+  commandScript,
+  verb,
+];
+
+const commandStudio: typeof StudioDef.Encoded = {
+  commands: {
+    assets: run("assets"),
+    render: run("render"),
+    takes: run("takes"),
+  },
+  gates: [
+    {
+      id: "fights",
+      json: "fights",
+      pass: { op: "eq", value: 0 },
+      run: run("gate"),
+      title: "Coplanar fights",
+      where: "variant",
+    },
+  ],
+  id: "vfx",
+  layers: [
+    {
+      id: "core",
+      order: 0,
+      renderKind: "image",
+      renderer: "command:render",
+      title: "Core",
+    },
+  ],
+  pack: { files: [] },
+  renderKinds: ["image"],
+  renderer: "elsewhere",
+  title: "Props",
+};
+
+describe("command studio", () => {
+  it.effect(
+    "lists a command studio's takes and shows each rendered variant's gates on the asset",
+    () =>
+      inGame(
+        (invoke) =>
+          Effect.gen(function* commandRound() {
+            const stool = { asset: "stool", layer: "core", studio: "vfx" };
+            const assets = yield* invoke("listAssets", { studio: "vfx" });
+
+            const passing = yield* invoke("render", {
+              ...stool,
+              variant: "t1",
+            });
+
+            const failing = yield* invoke("render", {
+              ...stool,
+              variant: "t2",
+            });
+
+            const asset = yield* invoke("getAsset", {
+              asset: "stool",
+              studio: "vfx",
+            });
+
+            expect(assets).toMatchObject({
+              ok: true,
+              value: { assets: [{ id: "stool", title: "Stool" }] },
+            });
+            expect([passing.ok, failing.ok]).toEqual([true, true]);
+            expect(asset).toMatchObject({
+              ok: true,
+              value: {
+                layers: {
+                  core: {
+                    variants: [
+                      {
+                        gates: [{ id: "fights", ok: true, value: 0 }],
+                        id: "t1",
+                      },
+                      {
+                        gates: [{ id: "fights", ok: false, value: 2 }],
+                        id: "t2",
+                      },
+                    ],
+                  },
+                },
+              },
+            });
+          }),
+        Layer.empty,
+        commandStudio
+      )
+  );
+});
 
 describe("layer lifecycle model", () => {
   it.effect.prop(
