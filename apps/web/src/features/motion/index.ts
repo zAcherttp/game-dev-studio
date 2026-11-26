@@ -1,6 +1,6 @@
 import { Button } from "@foldkit/ui";
-import { easingNames, easings, Tween } from "@rat-stack/motion";
-import type { EasingName } from "@rat-stack/motion";
+import { easingNames, easings, Tween } from "@gds/motion";
+import type { EasingName } from "@gds/motion";
 import * as stylex from "@stylexjs/stylex";
 import { Submodel } from "foldkit";
 import type { Html, HtmlBuilder } from "foldkit/html";

@@ -8,6 +8,8 @@ import { layerSubprocess } from "../src/sandbox-subprocess.js";
 
 const subprocessProofTimeoutMillis = 15_000;
 
+const withoutProcessGroups = process.platform === "win32";
+
 const proof = Effect.fn("sandboxLifetimeProof")(
   function* proof(mode: string) {
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
@@ -71,12 +73,12 @@ describe("sandbox lifetime", () => {
   it.live("kills its child when the owning scope closes", () =>
     scopedRun(false)
   );
-  it.live(
+  it.live.skipIf(withoutProcessGroups)(
     "escalates scope close and kills resistant descendants",
     () => proof("scope"),
     subprocessProofTimeoutMillis
   );
-  it.live(
+  it.live.skipIf(withoutProcessGroups)(
     "escalates interruption and kills resistant descendants",
     () => proof("interrupt"),
     subprocessProofTimeoutMillis
@@ -114,7 +116,7 @@ describe("sandbox lifetime", () => {
     () => proof("deadline"),
     subprocessProofTimeoutMillis
   );
-  it.live(
+  it.live.skipIf(withoutProcessGroups)(
     "survives SIGKILL of its parent without an orphan",
     () => proof("kill-parent"),
     subprocessProofTimeoutMillis

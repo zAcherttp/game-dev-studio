@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 
-const oxlint = path.join(repoRoot, "node_modules/.bin/oxlint");
+const oxlint = path.join(repoRoot, "node_modules/oxlint/bin/oxlint");
 
 const plugin = path.join(repoRoot, "scripts/oxlint-plugin-boundaries.ts");
 
@@ -24,7 +24,7 @@ interface LintResult {
 }
 
 const lintFixture = (area: string, source: string): LintResult => {
-  const directory = mkdtempSync(path.join(tmpdir(), "rat-stack-boundaries-"));
+  const directory = mkdtempSync(path.join(tmpdir(), "gds-boundaries-"));
   const fixtureDirectory = path.join(directory, area, "boundary-fixtures");
   const config = path.join(directory, "oxlint.json");
   const file = path.join(fixtureDirectory, "fixture.ts");
@@ -33,26 +33,29 @@ const lintFixture = (area: string, source: string): LintResult => {
   writeFileSync(
     config,
     JSON.stringify({
-      jsPlugins: [{ name: "rat-stack-boundaries", specifier: plugin }],
+      jsPlugins: [{ name: "gds-boundaries", specifier: plugin }],
       rules: {
-        "rat-stack-boundaries/no-browser-globals-on-server": "error",
-        "rat-stack-boundaries/no-browser-server-imports": "error",
-        "rat-stack-boundaries/no-code-snippets-in-runtime": "error",
-        "rat-stack-boundaries/no-core-adapters": "error",
-        "rat-stack-boundaries/no-cross-layer-imports": "error",
-        "rat-stack-boundaries/no-devtools-in-production": "error",
-        "rat-stack-boundaries/no-feature-transport": "error",
-        "rat-stack-boundaries/no-hand-rolled-surface": "error",
+        "gds-boundaries/no-browser-globals-on-server": "error",
+        "gds-boundaries/no-browser-server-imports": "error",
+        "gds-boundaries/no-core-adapters": "error",
+        "gds-boundaries/no-cross-layer-imports": "error",
+        "gds-boundaries/no-devtools-in-production": "error",
+        "gds-boundaries/no-feature-transport": "error",
+        "gds-boundaries/no-hand-rolled-surface": "error",
       },
     })
   );
   writeFileSync(file, source);
 
   try {
-    const result = spawnSync(oxlint, ["-c", config, "--no-ignore", file], {
-      cwd: repoRoot,
-      encoding: "utf-8",
-    });
+    const result = spawnSync(
+      process.execPath,
+      [oxlint, "-c", config, "--no-ignore", file],
+      {
+        cwd: repoRoot,
+        encoding: "utf-8",
+      }
+    );
 
     return {
       output: `${result.stdout}${result.stderr}`,
@@ -74,28 +77,6 @@ const expectRuleSoft = (result: LintResult, message: string) => {
 };
 
 describe("architecture boundary rules", () => {
-  it("keeps code-snippets and Shiki out of runtime import graphs", () => {
-    for (const source of [
-      'import { prepareCode } from "@rat-stack/code-snippets";',
-      'const engine = import("shiki");',
-      'export * from "@rat-stack/code-snippets/shiki";',
-    ]) {
-      expectRuleSoft(
-        lintFixture("apps/site/src", source),
-        "Code snippets and Shiki are build-only"
-      );
-      expect(lintFixture("apps/site/scripts", source).status).toBe(0);
-    }
-
-    expectRule(
-      lintFixture(
-        "packages/code-snippets/src",
-        'import { createHighlighter } from "shiki";'
-      ),
-      "Code-snippets core cannot import Shiki"
-    );
-  });
-
   it("keeps clients and vendor adapters out of core through every import form", () => {
     const sources = [
       'import { HttpClient } from "effect/unstable/http";',
@@ -105,20 +86,22 @@ describe("architecture boundary rules", () => {
       'type Client = import("effect/http/HttpClient").HttpClient;',
       'import * as client from "effect/unstable/http/HttpClient";',
       'export { HttpClientRequest } from "effect/unstable/http";',
-      'export * from "@rat-stack/subscriber-delivery";',
-      'const adapter = import("@rat-stack/subscriber-delivery");',
-      'const adapter = require("@rat-stack/subscriber-delivery");',
+      'import { connect } from "roblox-studio-mcp";',
+      'const engine = import("godot-bridge");',
+      'const game = require("../../../../game/tools/devstudio/studios/vfx.ts");',
       'type Client = import("effect/unstable/http/HttpClient").HttpClient;',
       'import { provider } from "../../adapters/provider.js";',
       'import { provider } from "./vendor/provider.js";',
       'import { vendor } from "postshiba";',
     ];
 
-    for (const source of sources) {
-      expectRuleSoft(
-        lintFixture("packages/core/src", source),
-        "Core cannot import HTTP clients or adapters."
-      );
+    for (const area of ["packages/core/src", "packages/model/src"]) {
+      for (const source of sources) {
+        expectRuleSoft(
+          lintFixture(area, source),
+          "Core and model cannot import an engine, a game, an HTTP client or an adapter."
+        );
+      }
     }
   });
 
@@ -127,15 +110,17 @@ describe("architecture boundary rules", () => {
       'import { Effect } from "effect";',
       'import { types } from "xstate";',
       'import { createEffectActor } from "@xstate/effect";',
-      'import { defineContract } from "@rat-stack/capability/contract";',
-      'import { SubscriberIntake } from "./interest-intake.js";',
+      'import { defineContract } from "@gds/capability/contract";',
+      'import { Store } from "@gds/model";',
+      'import { Store } from "./ports.js";',
     ]) {
       expect(lintFixture("packages/core/src", source).status).toBe(0);
+      expect(lintFixture("packages/model/src", source).status).toBe(0);
     }
 
     expect(
       lintFixture(
-        "packages/subscriber-delivery/src",
+        "packages/store-files/src",
         'import { HttpClient } from "effect/unstable/http";'
       ).status
     ).toBe(0);
@@ -160,55 +145,11 @@ describe("architecture boundary rules", () => {
       'files: ["apps/*/src/features/**", "apps/*/src/dev/features/**"]'
     );
     expect(configSource).toContain(
-      '"rat-stack-boundaries/no-browser-server-imports": "error"'
+      '"gds-boundaries/no-browser-server-imports": "error"'
     );
     expect(configSource).toContain(
-      '"rat-stack-boundaries/no-feature-transport": "error"'
+      '"gds-boundaries/no-feature-transport": "error"'
     );
-  });
-
-  it("keeps shared Basin infrastructure independent of the events cartridge", () => {
-    for (const source of [
-      'import { basinStream } from "@rat-stack/events/basin";',
-      'export { icebergSink } from "@rat-stack/events/basin";',
-      'type Maintenance = import("@rat-stack/events/basin").CatalogMaintenance;',
-      'const basin = require("@rat-stack/events/basin");',
-      'import { basinStream } from "../../../events/src/basin.js";',
-    ]) {
-      expectRuleSoft(
-        lintFixture("packages/intake-live/src", source),
-        "This imports shared Basin infrastructure from the events cartridge."
-      );
-      expect(lintFixture("packages/events/src", source).status).toBe(0);
-    }
-
-    expect(
-      lintFixture(
-        "packages/intake-live/src",
-        'import { basinStream } from "@rat-stack/basin";'
-      ).status
-    ).toBe(0);
-  });
-
-  it("lets only the site seam import the events cartridge", () => {
-    for (const source of [
-      'import { events } from "@rat-stack/events/site";',
-      'import { withEventCapture } from "@rat-stack/events";',
-      'export { memoryEvents } from "@rat-stack/events/site";',
-    ]) {
-      for (const area of [
-        "apps/site/src",
-        "apps/site/test",
-        "packages/intake-live/src",
-      ]) {
-        expectRuleSoft(
-          lintFixture(area, source),
-          "This module reaches the events cartridge directly."
-        );
-      }
-
-      expect(lintFixture("packages/events/test", source).status).toBe(0);
-    }
   });
 
   it("blocks package imports from application code", () => {
@@ -228,17 +169,16 @@ describe("architecture boundary rules", () => {
 
     expectRule(
       result,
-      "packages/capability cannot import packages/core domain code."
-    );
-  });
-
-  it("keeps Stack wiring inside apps/infra", () => {
-    const result = lintFixture(
-      "apps/cli/src",
-      'import * as stack from "../../../infra/alchemy.run.ts";\n\nexport const applicationStack = stack;\n'
+      "packages/capability cannot import packages/core or packages/model domain code."
     );
 
-    expectRule(result, "This module imports Stack wiring from apps/infra.");
+    expectRule(
+      lintFixture(
+        "packages/capability/src",
+        'import { Store } from "@gds/model";\n\nexport const port = Store;\n'
+      ),
+      "packages/capability cannot import packages/core or packages/model domain code."
+    );
   });
 
   it("blocks aliased require, module.require, import-equals, and asserted module strings", () => {
@@ -285,11 +225,9 @@ describe("architecture boundary rules", () => {
 
   it.each([
     ["Node builtins", "node:fs"],
-    ["Alchemy", "alchemy/AdoptPolicy"],
-    ["Cloudflare Workers", "cloudflare:workers"],
     ["server-only packages", "server-only"],
     ["server-marked modules", "./database.server.js"],
-    ["infra app modules", "@rat-stack/infra"],
+    ["CLI app modules", "@gds/cli"],
   ])("blocks %s imports in feature modules", (_name, specifier) => {
     const result = lintFixture(
       "apps/cli/src/features",
@@ -298,7 +236,7 @@ describe("architecture boundary rules", () => {
 
     expectRule(
       result,
-      "Feature and client modules cannot import Node, Alchemy, Worker, infra, or server-only modules."
+      "Feature and client modules cannot import Node, CLI, or server-only modules."
     );
   });
 
@@ -310,7 +248,7 @@ describe("architecture boundary rules", () => {
 
     expectRule(
       result,
-      "Feature and client modules cannot import Node, Alchemy, Worker, infra, or server-only modules."
+      "Feature and client modules cannot import Node, CLI, or server-only modules."
     );
   });
 
@@ -322,7 +260,7 @@ describe("architecture boundary rules", () => {
 
     expectRule(
       result,
-      "Feature and client modules cannot import Node, Alchemy, Worker, infra, or server-only modules."
+      "Feature and client modules cannot import Node, CLI, or server-only modules."
     );
   });
 
@@ -331,7 +269,7 @@ describe("architecture boundary rules", () => {
     (area) => {
       const result = lintFixture(
         area,
-        'import * as contracts from "@rat-stack/core/contracts";\nimport { toRpcGroup } from "@rat-stack/capability/rpc-group";\n\nexport const browserContract = { contracts, toRpcGroup };\n'
+        'import * as contracts from "@gds/model";\nimport { toRpcGroup } from "@gds/capability/rpc-group";\n\nexport const browserContract = { contracts, toRpcGroup };\n'
       );
 
       expect(result.status).toBe(0);
@@ -341,26 +279,23 @@ describe("architecture boundary rules", () => {
   it("resolves renamed workspace scopes for browser-safe contracts", () => {
     const result = lintFixture(
       "apps/cli/src/client",
-      'import * as contracts from "@sample/core/contracts";\nimport { toRpcGroup } from "@sample/capability/rpc-group";\n\nexport const browserContract = { contracts, toRpcGroup };\n'
+      'import * as contracts from "@sample/model";\nimport { toRpcGroup } from "@sample/capability/rpc-group";\n\nexport const browserContract = { contracts, toRpcGroup };\n'
     );
 
     expect(result.status).toBe(0);
   });
 
   it.each([
-    ["the core implementation barrel", "@rat-stack/core"],
+    ["the core implementation barrel", "@gds/core"],
     ["a renamed core implementation barrel", "@sample/core"],
-    [
-      "the capability implementation entry point",
-      "@rat-stack/capability/implement",
-    ],
+    ["the capability implementation entry point", "@gds/capability/implement"],
     [
       "a renamed capability implementation entry point",
       "@sample/capability/implement",
     ],
     [
       "an application capability handler",
-      "../../../../site/src/capabilities/search.ts",
+      "../../../../web/src/capabilities/list-studios.ts",
     ],
   ])("blocks %s from browser modules", (_name, specifier) => {
     const result = lintFixture(
@@ -699,68 +634,62 @@ describe("architecture boundary rules", () => {
     expect(binding.status).toBe(0);
   });
 
-  it("keeps devtools and test people out of production code", () => {
-    const worker = lintFixture(
+  it("keeps devtools out of production code", () => {
+    const server = lintFixture(
       "apps/web/src/server",
-      'import { devtools } from "@rat-stack/devtools";\n\nexport const tools = devtools;\n'
+      'import { devtools } from "@gds/devtools";\n\nexport const tools = devtools;\n'
     );
 
-    const testPeople = lintFixture(
-      "apps/site/src",
-      'import { ratTestPerson } from "@rat-stack/auth/devtools";\n\nexport const person = ratTestPerson;\n'
-    );
-
-    expectRule(worker, "Devtools and test people");
-    expectRule(testPeople, "Devtools and test people");
+    expectRule(server, "Devtools (@gds/devtools) belong in");
   });
 
   it("blocks devtools through require, distribution paths, and production test folders", () => {
     const required = lintFixture(
       "apps/web/src/server",
-      'export const tools = require("@rat-stack/devtools");\n'
+      'export const tools = require("@gds/devtools");\n'
     );
 
-    const authDistribution = lintFixture(
+    const distribution = lintFixture(
       "apps/web/src/server",
-      'import { ratTestPerson } from "@rat-stack/auth/dist/devtools.js";\nexport const person = ratTestPerson;\n'
+      'import { devtools } from "@gds/devtools/dist/index.js";\nexport const tools = devtools;\n'
     );
 
     const sourceTest = lintFixture(
       "apps/web/src/test",
-      'import { devtools } from "@rat-stack/devtools";\nexport const tool = devtools;\n'
+      'import { devtools } from "@gds/devtools";\nexport const tool = devtools;\n'
     );
 
-    const authBarrel = lintFixture(
-      "packages/auth/src",
-      'export { ratTestPerson } from "@rat-stack/auth/devtools";\n'
+    const barrel = lintFixture(
+      "packages/model/src",
+      'export { devtools } from "@gds/devtools";\n'
     );
 
     const typeImport = lintFixture(
       "apps/web/src/server",
-      'type Devtools = import("@rat-stack/devtools").Devtools;\nexport type Tools = Devtools;\n'
+      'type Devtools = import("@gds/devtools").Devtools;\nexport type Tools = Devtools;\n'
     );
 
-    expectRuleSoft(required, "Devtools and test people");
-    expectRuleSoft(authDistribution, "Devtools and test people");
-    expectRuleSoft(sourceTest, "Devtools and test people");
-    expectRuleSoft(authBarrel, "Devtools and test people");
-    expectRuleSoft(typeImport, "Devtools and test people");
+    expectRuleSoft(required, "Devtools (@gds/devtools) belong in");
+    expectRuleSoft(distribution, "Devtools (@gds/devtools) belong in");
+    expectRuleSoft(sourceTest, "Devtools (@gds/devtools) belong in");
+    expectRuleSoft(barrel, "Devtools (@gds/devtools) belong in");
+    expectRuleSoft(typeImport, "Devtools (@gds/devtools) belong in");
   });
 
   it("allows devtools in a dev folder, the CLI, and tests", () => {
     const dev = lintFixture(
       "apps/web/src/dev",
-      'import { ratTestPerson, runAsPerson } from "@rat-stack/auth/devtools";\nimport { devtools } from "@rat-stack/devtools";\n\nexport const wiring = { devtools, ratTestPerson, runAsPerson };\n'
+      'import { devtools } from "@gds/devtools";\n\nexport const wiring = { devtools };\n'
     );
 
     const cli = lintFixture(
       "apps/cli/src",
-      'import { devtools } from "@rat-stack/devtools";\n\nexport const tools = devtools;\n'
+      'import { devtools } from "@gds/devtools";\n\nexport const tools = devtools;\n'
     );
 
     const test = lintFixture(
       "apps/web/test",
-      'import { devtools } from "@rat-stack/devtools";\n\nexport const tools = devtools;\n'
+      'import { devtools } from "@gds/devtools";\n\nexport const tools = devtools;\n'
     );
 
     expect(dev.status).toBe(0);
@@ -785,12 +714,12 @@ describe("architecture boundary rules", () => {
 
     const contracts = lintFixture(
       "apps/web/src/dev/client",
-      'import { devtoolsContracts } from "@rat-stack/devtools/contracts";\n\nexport const contracts = devtoolsContracts;\n'
+      'import { devtoolsContracts } from "@gds/devtools/contracts";\n\nexport const contracts = devtoolsContracts;\n'
     );
 
     const server = lintFixture(
       "apps/web/src/dev/client",
-      'import { devtools } from "@rat-stack/devtools";\n\nexport const tools = devtools;\n'
+      'import { devtools } from "@gds/devtools";\n\nexport const tools = devtools;\n'
     );
 
     expect(overlay.status).toBe(0);

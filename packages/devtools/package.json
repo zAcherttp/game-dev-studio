@@ -1,5 +1,5 @@
 {
-  "name": "@rat-stack/devtools",
+  "name": "@gds/devtools",
   "version": "0.1.0",
   "private": true,
   "files": [
@@ -30,7 +30,7 @@
     "pretest": "pnpm run --silent build"
   },
   "dependencies": {
-    "@rat-stack/capability": "workspace:*",
+    "@gds/capability": "workspace:*",
     "effect": "4.1.4"
   },
   "devDependencies": {

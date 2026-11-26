@@ -55,11 +55,11 @@ export default defineConfig({
     "./scripts/oxlint-plugin-effect-tests.ts",
     "./scripts/oxlint-plugin-no-comments.ts",
     {
-      name: "rat-stack-boundaries",
+      name: "gds-boundaries",
       specifier: "./scripts/oxlint-plugin-boundaries.ts",
     },
     {
-      name: "rat-stack-patterns",
+      name: "gds-patterns",
       specifier: "./scripts/oxlint-plugin-patterns.ts",
     },
     { name: "anti-slop", specifier: "./tools/oxlint/anti-slop/index.ts" },
@@ -74,16 +74,6 @@ export default defineConfig({
   },
   overrides: [
     ...foldkitOverrides,
-    {
-      files: ["packages/catalog/**/*.ts", "apps/catalog/**/*.ts"],
-      rules: {
-        "unicorn/filename-case": [
-          "error",
-          { cases: { kebabCase: true, pascalCase: true } },
-        ],
-        "max-classes-per-file": ["error", 3],
-      },
-    },
     {
       files: [
         "**/*.{test,spec,test-d,spec-d}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}",
@@ -111,23 +101,13 @@ export default defineConfig({
         "apps/*/src/dev/client/**",
       ],
       rules: {
-        "rat-stack-boundaries/no-browser-server-imports": "error",
+        "gds-boundaries/no-browser-server-imports": "error",
       },
     },
     {
       files: ["apps/*/src/features/**", "apps/*/src/dev/features/**"],
       rules: {
-        "rat-stack-boundaries/no-feature-transport": "error",
-      },
-    },
-    {
-      files: [
-        "apps/site/scripts/content-lib.ts",
-        "apps/site/scripts/generate-content.ts",
-        "apps/site/scripts/wiki-prose.ts",
-      ],
-      rules: {
-        "rat-stack-patterns/audited-content-regex": "error",
+        "gds-boundaries/no-feature-transport": "error",
       },
     },
   ],
@@ -172,23 +152,19 @@ export default defineConfig({
     "no-comments/no-comments": "error",
     "oxc/no-accumulating-spread": "error",
     "promise/prefer-await-to-then": "error",
-    "rat-stack-boundaries/no-browser-globals-on-server": "error",
-    "rat-stack-boundaries/no-code-snippets-in-runtime": "error",
-    "rat-stack-boundaries/no-core-adapters": "error",
-    "rat-stack-boundaries/no-cross-layer-imports": "error",
-    "rat-stack-boundaries/no-devtools-in-production": "error",
-    "rat-stack-boundaries/no-hand-rolled-surface": "error",
-    "rat-stack-patterns/acquire-release-constructs-in-acquire-body": "error",
-    "rat-stack-patterns/contract-binding-matches-name": "error",
-    "rat-stack-patterns/flag-removal-date": "error",
-    "rat-stack-patterns/learn-snippet-idiom": "error",
-    "rat-stack-patterns/no-hand-rolled-hex": "error",
-    "rat-stack-patterns/no-module-level-mutable-state": "error",
-    "rat-stack-patterns/no-shared-pending-cache": "error",
-    "rat-stack-patterns/no-sleep-in-loop": "error",
-    "rat-stack-patterns/retain-needs-stage-policy": "error",
-    "rat-stack-patterns/shared-waiters": "error",
-    "rat-stack-patterns/watch-effect-actors": "error",
+    "gds-boundaries/no-browser-globals-on-server": "error",
+    "gds-boundaries/no-core-adapters": "error",
+    "gds-boundaries/no-cross-layer-imports": "error",
+    "gds-boundaries/no-devtools-in-production": "error",
+    "gds-boundaries/no-hand-rolled-surface": "error",
+    "gds-patterns/acquire-release-constructs-in-acquire-body": "error",
+    "gds-patterns/contract-binding-matches-name": "error",
+    "gds-patterns/no-hand-rolled-hex": "error",
+    "gds-patterns/no-module-level-mutable-state": "error",
+    "gds-patterns/no-shared-pending-cache": "error",
+    "gds-patterns/no-sleep-in-loop": "error",
+    "gds-patterns/shared-waiters": "error",
+    "gds-patterns/watch-effect-actors": "error",
     "typescript/promise-function-async": "off",
     "unicorn/no-useless-undefined": ["error", { checkArguments: true }],
     "unicorn/throw-new-error": "off",

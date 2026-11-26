@@ -406,26 +406,10 @@ const moduleResolver = (root: string) => {
 
     seen.add(key);
 
-    if (
-      [
-        "virtual:reader-pages",
-        "virtual:reader-page-sources",
-        "virtual:reader-error",
-      ].includes(specifier)
-    ) {
-      return {
-        files: [path.resolve(root, "apps/web/reader-pages.ts")],
-        unresolved: false,
-        configs: [],
-      };
-    }
-
-    if (/^[a-z]+:/iu.test(specifier)) {
+    if (/^[a-z]+:/iu.test(specifier) && !path.isAbsolute(specifier)) {
       return {
         files: [],
-        unresolved: !["node:", "cloudflare:"].some((prefix) =>
-          specifier.startsWith(prefix)
-        ),
+        unresolved: !specifier.startsWith("node:"),
         configs: [],
       };
     }
@@ -1262,9 +1246,9 @@ const [, entrypoint] = process.argv;
 
 if (
   entrypoint !== undefined &&
-  path.resolve(entrypoint) === import.meta.filename
+  path.resolve(entrypoint) === path.resolve(import.meta.filename)
 ) {
-  const root = process.cwd();
+  const root = path.resolve(process.cwd());
 
   const json = execFileSync(
     "pnpm",
@@ -1281,7 +1265,12 @@ if (
       "typecheck:fast-scripts",
       "--dry=json",
     ],
-    { cwd: root, encoding: "utf-8", maxBuffer: 64 * 1024 * 1024 }
+    {
+      cwd: root,
+      encoding: "utf-8",
+      maxBuffer: 64 * 1024 * 1024,
+      shell: process.platform === "win32",
+    }
   );
 
   const graph = Schema.decodeSync(Schema.fromJsonString(TurboGraph))(json);

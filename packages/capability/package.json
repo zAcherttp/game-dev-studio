@@ -1,5 +1,5 @@
 {
-  "name": "@rat-stack/capability",
+  "name": "@gds/capability",
   "version": "0.1.0",
   "private": true,
   "files": [
@@ -101,8 +101,7 @@
     "typecheck:fast": "tsrs --noEmit -p tsconfig.json",
     "test": "vitest run",
     "build": "tsc -p tsconfig.build.json",
-    "check": "pnpm run typecheck",
-    "pretest": "test -n \"$TURBO_HASH\" || pnpm run --silent build"
+    "check": "pnpm run typecheck"
   },
   "dependencies": {
     "effect": "4.1.4"

@@ -1,4 +1,4 @@
-import * as Motion from "@rat-stack/motion/foldkit";
+import * as Motion from "@gds/motion/foldkit";
 import { defineMessageUnion } from "foldkit/message";
 
 import { TargetId } from "./model.js";

@@ -25,7 +25,7 @@ export interface ActorWatchService {
 }
 
 export const ActorWatch = Context.Reference<ActorWatchService>(
-  "@rat-stack/capability/ActorWatch",
+  "@gds/capability/ActorWatch",
   { defaultValue: () => ({ watch: () => Effect.void }) }
 );
 

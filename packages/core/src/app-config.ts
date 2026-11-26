@@ -3,7 +3,7 @@ import { Config } from "effect";
 import { ConfigService } from "./config-service.js";
 
 export class AppConfig extends ConfigService.Service<AppConfig>()(
-  "@rat-stack/core/AppConfig",
+  "@gds/core/AppConfig",
   {
     appEnv: Config.Literals(
       ["development", "test", "production"],

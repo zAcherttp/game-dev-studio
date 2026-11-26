@@ -1,4 +1,4 @@
-import * as Motion from "@rat-stack/motion/foldkit";
+import * as Motion from "@gds/motion/foldkit";
 
 import { Message } from "./message.js";
 import type { MotionDemoMessage } from "./message.js";

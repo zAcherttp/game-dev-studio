@@ -93,17 +93,11 @@ export const noFlakeMasking = defineRule({
       node: ESTree.Node | undefined,
       kind: string,
       owner: readonly string[],
-      keys: ReadonlySet<string>,
-      supportsRetry = true
+      keys: ReadonlySet<string>
     ) {
       for (const property of objectFields(inlineValue(source, node))) {
         const key = keyName(property);
-        if (
-          check === "retry" &&
-          supportsRetry &&
-          key === "retry" &&
-          !isZero(property.value)
-        ) {
+        if (check === "retry" && key === "retry" && !isZero(property.value)) {
           context.report({ node: property, messageId: "retry" });
         } else if (check === "timeout" && key !== undefined && keys.has(key)) {
           reportTimeout(property, kind, owner, key, property.value);
@@ -177,12 +171,11 @@ export const noFlakeMasking = defineRule({
         const owner = check === "timeout" ? testOwner(source, node) : [];
         if (
           !propertyTest &&
-          inlineValue(source, second)?.type === "ObjectExpression" &&
-          !test.alchemy
+          inlineValue(source, second)?.type === "ObjectExpression"
         ) {
           inspect(second, "test", owner, testTimeouts);
         } else if (trailing) {
-          inspect(trailing, "test", owner, testTimeouts, !test.alchemy);
+          inspect(trailing, "test", owner, testTimeouts);
           const actual = inlineValue(source, trailing);
           if (
             check === "timeout" &&

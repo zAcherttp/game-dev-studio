@@ -23,146 +23,22 @@ type ReadBoundary =
 const hashed = (...roots: readonly string[]): readonly ReadBoundary[] =>
   roots.map((root) => ({ kind: "hashed", root }));
 
-export const generatedSourceBoundaries = hashed(
-  "apps/site/src/bundled-content.generated.ts",
-  "apps/site/src/interest-pages.generated.ts",
-  "apps/site/src/rat-icons.generated.ts"
-);
-
-const sourceTree = (...roots: readonly string[]): readonly ReadBoundary[] =>
-  roots.map((root) => ({
-    kind: "hashed",
-    root,
-    exclude: ["**/*.generated.ts", "**/test/**"],
-  }));
+export const generatedSourceBoundaries = hashed();
 
 const temporary = (
   root = "<test-created temporary directory>/**"
 ): readonly ReadBoundary[] => [{ kind: "fixture", root }];
 
-const unbounded = (reason: string): readonly ReadBoundary[] => [
-  { kind: "unbounded", reason },
-];
-
-const contentRoots = hashed(
-  ".brain/**",
-  "skills/**",
-  "assets/**",
-  "apps/site/content/**",
-  "packages/*/src/**",
-  "apps/*/src/**",
-  "scripts/**",
-  "*.md",
-  "vendor/README.md"
-);
-
 const parameterizedReadBoundaries = new Map(
   Object.entries<readonly ReadBoundary[]>({
-    "apps/catalog/test/SqliteCatalog.ts": hashed("apps/catalog/migrations/**"),
-    "apps/infra/test/preview-content.test.ts": hashed("apps/web/dist/**"),
-    "apps/infra/test/website-build.test.ts": hashed("apps/web/dist/**"),
-    "apps/infra/test/website-manifest.test.ts": hashed(
-      "apps/site/dist/content/**"
-    ),
-    "apps/site/scripts/code-inputs.ts": contentRoots,
-    "apps/site/scripts/doc-fences.ts": contentRoots,
-    "apps/site/scripts/emit-assets.ts": [
-      ...contentRoots,
-      ...temporary("<test-created content deployment>/**"),
-    ],
-    "apps/site/scripts/generate-content.ts": contentRoots,
-    "apps/site/scripts/git-snapshot.ts": [
-      ...contentRoots,
-      ...unbounded(
-        "Git metadata such as shallow status is outside Turbo source inputs"
-      ),
-    ],
-    "apps/site/scripts/learn-snippets.ts": hashed(".brain/data/learn-cards/**"),
-    "apps/site/scripts/migration-inputs.ts": contentRoots,
-    "apps/site/scripts/migration-writer.ts": temporary(),
-    "apps/site/scripts/reader-learn-flags.ts": hashed(".brain/**"),
-    "apps/site/scripts/reader-site-inputs.ts": hashed(
-      "apps/site/dist/content/**"
-    ),
-    "apps/site/scripts/security-audit-content.ts": contentRoots,
-    "apps/site/scripts/tokenmaxx-help.ts": hashed(".brain/**"),
-    "apps/site/scripts/tokenmaxx-sync.ts": [...contentRoots, ...temporary()],
-    "apps/site/scripts/tokenmaxx-workshop.ts": [
-      ...contentRoots,
-      ...temporary(),
-    ],
-    "apps/site/src/asset-deployment.ts": [
-      ...hashed("apps/site/dist/content/**"),
-      ...temporary(),
-    ],
-    "apps/site/src/node-content.ts": [
-      ...hashed("apps/site/dist/content/**"),
-      ...temporary(),
-    ],
-    "apps/site/test/asset-deployment.test.ts": temporary(),
-    "apps/site/test/atomic-report.test.ts": temporary(),
-    "apps/site/test/bibliography.test.ts": hashed(
-      ".brain/**",
-      "skills/**",
-      "apps/site/content/**",
-      "*.md",
-      "vendor/README.md"
-    ),
-    "apps/site/test/component-registry.test.ts": hashed(".brain/**"),
-    "apps/site/test/content-grounding.test.ts": hashed("apps/site/content/**"),
-    "apps/site/test/content-store.test.ts": temporary(),
-    "apps/site/test/content.test.ts": [...contentRoots, ...temporary()],
-    "apps/site/test/emit-assets-concurrency.test.ts": temporary(),
-    "apps/site/test/emit-assets.test.ts": [
-      ...contentRoots,
-      ...hashed("apps/site/dist/content/**"),
-      ...temporary(),
-    ],
-    "apps/site/test/fixtures/local-storage.ts": temporary(),
-    "apps/site/test/generated-content.ts": hashed("apps/site/dist/content/**"),
-    "apps/site/test/migration-writer.test.ts": temporary(),
-    "apps/site/test/reader-asset-headers.test.ts": temporary(
-      "<test-created reader output>/**"
-    ),
-    "apps/site/test/reference-components.test.ts": hashed(
-      "apps/site/dist/content/**"
-    ),
-    "apps/site/test/tokenmaxx-workshop.test.ts": [
-      ...contentRoots,
-      ...temporary(),
-    ],
-    "apps/site/test/worker-observability.test.ts": sourceTree("apps/**/*.ts"),
-    "apps/site/test/workshop-worker.test.ts": temporary(),
-    "apps/web/scripts/migration-hand-page.ts": hashed(
-      "apps/site/dist/content/**"
-    ),
-    "apps/web/scripts/reader-build.ts": temporary(
-      "<test-created reader output>/**"
-    ),
     "apps/web/test/accent.test.ts": hashed("apps/web/src/**"),
-    "apps/web/test/built-images.test.ts": hashed("apps/web/dist/**"),
-    "apps/web/test/production-bundle.test.ts": hashed(
-      "apps/web/dist/**",
-      "apps/site/dist/content/**"
-    ),
-    "apps/web/test/reader-csp.test.ts": hashed("apps/web/dist/**"),
-    "apps/web/test/reader-systems-skills.test.ts": hashed(
-      "apps/site/dist/content/**"
-    ),
-    "apps/web/test/reader-worker-first-head.test.ts":
-      hashed("apps/web/dist/**"),
-    "apps/web/test/tube.pages.test.ts": hashed("apps/web/dist/**"),
-    "packages/core/src/file-inspector.ts": unbounded(
-      "The file-inspection port accepts a caller-selected path"
-    ),
     "packages/core/test/bump-checkers.test.ts": [
       ...hashed(
         "scripts/bump-checkers.ts",
         "scripts/checker-age-exceptions.ts"
       ),
-      ...temporary(".rat/checker-bump-test-*/**"),
+      ...temporary(".gds/checker-bump-test-*/**"),
     ],
-    "packages/core/test/cafe-people.test.ts": hashed(".brain/data/cafe/*.json"),
     "packages/core/test/fence-messages.test.ts": hashed(
       "oxlint.config.ts",
       "scripts/**/*.{ts,js,mjs,cjs}",
@@ -175,13 +51,6 @@ const parameterizedReadBoundaries = new Map(
       "apps/*/package.json",
       "packages/*/package.json"
     ),
-    "packages/core/test/join-intake-spec.test.ts": hashed(
-      "packages/core/spec/**",
-      "packages/core/src/**",
-      "packages/core/test/**",
-      "apps/site/src/interest/**",
-      "apps/site/test/join-contact*.test.ts"
-    ),
     "packages/core/test/lockfile-guard.test.ts": [
       ...hashed("package.json"),
       ...temporary(),
@@ -190,27 +59,6 @@ const parameterizedReadBoundaries = new Map(
       ...hashed("scripts/oxlint-plugin-no-comments.ts"),
       ...temporary(),
     ],
-    "packages/core/test/patterns-rule.test.ts": hashed(
-      ".brain/data/learn-cards/*.ts"
-    ),
-    "packages/database/test/local-layers.ts": hashed(
-      "packages/database/migrations/**"
-    ),
-    "packages/deploy/src/local.ts": [
-      ...hashed(".env.schema", "apps/site/.env.schema"),
-      ...temporary(),
-    ],
-    "packages/deploy/src/receipt-store.ts": temporary(),
-    "packages/deploy/test/receipt-privacy.test.ts": temporary(),
-    "packages/deploy/test/report.test.ts": temporary(),
-    "packages/learn/src/local-preferences.ts": unbounded(
-      "Preferences read a caller-selected local persistence file"
-    ),
-    "packages/learn/src/local-store.ts": unbounded(
-      "Learning progress reads a caller-selected local persistence file"
-    ),
-    "packages/learn/test/local-preferences.test.ts": temporary(),
-    "packages/learn/test/local-store.test.ts": temporary(),
     "packages/motion/test/vendoring.test.ts": hashed(
       "packages/motion/src/*.pure.ts"
     ),

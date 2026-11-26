@@ -48,8 +48,8 @@ it.layer(NodeServices.layer)("lockfile guard", (test) => {
 
         const installed = yield* spawner.exitCode(
           ChildProcess.make(
-            "pnpm",
-            ["install", "--offline", "--ignore-scripts"],
+            "bash",
+            ["-c", "pnpm install --offline --ignore-scripts"],
             { cwd: directory }
           )
         );

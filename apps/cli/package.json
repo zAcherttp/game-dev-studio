@@ -1,9 +1,9 @@
 {
-  "name": "@rat-stack/cli",
+  "name": "@gds/cli",
   "version": "0.1.0",
   "private": true,
   "bin": {
-    "rat-stack": "./bin/rat-stack"
+    "game-dev-studio": "./bin/game-dev-studio"
   },
   "type": "module",
   "scripts": {
@@ -11,25 +11,23 @@
     "typecheck:tsc": "tsc --noEmit -p tsconfig.json",
     "typecheck:fast": "tsrs --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "build": "tsc -p tsconfig.build.json && vite build -c ratstack.config.ts",
+    "build": "tsc -p tsconfig.build.json",
     "cli": "pnpm run --silent build && node dist/cli.js",
     "check": "pnpm run typecheck",
-    "pretest": "pnpm run --silent build",
-    "prepublishOnly": "pnpm run build"
+    "pretest": "pnpm run --silent build"
   },
   "dependencies": {
     "@effect/platform-node": "4.1.4",
-    "@rat-stack/capability": "workspace:*",
-    "@rat-stack/core": "workspace:*",
-    "@rat-stack/devtools": "workspace:*",
-    "@rat-stack/learn": "workspace:*",
+    "@gds/capability": "workspace:*",
+    "@gds/core": "workspace:*",
+    "@gds/devtools": "workspace:*",
+    "@gds/model": "workspace:*",
     "effect": "4.1.4"
   },
   "devDependencies": {
     "@effect/vitest": "4.1.4",
     "@types/node": "24.19.2",
     "typescript": "7.0.2",
-    "vite": "8.3.8",
     "vitest": "5.1.0"
   }
 }

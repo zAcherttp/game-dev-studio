@@ -1,30 +1,21 @@
 import { Runtime } from "foldkit";
 
-import { installOverlay } from "#devtools-overlay";
+import { view } from "../features/home/index.js";
+import { Message } from "./motion/message.js";
+import { initialModel, Model } from "./motion/model.js";
+import { subscriptions } from "./motion/subscriptions.js";
+import { update } from "./motion/update.js";
 
-import { view } from "../features/reader.js";
-import { DocumentQueries } from "./docs/queries.js";
-import { browserInit } from "./reader/init.js";
-import { Message } from "./reader/message.js";
-import { Model, ReaderFlags } from "./reader/model.js";
-import { subscriptions } from "./reader/subscriptions.js";
-import { update } from "./reader/update.js";
-
-import "../../../site/src/rat.css";
-import "./reader.css";
+import "../../styles/studio.css";
 
 const application = Runtime.makeApplication({
-  Flags: ReaderFlags,
   Model,
   container: document.querySelector("#root"),
   devTools: import.meta.env.DEV ? { Message } : false,
-  init: browserInit,
-  resources: DocumentQueries.layer,
+  init: () => ({ model: initialModel }),
   subscriptions,
   update,
   view,
 });
-
-installOverlay();
 
 Runtime.hydrate(application);

@@ -8,12 +8,12 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 
-const oxlint = path.join(repoRoot, "node_modules/.bin/oxlint");
+const oxlint = path.join(repoRoot, "node_modules/oxlint/bin/oxlint");
 
 const plugin = path.join(repoRoot, "tools/oxlint/anti-slop/index.ts");
 
 const lint = (source: string) => {
-  const directory = mkdtempSync(path.join(tmpdir(), "rat-stack-unknown-"));
+  const directory = mkdtempSync(path.join(tmpdir(), "gds-unknown-"));
   const config = path.join(directory, "oxlint.json");
   const file = path.join(directory, "fixture.ts");
 
@@ -27,10 +27,14 @@ const lint = (source: string) => {
   writeFileSync(file, source);
 
   try {
-    const result = spawnSync(oxlint, ["-c", config, "--no-ignore", file], {
-      cwd: repoRoot,
-      encoding: "utf-8",
-    });
+    const result = spawnSync(
+      process.execPath,
+      [oxlint, "-c", config, "--no-ignore", file],
+      {
+        cwd: repoRoot,
+        encoding: "utf-8",
+      }
+    );
 
     return {
       output: `${result.stdout}${result.stderr}`,

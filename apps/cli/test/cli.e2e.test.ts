@@ -3,7 +3,7 @@ import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 
 import { describe, expect, it } from "@effect/vitest";
-import { CallEntrySchema, OutcomeSchema } from "@rat-stack/devtools";
+import { CallEntrySchema, OutcomeSchema } from "@gds/devtools";
 import { Schema } from "effect";
 
 const cliDir = path.resolve(import.meta.dirname, "..");
@@ -12,7 +12,16 @@ const repoRoot = path.resolve(cliDir, "../..");
 
 const cliPath = path.join(cliDir, "dist", "cli.js");
 
-const readmePath = path.join(repoRoot, "README.md");
+const toolNames = [
+  "listStudios",
+  "getAsset",
+  "addVariants",
+  "render",
+  "pick",
+  "round",
+  "getPack",
+  "openCheck",
+] as const;
 
 const decodeOpenApi = Schema.decodeUnknownSync(
   Schema.fromJsonString(
@@ -117,40 +126,23 @@ const mcpConversation = async (
   });
 
 describe("built CLI", () => {
-  it("prints help and exits cleanly", () => {
+  it("prints help naming every capability and surface", () => {
     const result = runCli(["--help"]);
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("USAGE");
-    expect(result.stdout).not.toContain("registerInterest");
 
-    for (const name of ["stats", "catalog", "openapi", "serve", "mcp"]) {
+    for (const name of [...toolNames, "catalog", "openapi", "serve", "mcp"]) {
       expect(result.stdout).toContain(name);
     }
   });
 
-  it("prints human-readable stats without --json", () => {
-    const result = runCli(["stats", readmePath]);
-
-    expect(result.status).toBe(0);
-    expect(result.stdout).toContain(readmePath);
-    expect(result.stdout).toMatch(/words:\s+\d+/u);
-  });
-
-  it("prints JSON stats and exits cleanly", () => {
-    const result = runCli(["stats", readmePath, "--json"]);
-
-    expect(result.status).toBe(0);
-    expect(result.stdout).toContain(`"path": "${readmePath}"`);
-    expect(result.stdout).toMatch(/"words": \d+/u);
-  });
-
-  it("reports the typed failure and exits one for a missing file", () => {
-    const result = runCli(["stats", "this-file-does-not-exist.txt"]);
+  it("reports the typed not-built failure and exits one", () => {
+    const result = runCli(["listStudios"]);
 
     expect(result.status).toBe(1);
     expect(`${result.stdout}${result.stderr}`).toContain(
-      "Could not read this-file-does-not-exist.txt"
+      "listStudios has a contract but no handler yet"
     );
   });
 
@@ -159,7 +151,7 @@ describe("built CLI", () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("declare const tools: {");
-    expect(result.stdout).toContain("readonly inspectFile: (input:");
+    expect(result.stdout).toContain("readonly listStudios: (input:");
   });
 
   it("prints an OpenAPI document with one path per capability", () => {
@@ -167,7 +159,9 @@ describe("built CLI", () => {
 
     expect(result.status).toBe(0);
     const document = decodeOpenApi(result.stdout);
-    expect(document.paths["/inspectFile"]?.post).toBeDefined();
+    expect(Object.keys(document.paths).toSorted()).toEqual(
+      toolNames.map((name) => `/${name}`).toSorted()
+    );
   });
 });
 
@@ -186,7 +180,26 @@ const initialize = [
 ] as const;
 
 describe("built MCP server", () => {
-  it("runs a program against the capabilities in code mode", async () => {
+  it("lists the eight capabilities as tools over stdio", async () => {
+    const responses = await mcpConversation([
+      ...initialize,
+      { id: 2, jsonrpc: "2.0", method: "tools/list", params: {} },
+    ]);
+
+    const listing = responses.find((response) => response.id === 2);
+    expect(listing?.error).toBeUndefined();
+    const result = decodeToolsList(listing?.result);
+
+    expect(result.tools.map((tool) => tool.name).toSorted()).toEqual(
+      [...toolNames].toSorted()
+    );
+    expect(
+      result.tools.find((tool) => tool.name === "listStudios")?.annotations
+        ?.readOnlyHint
+    ).toBe(true);
+  });
+
+  it("returns the not-built failure to a code-mode program", async () => {
     const responses = await mcpConversation(
       [
         ...initialize,
@@ -196,7 +209,7 @@ describe("built MCP server", () => {
           method: "tools/call",
           params: {
             arguments: {
-              code: `const stats = await tools.inspectFile({ path: ${JSON.stringify(readmePath)} }); return stats.lines > 10;`,
+              code: "try { await tools.listStudios({}); return 'built'; } catch (error) { return error._tag ?? String(error); }",
             },
             name: "execute",
           },
@@ -207,37 +220,7 @@ describe("built MCP server", () => {
 
     const call = responses.find((response) => response.id === 2);
     expect(call?.error).toBeUndefined();
-    expect(call?.result).toMatchObject({
-      structuredContent: { logs: [], result: true },
-    });
-  });
-
-  it("lists the capabilities as tools over stdio", async () => {
-    const responses = await mcpConversation([
-      {
-        id: 1,
-        jsonrpc: "2.0",
-        method: "initialize",
-        params: {
-          capabilities: {},
-          clientInfo: { name: "e2e", version: "0.0.0" },
-          protocolVersion: "2025-06-18",
-        },
-      },
-      { jsonrpc: "2.0", method: "notifications/initialized" },
-      { id: 2, jsonrpc: "2.0", method: "tools/list", params: {} },
-    ]);
-
-    const listing = responses.find((response) => response.id === 2);
-    expect(listing?.error).toBeUndefined();
-    const result = decodeToolsList(listing?.result);
-
-    const tool = result.tools.find(
-      (candidate) => candidate.name === "inspectFile"
-    );
-
-    expect(tool).toBeDefined();
-    expect(tool?.annotations?.readOnlyHint).toBe(true);
+    expect(JSON.stringify(call?.result)).toContain("NotBuilt");
   });
 
   it("records calls and answers rat_list_calls with --devtools", async () => {
@@ -250,7 +233,7 @@ describe("built MCP server", () => {
           method: "tools/call",
           params: {
             arguments: {
-              code: `await tools.inspectFile({ path: ${JSON.stringify(readmePath)} }); return await tools.rat_list_calls({});`,
+              code: "await tools.getPack({ studio: 'vfx' }).catch(() => undefined); return await tools.rat_list_calls({});",
             },
             name: "execute",
           },
@@ -268,11 +251,11 @@ describe("built MCP server", () => {
 
     expect(matched).toBe(1);
     expect(entry).toMatchObject({
-      capability: "inspectFile",
-      input: { path: readmePath },
+      capability: "getPack",
+      input: { studio: "vfx" },
     });
     expect(
-      entry !== undefined && OutcomeSchema.guards.Succeeded(entry.outcome)
+      entry !== undefined && OutcomeSchema.guards.Failed(entry.outcome)
     ).toBe(true);
   });
 });

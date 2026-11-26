@@ -4,12 +4,12 @@ import {
   invokerFor,
   toCatalog,
   wireFailureSchema,
-} from "@rat-stack/capability";
-import type { AnyCapability, AnyContract, Around } from "@rat-stack/capability";
-import { ActorWatch } from "@rat-stack/capability/actor-watch";
-import type { ActorWatchService } from "@rat-stack/capability/actor-watch";
-import { CallWatch } from "@rat-stack/capability/call-watch";
-import type { CallWatchService } from "@rat-stack/capability/call-watch";
+} from "@gds/capability";
+import type { AnyCapability, AnyContract, Around } from "@gds/capability";
+import { ActorWatch } from "@gds/capability/actor-watch";
+import type { ActorWatchService } from "@gds/capability/actor-watch";
+import { CallWatch } from "@gds/capability/call-watch";
+import type { CallWatchService } from "@gds/capability/call-watch";
 import type { JsonSchema } from "effect";
 import { Cause, Clock, Effect, Exit, Layer, Option, Schema } from "effect";
 

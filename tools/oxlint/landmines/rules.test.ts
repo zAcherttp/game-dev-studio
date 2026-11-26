@@ -11,8 +11,6 @@ const tester = new RuleTester({
 const js = 'import { test, it, beforeEach, afterEach, vi } from "vitest";';
 const fx =
   'import { it, flakyTest } from "@effect/vitest"; import { Effect } from "effect";';
-const provider =
-  'import * as Test from "@alchemy.run/test/Vitest"; import { Effect } from "effect"; const { test: run } = Test.make({});';
 const poll = 'import { expect, vi } from "vitest";';
 const config = 'import { defineConfig as config } from "vitest/config";';
 const clock = "await new Promise((done) => setTimeout(done, 50));";
@@ -70,7 +68,6 @@ tester.run("landmines/no-fixed-sleep", noFixedSleep, {
       `${fx} it.live('direct', () => Effect.gen(function* () { yield* Effect.sleep('1 second'); }));`,
       `${fx} it.live('piped', () => Effect.succeed(1).pipe(Effect.andThen(Effect.sleep('1 second'))));`,
       `import { it as spec } from '@effect/vitest'; import { sleep as wait } from 'effect/Effect'; spec.live('aliased', () => wait(1));`,
-      `${provider} run.provider('real', () => Effect.gen(function* () { yield* Effect.sleep(100); }));`,
     ].map((code) => reported(code, "sleep")),
     {
       ...reported(
@@ -191,7 +188,6 @@ tester.run("landmines/no-flake-masking timeouts", noFlakeMasking, {
       `${config} export default config({ test: { projects: [{ test: { name: 'e2e', testTimeout: 60_000 } }] } });`,
       `${fx} it.effect.prop('x', { timeout: Schema.Int }, () => Effect.void, { timeout: 60_000 });`,
       `${fx} it.layer(service)('layer', (test) => { test.effect('x', () => Effect.void, 60_000); });`,
-      `${provider} run.provider('x', () => Effect.void, { timeout: 60_000 });`,
     ].map(timeout),
     {
       code: `${config} export default config({ test: { testTimeout: 30_000, hookTimeout: 60_000 } });`,
@@ -213,7 +209,7 @@ tester.run("landmines/no-test-doubles", noTestDoubles, {
     `${js} ${layer} const gate = Layer.succeed(Gate, { allow: () => Effect.succeed(true) });`,
     `${js} ${layer} const sink = Layer.succeed(Sink, { send: () => Effect.fail(new SinkDown()) });`,
     `${js} import * as Layer from "effect/Layer"; const store = Layer.succeed(Store, memoryStore);`,
-    `${js} test('x', () => { globalThis.__ALCHEMY_RUNTIME__ = true; });`,
+    `${js} test('x', () => { globalThis.__PROBE_RUNTIME__ = true; });`,
     `${js} test('x', () => { let fetch = real; fetch = other; });`,
     `${js} test('x', (globalThis) => { globalThis.fetch = canned; });`,
     `${js} test('x', () => { Object.defineProperty(request, 'cf', { value: edge }); });`,

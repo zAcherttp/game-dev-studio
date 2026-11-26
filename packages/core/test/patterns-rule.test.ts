@@ -3,7 +3,6 @@ import { spawnSync } from "node:child_process";
 import {
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -15,22 +14,19 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 
-const oxlint = path.join(repoRoot, "node_modules/.bin/oxlint");
+const oxlint = path.join(repoRoot, "node_modules/oxlint/bin/oxlint");
 
 const plugin = path.join(repoRoot, "scripts/oxlint-plugin-patterns.ts");
 
 const rules = [
-  "rat-stack-patterns/acquire-release-constructs-in-acquire-body",
-  "rat-stack-patterns/contract-binding-matches-name",
-  "rat-stack-patterns/flag-removal-date",
-  "rat-stack-patterns/learn-snippet-idiom",
-  "rat-stack-patterns/no-hand-rolled-hex",
-  "rat-stack-patterns/no-module-level-mutable-state",
-  "rat-stack-patterns/no-shared-pending-cache",
-  "rat-stack-patterns/retain-needs-stage-policy",
-  "rat-stack-patterns/shared-waiters",
-  "rat-stack-patterns/no-sleep-in-loop",
-  "rat-stack-patterns/watch-effect-actors",
+  "gds-patterns/acquire-release-constructs-in-acquire-body",
+  "gds-patterns/contract-binding-matches-name",
+  "gds-patterns/no-hand-rolled-hex",
+  "gds-patterns/no-module-level-mutable-state",
+  "gds-patterns/no-shared-pending-cache",
+  "gds-patterns/shared-waiters",
+  "gds-patterns/no-sleep-in-loop",
+  "gds-patterns/watch-effect-actors",
 ];
 
 interface LintResult {
@@ -39,7 +35,7 @@ interface LintResult {
 }
 
 const lintFixture = (area: string, source: string): LintResult => {
-  const directory = mkdtempSync(path.join(tmpdir(), "rat-stack-patterns-"));
+  const directory = mkdtempSync(path.join(tmpdir(), "gds-patterns-"));
   const fixtureDirectory = path.join(directory, area, "pattern-fixtures");
   const config = path.join(directory, "oxlint.json");
   const file = path.join(fixtureDirectory, "fixture.ts");
@@ -48,17 +44,21 @@ const lintFixture = (area: string, source: string): LintResult => {
   writeFileSync(
     config,
     JSON.stringify({
-      jsPlugins: [{ name: "rat-stack-patterns", specifier: plugin }],
+      jsPlugins: [{ name: "gds-patterns", specifier: plugin }],
       rules: Object.fromEntries(rules.map((rule) => [rule, "error"])),
     })
   );
   writeFileSync(file, source);
 
   try {
-    const result = spawnSync(oxlint, ["-c", config, "--no-ignore", file], {
-      cwd: repoRoot,
-      encoding: "utf-8",
-    });
+    const result = spawnSync(
+      process.execPath,
+      [oxlint, "-c", config, "--no-ignore", file],
+      {
+        cwd: repoRoot,
+        encoding: "utf-8",
+      }
+    );
 
     return {
       output: `${result.stdout}${result.stderr}`,
@@ -85,31 +85,7 @@ const eagerAcquire =
 const moduleState =
   "Module-level let and var hold state that outlives one request";
 
-describe("rat-stack pattern rules", () => {
-  it("requires a retention policy through direct, renamed and namespace imports", () => {
-    for (const source of [
-      'import { retain } from "alchemy/RemovalPolicy"; resource.pipe(retain());',
-      'import { retain as keep } from "alchemy/RemovalPolicy"; resource.pipe(keep());',
-      'import * as Policy from "alchemy/RemovalPolicy"; resource.pipe(Policy.retain());',
-      'import { retain } from "alchemy"; resource.pipe(retain());',
-    ]) {
-      expectRule(
-        lintFixture("packages/flags/src", source),
-        "This retain call has no stage policy"
-      );
-    }
-
-    for (const source of [
-      'import { retain } from "alchemy/RemovalPolicy"; resource.pipe(retain(Stage.pipe(Effect.map((stage) => stage === "prod"))));',
-      'import { retainInProd } from "./retention"; resource.pipe(retainInProd);',
-      'import { retain } from "other"; retain();',
-      "const retain = () => {}; retain();",
-      'import { retain } from "alchemy/RemovalPolicy"; function work(retain) { retain(); }',
-      'import { retain } from "alchemy/RemovalPolicy";\n// oxlint-disable-next-line rat-stack-patterns/retain-needs-stage-policy -- This adopted zone belongs to production in every stage.\nresource.pipe(retain());',
-    ]) {
-      expect(lintFixture("apps/infra", source).status).toBe(0);
-    }
-  });
+describe("game-dev-studio pattern rules", () => {
   it("keeps sleeping loops in machines without flagging unrelated sleep functions", () => {
     const message = "This loop yields Effect.sleep";
 
@@ -220,29 +196,6 @@ describe("rat-stack pattern rules", () => {
     ).toBe(0);
   });
 
-  it("allows only DurableObject instance fields, not static fields or unrelated subclasses", () => {
-    for (const declaration of [
-      "class Other extends Base { pending = Deferred.makeUnsafe(); }",
-      "class Owner extends DurableObject { static pending = Deferred.makeUnsafe(); }",
-      "class Other { pending = Deferred.makeUnsafe(); }",
-    ]) {
-      expectRule(
-        lintFixture(
-          "apps/site/src",
-          `import { Deferred } from "effect"; import { DurableObject } from "cloudflare:workers"; ${declaration}`
-        ),
-        "This waiting primitive lives at module level"
-      );
-    }
-
-    expect(
-      lintFixture(
-        "apps/site/src",
-        'import { Deferred } from "effect"; import { DurableObject as Owner } from "cloudflare:workers"; class State extends Owner { pending = Deferred.makeUnsafe(); }'
-      ).status
-    ).toBe(0);
-  });
-
   it.each([
     ["Deferred", "make"],
     ["Deferred", "makeUnsafe"],
@@ -286,7 +239,6 @@ describe("rat-stack pattern rules", () => {
         for (const source of [
           `import { ${primitive} as P, Effect, Layer } from "effect"; export const layer = Layer.effect(Tag, Effect.gen(function* () { const local = yield* P.${make}(1); return local; }));`,
           `import { ${primitive} as P } from "effect"; export const fetch = () => { const local = P.${make}(1); return local; };`,
-          `import { ${primitive} as P } from "effect"; import { DurableObject } from "cloudflare:workers"; export class Owner extends DurableObject { pending = P.${make}(1); }`,
           `const ${primitive} = { ${make}: () => 1 }; export const ordinary = ${primitive}.${make}(1);`,
           `import { ${primitive} as P } from "other-library"; export const ordinary = P.${make}(1);`,
         ]) {
@@ -306,24 +258,6 @@ describe("rat-stack pattern rules", () => {
     }
   );
 
-  it("rejects missing removal dates through direct, aliased, and namespace declarations", () => {
-    const message = "has no removeBy date literal";
-
-    for (const source of [
-      'defineFlag("test", Schema.Boolean, { default: false, owner: "test" });',
-      'import { defineFlag as flag } from "@rat-stack/core/flags"; flag("test", Schema.Boolean, { default: false, owner: "test" });',
-      'import * as flags from "@rat-stack/flags"; flags.defineFlag("test", Schema.Boolean, { default: false, owner: "test", removeBy: "soon" });',
-    ]) {
-      expectRule(lintFixture("packages/core/src", source), message);
-    }
-
-    expect(
-      lintFixture(
-        "packages/core/src",
-        'defineFlag("test", Schema.Boolean, { default: false, owner: "test", removeBy: "2027-01-01" });'
-      ).status
-    ).toBe(0);
-  });
   it("turns every pattern rule on in the repo config", () => {
     const configSource = readFileSync(
       path.join(repoRoot, "oxlint.config.ts"),
@@ -337,17 +271,17 @@ describe("rat-stack pattern rules", () => {
 
   it("flags an acquire that succeeds with an eager or captured handle", () => {
     const eager = lintFixture(
-      "packages/database/src",
+      "packages/store/src",
       'import { Effect } from "effect";\n\nclass Pool { close() {} }\n\nexport const pool = Effect.acquireRelease(Effect.succeed(new Pool()), (opened) => Effect.sync(() => opened.close()));\n'
     );
 
     const captured = lintFixture(
-      "packages/database/src",
+      "packages/store/src",
       'import { Effect } from "effect";\n\nclass Pool { close() {} }\n\nconst shared = new Pool();\n\nexport const pool = Effect.acquireRelease(Effect.sync(() => shared), (opened) => Effect.sync(() => opened.close()));\n'
     );
 
     const required = lintFixture(
-      "packages/database/src",
+      "packages/store/src",
       'const { Effect } = require("effect");\n\nclass Pool { close() {} }\n\nconst shared = new Pool();\nexport const pool = Effect.acquireRelease(Effect.succeed(shared), (opened) => Effect.sync(() => opened.close()));\n'
     );
 
@@ -358,17 +292,17 @@ describe("rat-stack pattern rules", () => {
 
   it("unwraps asserted acquires without flagging handles built inside the thunk", () => {
     const asserted = lintFixture(
-      "packages/database/src",
+      "packages/store/src",
       'import { Effect } from "effect";\n\nclass Pool { close() {} }\n\nconst shared = new Pool();\nexport const pool = Effect.acquireRelease(Effect.sync(() => shared) as Effect.Effect<Pool>, (opened) => Effect.sync(() => opened.close()));\n'
     );
 
     const defaultedParameter = lintFixture(
-      "packages/database/src",
+      "packages/store/src",
       'import { Effect } from "effect";\n\nclass Pool { close() {} }\n\nexport const pool = Effect.acquireRelease(Effect.sync((handle = new Pool()) => handle), (opened) => Effect.sync(() => opened.close()));\n'
     );
 
     const localHandle = lintFixture(
-      "packages/database/src",
+      "packages/store/src",
       'import { Effect } from "effect";\n\nclass Pool { close() {} }\n\nexport const pool = Effect.acquireRelease(Effect.sync(() => { const handle = new Pool(); return handle; }), (opened) => Effect.sync(() => opened.close()));\n'
     );
 
@@ -379,7 +313,7 @@ describe("rat-stack pattern rules", () => {
 
   it("allows an acquire that constructs the resource", () => {
     const result = lintFixture(
-      "packages/database/src",
+      "packages/store/src",
       'import { Effect } from "effect";\n\nclass Pool { close() {} }\n\nexport const pool = Effect.acquireRelease(Effect.sync(() => new Pool()), (opened) => Effect.sync(() => opened.close()));\n'
     );
 
@@ -413,7 +347,7 @@ describe("rat-stack pattern rules", () => {
 
       const exception = lintFixture(
         "packages/core/src",
-        `import { Effect } from "effect";\n// oxlint-disable-next-line rat-stack-patterns/no-shared-pending-cache -- This cache imports a CryptoKey from a fixed secret without request I/O.\nexport const shared = Effect.${name}(importKey(secret), "Infinity");`
+        `import { Effect } from "effect";\n// oxlint-disable-next-line gds-patterns/no-shared-pending-cache -- This cache imports a CryptoKey from a fixed secret without request I/O.\nexport const shared = Effect.${name}(importKey(secret), "Infinity");`
       );
 
       const serviceMethod = lintFixture(
@@ -490,7 +424,7 @@ describe("rat-stack pattern rules", () => {
   it("flags a contract binding that does not match its name", () => {
     const result = lintFixture(
       "packages/core/src",
-      'import { defineContract } from "@rat-stack/capability/contract";\n\nexport const contract = defineContract("execute", {});\n'
+      'import { defineContract } from "@gds/capability/contract";\n\nexport const contract = defineContract("execute", {});\n'
     );
 
     expectRule(
@@ -502,12 +436,12 @@ describe("rat-stack pattern rules", () => {
   it("tracks contract aliases, static templates, wrappers, and later assignments", () => {
     const alias = lintFixture(
       "packages/core/src",
-      'import { defineContract as makeContract } from "@rat-stack/capability/contract";\n\nexport const wrongName = makeContract(`search`, {}) as object;\n'
+      'import { defineContract as makeContract } from "@gds/capability/contract";\n\nexport const wrongName = makeContract(`search`, {}) as object;\n'
     );
 
     const assignment = lintFixture(
       "packages/core/src",
-      'import { defineContract } from "@rat-stack/capability/contract";\n\nexport const create = () => { let wrongName; wrongName = defineContract("search", {}); };\n'
+      'import { defineContract } from "@gds/capability/contract";\n\nexport const create = () => { let wrongName; wrongName = defineContract("search", {}); };\n'
     );
 
     const computedIdentifier = lintFixture(
@@ -523,47 +457,10 @@ describe("rat-stack pattern rules", () => {
   it("accepts the name, the name plus Contract, and camelCase for snake_case names", () => {
     const result = lintFixture(
       "packages/core/src",
-      'import { defineContract } from "@rat-stack/capability/contract";\n\nexport const inspectFileContract = defineContract("inspectFile", {});\nexport const search = defineContract("search", {});\nexport const ratListCalls = defineContract("rat_list_calls", {});\n'
+      'import { defineContract } from "@gds/capability/contract";\n\nexport const inspectFileContract = defineContract("inspectFile", {});\nexport const search = defineContract("search", {});\nexport const ratListCalls = defineContract("rat_list_calls", {});\n'
     );
 
     expect(result.status).toBe(0);
-  });
-
-  it("flags a primitive service provided with provideService in a learn snippet", () => {
-    const primitive =
-      'import { Context, Effect } from "effect";\n\nexport class Greeting extends Context.Service<Greeting, string>()("Greeting") {}\n\nexport const main = Effect.gen(function* greet() { return yield* Greeting; }).pipe(Effect.provideService(Greeting, "hi"));\n';
-
-    const snippet = lintFixture(".brain/data/learn-cards", primitive);
-
-    const runtime = lintFixture("packages/core/src", primitive);
-
-    expectRuleSoft(
-      snippet,
-      "This service holds a primitive value instead of operations"
-    );
-    expectRuleSoft(snippet, "This service key has no namespace");
-    expectRuleSoft(snippet, "This service has no static layer beside it");
-    expectRuleSoft(snippet, "This provides the service with provideService");
-    expect.soft(runtime.status).toBe(0);
-  });
-
-  it("accepts every learn card snippet in the repo", () => {
-    const directory = path.join(repoRoot, ".brain/data/learn-cards");
-
-    const snippets = readdirSync(directory).filter((file) =>
-      file.endsWith(".ts")
-    );
-
-    expect(snippets.length).toBeGreaterThan(0);
-
-    for (const file of snippets) {
-      const result = lintFixture(
-        ".brain/data/learn-cards",
-        readFileSync(path.join(directory, file), "utf-8")
-      );
-
-      expect.soft(result.output, file).not.toContain("learn-snippet-idiom");
-    }
   });
 
   it("flags an Effect-backed actor that is never watched", () => {
@@ -602,17 +499,17 @@ describe("rat-stack pattern rules", () => {
   it("tracks watched actors by binding and permits tests that start actors", () => {
     const watched = lintFixture(
       "packages/core/src",
-      'import { watchActor } from "@rat-stack/capability/actor-watch";\nimport { createEffectActor } from "@xstate/effect";\nimport { Effect } from "effect";\n\nexport const start = (machine: never) =>\n  Effect.gen(function* startMachine() {\n    const actor = yield* createEffectActor(machine);\n\n    yield* watchActor("machine", actor);\n  });\n'
+      'import { watchActor } from "@gds/capability/actor-watch";\nimport { createEffectActor } from "@xstate/effect";\nimport { Effect } from "effect";\n\nexport const start = (machine: never) =>\n  Effect.gen(function* startMachine() {\n    const actor = yield* createEffectActor(machine);\n\n    yield* watchActor("machine", actor);\n  });\n'
     );
 
     const partialWatch = lintFixture(
       "packages/core/src",
-      'import { watchActor } from "@rat-stack/capability/actor-watch";\nimport { createEffectActor as makeActor } from "@xstate/effect";\n\nexport const start = (first: never, second: never) => {\n  const firstActor = makeActor(first);\n  const secondActor = makeActor(second);\n\n  watchActor("first", firstActor);\n  return secondActor;\n};\n'
+      'import { watchActor } from "@gds/capability/actor-watch";\nimport { createEffectActor as makeActor } from "@xstate/effect";\n\nexport const start = (first: never, second: never) => {\n  const firstActor = makeActor(first);\n  const secondActor = makeActor(second);\n\n  watchActor("first", firstActor);\n  return secondActor;\n};\n'
     );
 
     const called = lintFixture(
       "packages/core/src",
-      'import { watchActor } from "@rat-stack/capability/actor-watch";\nimport { createEffectActor } from "@xstate/effect";\n\nexport const start = (machine: never) => {\n  const actor = createEffectActor.call(undefined, machine);\n\n  watchActor.call(undefined, "machine", actor);\n};\n'
+      'import { watchActor } from "@gds/capability/actor-watch";\nimport { createEffectActor } from "@xstate/effect";\n\nexport const start = (machine: never) => {\n  const actor = createEffectActor.call(undefined, machine);\n\n  watchActor.call(undefined, "machine", actor);\n};\n'
     );
 
     const test = lintFixture(

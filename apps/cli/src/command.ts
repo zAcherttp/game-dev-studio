@@ -1,10 +1,7 @@
-import { toCommand } from "@rat-stack/capability";
-import { formatFileStats, inspectFile } from "@rat-stack/core";
-import { flipFeatureFlag } from "@rat-stack/core/flag-write-capabilities";
+import { toCommand } from "@gds/capability";
 import { Console, Effect, Layer } from "effect";
 import { Command, Flag } from "effect/cli";
 
-import { intakeCommand } from "./intake.js";
 import {
   commandCapabilities,
   SERVE_HOST,
@@ -19,22 +16,9 @@ import { VERSION } from "./version.js";
 
 export { VERSION } from "./version.js";
 
-const capabilityCommands = commandCapabilities.map((capability) => {
-  const command =
-    capability === inspectFile
-      ? toCommand(capability, {
-          positional: ["path"],
-          render: formatFileStats,
-        }).pipe(Command.withAlias("stats"))
-      : toCommand(
-          capability,
-          capability === flipFeatureFlag
-            ? { promptForApproval: true }
-            : undefined
-        );
-
-  return command;
-});
+const capabilityCommands = commandCapabilities.map((capability) =>
+  toCommand(capability)
+);
 
 const openapiCommand = Command.make("openapi", {}, () =>
   Console.log(JSON.stringify(http.openApi(), null, 2))
@@ -117,12 +101,13 @@ const catalogCommand = Command.make(
   )
 );
 
-export const rootCommand = Command.make("rat-stack").pipe(
-  Command.withDescription("Agent-first file inspection: CLI, REST, and MCP"),
+export const rootCommand = Command.make("game-dev-studio").pipe(
+  Command.withDescription(
+    "Local dev studio: studios, assets, layers, variants, picks and rounds over CLI, REST, and MCP"
+  ),
   Command.withSubcommands([
     ...capabilityCommands,
     catalogCommand,
-    intakeCommand,
     openapiCommand,
     serveCommand,
     mcpCommand,

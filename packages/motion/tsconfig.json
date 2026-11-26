@@ -6,9 +6,11 @@
         "name": "@effect/language-service",
         "allowedUnstableApis": [
           "@effect/platform-node/NodeFileSystem",
+          "@effect/platform-node/NodePath",
           "@effect/vitest",
           "effect/Arbitrary",
-          "effect/FileSystem"
+          "effect/FileSystem",
+          "effect/Path"
         ]
       }
     ]

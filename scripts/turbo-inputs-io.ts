@@ -4,20 +4,47 @@ import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import os from "node:os";
 // @effect-diagnostics-next-line nodeBuiltinImport:off -- Root has no @effect/platform-node dependency; this adapter owns platform path resolution.
-import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import nodePath from "node:path";
+import { fileURLToPath as nodeFileURLToPath, pathToFileURL } from "node:url";
 
 const {
   existsSync,
-  globSync,
+  globSync: nodeGlobSync,
   mkdirSync,
-  mkdtempSync,
+  mkdtempSync: nodeMkdtempSync,
   readFileSync,
-  realpathSync,
+  realpathSync: nodeRealpathSync,
   rmSync,
   statSync,
   writeFileSync,
 } = fs;
+
+const slash = (value: string) => value.replaceAll("\\", "/");
+
+const path: typeof nodePath =
+  nodePath.sep === "/"
+    ? nodePath
+    : {
+        ...nodePath,
+        basename: (...parts) => slash(nodePath.basename(...parts)),
+        dirname: (value) => slash(nodePath.dirname(value)),
+        join: (...parts) => slash(nodePath.join(...parts)),
+        normalize: (value) => slash(nodePath.normalize(value)),
+        relative: (from, to) => slash(nodePath.relative(from, to)),
+        resolve: (...parts) => slash(nodePath.resolve(...parts)),
+        sep: "/",
+      };
+
+const fileURLToPath = (url: string | URL) => slash(nodeFileURLToPath(url));
+
+const realpathSync = (value: string) => slash(nodeRealpathSync(value));
+
+const mkdtempSync = (prefix: string) => slash(nodeMkdtempSync(prefix));
+
+const globSync = (
+  pattern: string | readonly string[],
+  options: { readonly cwd?: string; readonly exclude?: readonly string[] } = {}
+) => nodeGlobSync(pattern, options).map(slash);
 
 export {
   execFileSync,

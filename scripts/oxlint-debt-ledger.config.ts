@@ -3,9 +3,9 @@ import { defineConfig } from "oxlint";
 export default defineConfig({
   jsPlugins: [
     {
-      name: "rat-stack-debt",
+      name: "gds-debt",
       specifier: "./oxlint-plugin-debt-ledger.ts",
     },
   ],
-  rules: { "rat-stack-debt/debt-ledger": "error" },
+  rules: { "gds-debt/debt-ledger": "error" },
 });
