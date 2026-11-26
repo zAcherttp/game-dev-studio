@@ -1183,5 +1183,10 @@ export const fireKit: typeof Asset.Type = {
 export const fireFlags: FlagsValue = {
   assets: [{ asset: fireKit, layers: fireLayers }],
   by: "Phát",
+  catalog: [
+    { id: "arrival_landing", picks: 0, title: "Arrival landing" },
+    { id: "fire", picks: 57, title: "Fire kit" },
+    { id: "campfire", picks: 3, title: "Campfire" },
+  ],
   studio: fireStudio,
 };

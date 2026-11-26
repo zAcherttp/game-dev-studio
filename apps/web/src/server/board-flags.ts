@@ -33,7 +33,11 @@ const unavailable = (url: URL, what: string) =>
   });
 
 export const loadBoardFlags = Effect.fn("web.loadBoardFlags")(
-  function* loadBoardFlags(studioId: string | undefined, by: string) {
+  function* loadBoardFlags(
+    studioId: string | undefined,
+    assetId: string | undefined,
+    by: string
+  ) {
     const url = yield* studioUrl;
 
     return yield* Effect.gen(function* load() {
@@ -56,24 +60,36 @@ export const loadBoardFlags = Effect.fn("web.loadBoardFlags")(
         studio: studio.id,
       });
 
-      const assets = yield* Effect.all(
+      const stored = yield* Effect.all(
         summaries.map(({ id }) =>
           client.getAsset({ asset: id, studio: studio.id })
-        )
+        ),
+        { concurrency: 8 }
       );
 
-      const layers = yield* Effect.all(
-        summaries.map(({ id }) =>
-          client.layersOf({ asset: id, studio: studio.id })
-        )
-      );
+      const catalog = stored.map((asset) => ({
+        id: asset.id,
+        picks: Object.values(asset.layers).reduce(
+          (total, layer) => total + layer.picks.length,
+          0
+        ),
+        title: asset.title,
+      }));
+
+      const current =
+        stored.find((asset) => asset.id === assetId) ??
+        stored.find((_asset, index) => (catalog[index]?.picks ?? 0) > 0) ??
+        stored[0];
+
+      const { layers } =
+        current === undefined
+          ? { layers: [] }
+          : yield* client.layersOf({ asset: current.id, studio: studio.id });
 
       const flags: FlagsValue = {
-        assets: assets.map((asset, index) => ({
-          asset,
-          layers: layers[index]?.layers ?? [],
-        })),
+        assets: current === undefined ? [] : [{ asset: current, layers }],
         by,
+        catalog,
         studio,
       };
 

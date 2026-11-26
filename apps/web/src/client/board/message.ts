@@ -31,6 +31,8 @@ export const Message = defineMessageUnion({
   SucceededPick: { asset: Asset },
   SucceededRound: { request: RoundRequest },
   TickedClock: { elapsed: Schema.Finite },
+  ToggledSwitcher: {},
+  UpdatedAssetFilter: { value: Schema.String },
   UpdatedAxis: { value: Schema.String },
   UpdatedNote: { value: Schema.String },
   UpdatedRoundNote: { value: Schema.String },

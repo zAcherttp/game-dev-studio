@@ -14,6 +14,7 @@ import { mediaSrc } from "../../client/board/picker.js";
 import { boardStyles } from "./board.stylex.js";
 import { boardCopy } from "./copy.js";
 import { pickerView } from "./picker.js";
+import { switcherView } from "./switcher.js";
 
 type VariantValue = typeof Variant.Type;
 
@@ -247,6 +248,7 @@ const toolbar = (model: BoardModel, h: HtmlBuilder<BoardMessage>): Html =>
     [
       h.h1([h.Class(cls(boardStyles.brand))], [boardCopy.brand]),
       h.span([h.Class(cls(boardStyles.crumb))], [model.studio.title]),
+      switcherView(model, h),
       h.span([h.Class(cls(boardStyles.spacer))]),
       h.span([h.Class(cls(boardStyles.hint))], [boardCopy.hint]),
       toolButton(

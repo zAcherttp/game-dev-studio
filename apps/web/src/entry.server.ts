@@ -13,9 +13,12 @@ export const renderDocument: Server.DocumentRenderer = (application, assets) =>
 const PICKER = "Phát";
 
 const studioOf = (pathname: string) => {
-  const match = /^\/(?:studio\/(?<id>[\w-]+)\/?)?$/u.exec(pathname);
+  const match =
+    /^\/(?:studio\/(?<id>[\w-]+)(?:\/(?<asset>[\w.-]+))?\/?)?$/u.exec(pathname);
 
-  return match === null ? undefined : { id: match.groups?.id };
+  return match === null
+    ? undefined
+    : { asset: match.groups?.asset, id: match.groups?.id };
 };
 
 const renderBoard = Effect.fn("web.renderBoard")(function* renderBoard(
@@ -27,7 +30,7 @@ const renderBoard = Effect.fn("web.renderBoard")(function* renderBoard(
     return Server.Responded(new Response("Not found", { status: 404 }));
   }
 
-  const flags = yield* loadBoardFlags(route.id, PICKER);
+  const flags = yield* loadBoardFlags(route.id, route.asset, PICKER);
 
   const application = yield* Server.renderToString(
     {

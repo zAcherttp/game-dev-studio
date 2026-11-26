@@ -9,6 +9,15 @@ export const boardCopy = {
   zoomOut: "Zoom out",
 };
 
+export const switcherCopy = {
+  button: (title: string) => `${title} ▾`,
+  empty: "No asset matches.",
+  filter: "Filter assets",
+  filterPlaceholder: "type to filter",
+  label: "Assets in this studio",
+  picks: (count: number) => (count === 1 ? "1 pick" : `${count} picks`),
+};
+
 export const pickerCopy = {
   axis: "More along",
   axisPlaceholder: "an axis, such as colour or timing",

@@ -1,8 +1,17 @@
 import { expect, it } from "@effect/vitest";
+import type { Variant } from "@gds/model";
 import { Schema } from "effect";
 import * as Arbitrary from "effect/Arbitrary";
 
-import { fit, layout, lineage, zoomAt } from "../src/client/board/layout.js";
+import {
+  FIT_MIN_ZOOM,
+  fit,
+  layout,
+  lineage,
+  panTo,
+  shownTakes,
+  zoomAt,
+} from "../src/client/board/layout.js";
 import { fireFlags } from "./fixtures/fire-kit.js";
 
 const ParentIndexes = Schema.Array(
@@ -10,6 +19,8 @@ const ParentIndexes = Schema.Array(
 ).check(Schema.isMinLength(1), Schema.isMaxLength(12));
 
 const parentIndexes = Arbitrary.schema(ParentIndexes);
+
+type VariantValue = typeof Variant.Type;
 
 const variantsOf = (parents: readonly number[]) =>
   parents.map((parent, index) => {
@@ -51,19 +62,25 @@ it.prop(
   }
 );
 
-it("the fire kit board shows every layer, every take, and one pick wire per picked layer", () => {
+it("the board draws every layer once, with its take count, and only the lineage and picked takes", () => {
   const graph = layout(fireFlags.studio, fireFlags.assets);
   const asset = fireFlags.assets[0]?.asset;
-  const kinds = graph.nodes.map((node) => node.kind);
 
-  const takes = Object.values(asset?.layers ?? {}).flatMap(
-    (layer) => layer.variants
+  const layerNodes = graph.nodes.filter((node) => node.kind === "layer");
+
+  const shown = Object.entries(asset?.layers ?? {}).flatMap(([id, layer]) =>
+    shownTakes(layer.variants, asset?.mix[id])
   );
 
-  expect(kinds.filter((kind) => kind === "layer")).toHaveLength(
-    fireFlags.assets[0]?.layers.length ?? -1
+  expect(layerNodes).toHaveLength(fireFlags.assets[0]?.layers.length ?? -1);
+
+  for (const node of layerNodes) {
+    expect(node.count).toBe(asset?.layers[node.layer.id]?.variants.length ?? 0);
+  }
+
+  expect(graph.nodes.filter((node) => node.kind === "variant")).toHaveLength(
+    shown.length
   );
-  expect(kinds.filter((kind) => kind === "variant")).toHaveLength(takes.length);
   expect(
     graph.edges
       .filter((edge) => edge.kind === "pick")
@@ -74,10 +91,37 @@ it("the fire kit board shows every layer, every take, and one pick wire per pick
       .map(([layer, variant]) => `variant:fire/${layer}/${variant}`)
       .toSorted()
   );
-  expect(graph.edges.filter((edge) => edge.kind === "lineage")).toHaveLength(
-    takes.filter((take) => take.parent !== undefined).length
-  );
 });
+
+it.prop(
+  "shown takes keep the pick and every take with a parent, with each one's ancestors, and nothing else",
+  { parents: parentIndexes },
+  ({ parents }) => {
+    const variants: readonly VariantValue[] = variantsOf(parents);
+    const picked = variants.at(-1)?.id;
+    const shown = shownTakes(variants, picked);
+    const ids = new Set(shown.map((variant) => variant.id));
+
+    expect(picked === undefined || ids.has(picked)).toBe(true);
+
+    for (const variant of variants) {
+      if (variant.parent !== undefined) {
+        expect(ids.has(variant.id)).toBe(true);
+      }
+    }
+
+    for (const variant of shown) {
+      expect(variant.parent === undefined || ids.has(variant.parent)).toBe(
+        true
+      );
+      expect(
+        variant.id === picked ||
+          variant.parent !== undefined ||
+          shown.some((child) => child.parent === variant.id)
+      ).toBe(true);
+    }
+  }
+);
 
 it("node ids stay unique when layers reuse take letters, as EasyVFX kits do", () => {
   const lettered = fireFlags.assets.map((entry) => ({
@@ -107,20 +151,41 @@ it("node ids stay unique when layers reuse take letters, as EasyVFX kits do", ()
   expect(new Set(ids).size).toBe(ids.length);
 });
 
-it("fit puts the whole board inside the viewport, and zooming keeps the point under the cursor still", () => {
+it("fit frames the board above a readable zoom floor, keeps the start in view when it can't, and panning centres a node", () => {
   const graph = layout(fireFlags.studio, fireFlags.assets);
 
-  for (const viewport of [
-    { height: 720, width: 1280 },
-    { height: 600, width: 800 },
-  ]) {
-    const camera = fit(graph, viewport);
+  for (const board of [graph, { height: 40_000, width: 3000 }]) {
+    for (const viewport of [
+      { height: 720, width: 1280 },
+      { height: 600, width: 800 },
+    ]) {
+      const camera = fit(board, viewport);
 
-    expect(camera.x).toBeGreaterThanOrEqual(0);
-    expect(camera.y).toBeGreaterThanOrEqual(0);
-    expect(camera.x * 2 + graph.width * camera.zoom).toBeCloseTo(
-      viewport.width
+      expect(camera.zoom).toBeGreaterThanOrEqual(FIT_MIN_ZOOM);
+      expect(camera.x).toBeGreaterThanOrEqual(0);
+      expect(camera.y).toBeGreaterThanOrEqual(0);
+
+      if (board.width * camera.zoom + 96 <= viewport.width) {
+        expect(camera.x * 2 + board.width * camera.zoom).toBeCloseTo(
+          viewport.width
+        );
+      }
+    }
+  }
+
+  const node = graph.nodes.at(-1);
+  const viewport = { height: 600, width: 800 };
+
+  if (node !== undefined) {
+    const centred = panTo({ x: 0, y: 0, zoom: 0.2 }, node, viewport);
+
+    expect((node.x + node.width / 2) * centred.zoom + centred.x).toBeCloseTo(
+      400
     );
+    expect((node.y + node.height / 2) * centred.zoom + centred.y).toBeCloseTo(
+      300
+    );
+    expect(centred.zoom).toBe(FIT_MIN_ZOOM);
   }
 
   const camera = { x: 30, y: -40, zoom: 0.8 };
