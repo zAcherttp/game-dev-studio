@@ -113,7 +113,7 @@ export const renderContract = defineContract("render", {
 
 export const pickContract = defineContract("pick", {
   description:
-    "Pick one variant for a layer. It replaces that layer's earlier pick in the mix; the history keeps both. No pick while the layer is making.",
+    "Pick one variant for a layer. It replaces that layer's earlier pick in the mix; the history keeps both. No pick while the layer is making. When the studio applies picks to the game, a failed apply fails the pick and records nothing.",
   failure: Schema.Union([
     NotBuilt,
     UnknownStudio,
@@ -172,6 +172,22 @@ export const openCheckContract = defineContract("openCheck", {
   output: CheckShot,
 });
 
+export const renderMixContract = defineContract("renderMix", {
+  annotations: { idempotent: true },
+  description:
+    "Render an asset's whole mix once: every layer's picked variant drawn together, through the studio's renderer.",
+  failure: Schema.Union([
+    NotBuilt,
+    UnknownStudio,
+    UnknownAsset,
+    UnknownLayer,
+    UnknownVariant,
+    AdapterFailed,
+  ]),
+  input: Schema.Struct({ asset: assetField, studio: studioField }),
+  output: Render,
+});
+
 export const contracts = [
   listStudiosContract,
   listAssetsContract,
@@ -179,6 +195,7 @@ export const contracts = [
   getAssetContract,
   addVariantsContract,
   renderContract,
+  renderMixContract,
   pickContract,
   roundContract,
   getPackContract,

@@ -30,6 +30,7 @@ const toolNames = [
   "layersOf",
   "addVariants",
   "render",
+  "renderMix",
   "pick",
   "round",
   "getPack",

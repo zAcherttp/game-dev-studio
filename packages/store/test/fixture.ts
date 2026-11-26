@@ -4,7 +4,16 @@ import { Effect, FileSystem, Layer, Path } from "effect";
 import { FileStore, GameFolder, StudioPack } from "../src/index.js";
 
 export const vfxStudio = {
-  gates: ["budget"],
+  gates: [
+    {
+      id: "budget",
+      json: "ok",
+      pass: { truthy: true },
+      run: ["python", "budget.py", "--json"],
+      title: "Budget",
+      where: "variant",
+    },
+  ],
   id: "vfx",
   layers: [
     { id: "core", order: 0, renderKind: "gif", title: "Core" },

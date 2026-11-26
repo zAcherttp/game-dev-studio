@@ -1,0 +1,24 @@
+[
+  {
+    "id": "easyvfx.audit",
+    "title": "EasyVFX audit: nothing worse than the baseline",
+    "run": ["python", "tools/evfx", "audit", "--no-scores", "--check"],
+    "cwd": "tools/easyvfx",
+    "pass": {
+      "op": "eq",
+      "value": 0
+    },
+    "where": "variant"
+  },
+  {
+    "id": "easyvfx.beats",
+    "title": "EasyVFX beat judge against the effect's beat sheet",
+    "run": ["python", "tools/evfx", "beats"],
+    "cwd": "tools/easyvfx",
+    "pass": {
+      "op": "eq",
+      "value": 0
+    },
+    "where": "variant"
+  }
+]
