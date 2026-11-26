@@ -1,10 +1,22 @@
 import { Schema } from "effect";
 
 import { Pick } from "./pick.js";
+import { RoundRequest } from "./round.js";
 import { Variant } from "./variant.js";
 
 export const AssetLayer = Schema.Struct({
+  making: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "When set, the at of the open round: the layer is making variants and refuses a pick until addVariants lands.",
+    })
+  ),
   picks: Schema.Array(Pick),
+  rounds: Schema.optionalKey(
+    Schema.Array(RoundRequest).annotate({
+      description: "Every round requested on this layer, oldest first.",
+    })
+  ),
   variants: Schema.Array(Variant),
 });
 
