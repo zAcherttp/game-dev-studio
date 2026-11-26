@@ -1,6 +1,6 @@
 export { assetText, parseAsset } from "./asset-text.js";
 
-export { FileStore } from "./file-store.js";
+export { FileStore, ownsLayers } from "./file-store.js";
 
 export { GameFolder } from "./game-folder.js";
 

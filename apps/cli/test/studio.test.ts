@@ -23,6 +23,8 @@ const variant = (id: string, parent?: string) => {
   return parent === undefined ? made : { ...made, parent };
 };
 
+const kitVariant = (layer: string, id: string) => ({ ...variant(id), layer });
+
 const where = { asset: "fire", layer: "core", studio: "vfx" } as const;
 
 const pickInput = (chosen: string) => ({
@@ -148,18 +150,56 @@ describe("studio capabilities", () => {
       )
   );
 
-  it.effect("refuses variants for a layer the studio does not have", () =>
+  it.effect(
+    "an asset on the studio's layers refuses a layer the studio does not have",
+    () =>
+      inGame((invoke) =>
+        Effect.gen(function* refusesUnknownLayer() {
+          yield* invoke("addVariants", { ...where, variants: [variant("c1")] });
+
+          expect(
+            tagOf(
+              yield* invoke("addVariants", {
+                ...where,
+                layer: "smoke",
+                variants: [{ ...variant("x1"), layer: "smoke" }],
+              })
+            )
+          ).toBe("UnknownLayer");
+        })
+      )
+  );
+
+  it.effect("a kit's own layers win over the studio's default layers", () =>
     inGame((invoke) =>
-      Effect.gen(function* refusesUnknownLayer() {
-        expect(
-          tagOf(
-            yield* invoke("addVariants", {
-              ...where,
-              layer: "smoke",
-              variants: [{ ...variant("x1"), layer: "smoke" }],
-            })
-          )
-        ).toBe("UnknownLayer");
+      Effect.gen(function* kitLayersWin() {
+        const kit = { asset: "kit", studio: "vfx" } as const;
+
+        const first = yield* invoke("addVariants", {
+          ...kit,
+          layer: "Anticipation",
+          variants: [kitVariant("Anticipation", "a1")],
+        });
+
+        const second = yield* invoke("addVariants", {
+          ...kit,
+          layer: "Streaks",
+          variants: [kitVariant("Streaks", "s1")],
+        });
+
+        const asset = yield* invoke("getAsset", kit);
+
+        expect([first.ok, second.ok]).toEqual([true, true]);
+        expect(asset).toMatchObject({
+          ok: true,
+          value: {
+            layers: {
+              Anticipation: { variants: [{ id: "a1" }] },
+              Streaks: { variants: [{ id: "s1" }] },
+            },
+          },
+        });
+        expect(asset).not.toHaveProperty("value.layers.core");
       })
     )
   );
