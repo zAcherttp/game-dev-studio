@@ -88,7 +88,8 @@ export const nodeId = {
   layer: (asset: string, layer: string) => `layer:${asset}/${layer}`,
   mix: (asset: string) => `mix:${asset}`,
   studio: (studio: string) => `studio:${studio}`,
-  variant: (asset: string, variant: string) => `variant:${asset}/${variant}`,
+  variant: (asset: string, layer: string, variant: string) =>
+    `variant:${asset}/${layer}/${variant}`,
 };
 
 interface Placed {
@@ -281,7 +282,7 @@ export const layout = (
             variantX + placed.depth * VARIANT_COLUMN,
             (start + placed.row) * ROW
           ),
-          id: nodeId.variant(asset.id, placed.variant.id),
+          id: nodeId.variant(asset.id, layer.id, placed.variant.id),
         });
       }
     }
@@ -309,15 +310,19 @@ export const layout = (
         const isRoot = placed.depth === 0 || parent === undefined;
         connect(
           isRoot ? "structure" : "lineage",
-          isRoot ? layerNodeId : nodeId.variant(asset.id, parent),
-          nodeId.variant(asset.id, placed.variant.id)
+          isRoot ? layerNodeId : nodeId.variant(asset.id, layer.id, parent),
+          nodeId.variant(asset.id, layer.id, placed.variant.id)
         );
       }
 
       const picked = asset.mix[layer.id];
 
       if (picked !== undefined) {
-        connect("pick", nodeId.variant(asset.id, picked), nodeId.mix(asset.id));
+        connect(
+          "pick",
+          nodeId.variant(asset.id, layer.id, picked),
+          nodeId.mix(asset.id)
+        );
       }
     }
   }

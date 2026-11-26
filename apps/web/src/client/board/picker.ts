@@ -72,6 +72,11 @@ export const syncClips = (
         ]
   );
 
+const drivePath = /^[A-Za-z]:[\\/]/u;
+
+export const mediaSrc = (path: string) =>
+  drivePath.test(path) ? `/@fs/${path.replaceAll("\\", "/")}` : path;
+
 const media = /\.(?:gif|png|jpe?g|webp)$/u;
 
 export const referenceOf = (pack: typeof PackDef.Type) =>

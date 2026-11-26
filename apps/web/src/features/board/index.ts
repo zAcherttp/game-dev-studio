@@ -10,6 +10,7 @@ import type { Graph, GraphEdge, GraphNode } from "../../client/board/layout.js";
 import { Message } from "../../client/board/message.js";
 import type { BoardMessage } from "../../client/board/message.js";
 import type { BoardModel } from "../../client/board/model.js";
+import { mediaSrc } from "../../client/board/picker.js";
 import { boardStyles } from "./board.stylex.js";
 import { boardCopy } from "./copy.js";
 import { pickerView } from "./picker.js";
@@ -74,7 +75,7 @@ const preview = (
   render === undefined
     ? h.div([h.Class(cls(boardStyles.emptyPreview))], [boardCopy.noPick])
     : h.img([
-        h.Src(render.still ?? render.path),
+        h.Src(mediaSrc(render.still ?? render.path)),
         h.Alt(alt),
         h.Class(cls(boardStyles.preview)),
         h.Draggable(false),
