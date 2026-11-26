@@ -17,6 +17,7 @@ import {
   Source,
   Store,
   UnknownStudio,
+  rendererOf,
 } from "@gds/model";
 import type { StudioDef } from "@gds/model";
 import { GameFolder } from "@gds/store";
@@ -175,17 +176,15 @@ export class RobloxStudios extends Context.Service<
       const backend = (studio: StudioValue) =>
         building.withPermits(1)(
           Effect.gen(function* backendFor() {
-            const known = (yield* Ref.get(built)).get(studio.id);
+            const key = `${studio.id}:${studio.renderer}`;
+            const known = (yield* Ref.get(built)).get(key);
 
             if (known !== undefined) {
               return known;
             }
 
             const made = yield* build(studio);
-            yield* Ref.update(
-              built,
-              (all) => new Map([...all, [studio.id, made]])
-            );
+            yield* Ref.update(built, (all) => new Map([...all, [key, made]]));
 
             return made;
           })
@@ -260,13 +259,17 @@ export const StudioRenderer = Layer.effect(
           Effect.catchTag("UnknownStudio", (problem) =>
             Effect.fail(noStudio("renderer", problem))
           ),
+          Effect.map((studio) => ({
+            ...studio,
+            renderer: rendererOf(studio, request.layer),
+          })),
           Effect.flatMap((studio) =>
             isRobloxStudio(studio)
               ? roblox.backend(studio)
               : Effect.fail(
                   new AdapterFailed({
                     adapter: "renderer",
-                    message: `Studio ${studio.id} names renderer "${studio.renderer}", which no adapter in this dev studio draws. Fix: set "renderer" in \`tools/devstudio/studios/${studio.id}.json\` to one of ${[...ROBLOX_RENDERERS].join(", ")}.`,
+                    message: `Studio ${studio.id} names renderer "${studio.renderer}" for layer ${request.layer}, which no adapter in this dev studio draws. Fix: set "renderer" on the studio or that layer in \`tools/devstudio/studios/${studio.id}.json\` to one of ${[...ROBLOX_RENDERERS].join(", ")}.`,
                   })
                 )
           ),

@@ -1,5 +1,14 @@
 {
-  "gates": ["budget"],
+  "gates": [
+    {
+      "id": "budget",
+      "title": "Budget",
+      "run": ["python", "budget.py", "--json"],
+      "json": "ok",
+      "pass": { "truthy": true },
+      "where": "variant"
+    }
+  ],
   "id": "vfx",
   "layers": [
     {

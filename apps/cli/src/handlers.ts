@@ -1,5 +1,6 @@
 import { implement } from "@gds/capability/implement";
 import {
+  Apply,
   Check,
   Pack,
   Renderer,
@@ -14,9 +15,11 @@ import {
   layersOfContract,
   listAssetsContract,
   listStudiosContract,
+  notBuilt,
   openCheckContract,
   pickContract,
   renderContract,
+  renderMixContract,
   roundContract,
 } from "@gds/model";
 import type { Asset } from "@gds/model";
@@ -27,7 +30,7 @@ import {
   pickOnLayer,
   roundOnLayer,
 } from "@gds/store";
-import { DateTime, Effect } from "effect";
+import { DateTime, Effect, Option } from "effect";
 
 interface Where {
   readonly studio: string;
@@ -186,6 +189,10 @@ export const render = implement(
   })
 );
 
+export const renderMix = implement(renderMixContract, () =>
+  Effect.fail(notBuilt(renderMixContract.name))
+);
+
 export const pick = implement(
   pickContract,
   Effect.fn("pick")(function* pick(input) {
@@ -195,6 +202,13 @@ export const pick = implement(
     const entry = yield* layerOf(stored, where);
 
     yield* pickOnLayer(factsOf(where, entry), variant);
+
+    const chosen = entry.variants.find(({ id }) => id === variant);
+    const applier = yield* Effect.serviceOption(Apply);
+
+    if (chosen !== undefined && Option.isSome(applier)) {
+      yield* applier.value.apply({ asset, layer, studio, variant: chosen });
+    }
 
     const at = yield* now;
 
@@ -244,6 +258,7 @@ export const studioCapabilities = [
   layersOf,
   addVariants,
   render,
+  renderMix,
   pick,
   round,
   getPack,

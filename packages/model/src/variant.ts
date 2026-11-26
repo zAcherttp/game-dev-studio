@@ -9,6 +9,13 @@ export const RenderBeat = Schema.Struct({
   }),
 });
 
+export const RenderView = Schema.Struct({
+  camera: Schema.String.annotate({
+    description: "The named camera the view is drawn from.",
+  }),
+  path: Schema.String,
+});
+
 export const Render = Schema.Struct({
   beat: Schema.optionalKey(RenderBeat).annotate({
     description:
@@ -20,6 +27,11 @@ export const Render = Schema.Struct({
   still: Schema.optionalKey(Schema.String).annotate({
     description: "An image held at the sync beat, beside a timed render.",
   }),
+  views: Schema.optionalKey(
+    Schema.Array(RenderView).annotate({
+      description: "One image per named camera. path is the first view's path.",
+    })
+  ),
 });
 
 export const GateResult = Schema.Struct({

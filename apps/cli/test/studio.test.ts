@@ -1,13 +1,15 @@
 import { NodeServices } from "@effect/platform-node";
 import { describe, expect, it } from "@effect/vitest";
 import { invokerFor } from "@gds/capability";
+import { AdapterFailed, Apply } from "@gds/model";
+import type { StudioDef } from "@gds/model";
 import { GameFolder } from "@gds/store";
-import { Effect, FileSystem, Path, Schema } from "effect";
+import { Effect, FileSystem, Layer, Path, Schema } from "effect";
 
 import { studioLayer } from "../src/studio-layer.js";
 import { capabilities } from "../src/surfaces.js";
 
-const vfxStudio = {
+const vfxStudio: typeof StudioDef.Encoded = {
   gates: [],
   id: "vfx",
   layers: [{ id: "core", order: 0, renderKind: "gif", title: "Core" }],
@@ -43,7 +45,9 @@ type Invoke = Effect.Success<
 const inGame = <A, E>(
   body: (
     invoke: Invoke
-  ) => Effect.Effect<A, E, FileSystem.FileSystem | Path.Path>
+  ) => Effect.Effect<A, E, FileSystem.FileSystem | Path.Path>,
+  extra: Layer.Layer<never> = Layer.empty,
+  studio: typeof StudioDef.Encoded = vfxStudio
 ) =>
   Effect.gen(function* run() {
     const fs = yield* FileSystem.FileSystem;
@@ -54,19 +58,29 @@ const inGame = <A, E>(
     yield* fs.makeDirectory(dir, { recursive: true });
     yield* fs.writeFileString(
       path.join(dir, "vfx.json"),
-      JSON.stringify(vfxStudio)
+      JSON.stringify(studio)
     );
 
-    const invoke = yield* invokerFor(capabilities).pipe(
-      Effect.provide(studioLayer(GameFolder.at(root)))
-    );
+    const layer = Layer.merge(studioLayer(GameFolder.at(root)), extra);
+    const invoke = yield* invokerFor(capabilities).pipe(Effect.provide(layer));
 
-    return yield* body(invoke).pipe(
-      Effect.provide(studioLayer(GameFolder.at(root)))
-    );
+    return yield* body(invoke).pipe(Effect.provide(layer));
   }).pipe(Effect.scoped, Effect.provide(NodeServices.layer));
 
 const Tagged = Schema.Struct({ _tag: Schema.String });
+
+const failingApply = Layer.succeed(
+  Apply,
+  Apply.of({
+    apply: () =>
+      Effect.fail(
+        new AdapterFailed({
+          adapter: "apply",
+          message: "Config row not written",
+        })
+      ),
+  })
+);
 
 const tagOf = (outcome: { readonly ok: boolean; readonly error?: unknown }) =>
   outcome.ok ? "ok" : Schema.decodeUnknownSync(Tagged)(outcome.error)._tag;
@@ -124,6 +138,64 @@ describe("studio capabilities", () => {
 
         expect(tagOf(yield* invoke("pick", pickInput("c1")))).toBe("LayerBusy");
       })
+    )
+  );
+
+  it.effect(
+    "a pick whose Apply fails fails the pick and leaves the store untouched",
+    () =>
+      inGame(
+        (invoke) =>
+          Effect.gen(function* applyFails() {
+            yield* invoke("addVariants", {
+              ...where,
+              variants: [variant("c1")],
+            });
+
+            const before = yield* invoke("getAsset", {
+              asset: "fire",
+              studio: "vfx",
+            });
+
+            const picked = yield* invoke("pick", pickInput("c1"));
+
+            const after = yield* invoke("getAsset", {
+              asset: "fire",
+              studio: "vfx",
+            });
+
+            expect(tagOf(picked)).toBe("AdapterFailed");
+            expect(after).toEqual(before);
+          }),
+        failingApply
+      )
+  );
+
+  it.effect("draws each layer through its own renderer over the studio's", () =>
+    inGame(
+      (invoke) =>
+        Effect.gen(function* layerRenderer() {
+          yield* invoke("addVariants", { ...where, variants: [variant("c1")] });
+
+          const drawn = yield* invoke("render", { ...where, variant: "c1" });
+
+          expect(tagOf(drawn)).toBe("AdapterFailed");
+          expect(JSON.stringify(drawn)).toContain("command:refloop");
+          expect(JSON.stringify(drawn)).toContain("for layer core");
+        }),
+      Layer.empty,
+      {
+        ...vfxStudio,
+        layers: [
+          {
+            id: "core",
+            order: 0,
+            renderKind: "gif",
+            renderer: "command:refloop",
+            title: "Core",
+          },
+        ],
+      }
     )
   );
 

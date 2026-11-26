@@ -1,5 +1,7 @@
 export { AdapterFailed } from "./adapter-failed.js";
 
+export { Apply, type Applied, type ApplyRequest } from "./apply.js";
+
 export { Asset, AssetLayer, AssetSummary, Mix } from "./asset.js";
 
 export { Check, type CheckRequest } from "./check.js";
@@ -15,8 +17,11 @@ export {
   openCheckContract,
   pickContract,
   renderContract,
+  renderMixContract,
   roundContract,
 } from "./contracts.js";
+
+export { GateDef, GatePass } from "./gate.js";
 
 export { LayerBusy } from "./layer-busy.js";
 
@@ -38,7 +43,13 @@ export { Source } from "./source.js";
 
 export { Store } from "./store.js";
 
-export { LayerDef, PackDef, PackFile, StudioDef } from "./studio.js";
+export {
+  LayerDef,
+  PackDef,
+  PackFile,
+  StudioDef,
+  rendererOf,
+} from "./studio.js";
 
 export { UnknownAsset } from "./unknown-asset.js";
 
@@ -48,4 +59,10 @@ export { UnknownStudio } from "./unknown-studio.js";
 
 export { UnknownVariant } from "./unknown-variant.js";
 
-export { GateResult, Render, RenderBeat, Variant } from "./variant.js";
+export {
+  GateResult,
+  Render,
+  RenderBeat,
+  RenderView,
+  Variant,
+} from "./variant.js";

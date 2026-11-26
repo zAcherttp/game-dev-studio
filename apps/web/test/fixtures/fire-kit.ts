@@ -4,7 +4,24 @@ import type { FlagsValue } from "../../src/client/board/model.js";
 
 export const fireStudio: typeof StudioDef.Type = {
   check: "roblox.vfxlab",
-  gates: ["easyvfx.audit", "easyvfx.beats"],
+  gates: [
+    {
+      cwd: "tools/easyvfx",
+      id: "easyvfx.audit",
+      pass: { op: "eq", value: 0 },
+      run: ["python", "tools/evfx", "audit", "--no-scores", "--check"],
+      title: "EasyVFX audit: nothing worse than the baseline",
+      where: "variant",
+    },
+    {
+      cwd: "tools/easyvfx",
+      id: "easyvfx.beats",
+      pass: { op: "eq", value: 0 },
+      run: ["python", "tools/evfx", "beats"],
+      title: "EasyVFX beat judge against the effect's beat sheet",
+      where: "variant",
+    },
+  ],
   id: "vfx",
   layers: [
     {
