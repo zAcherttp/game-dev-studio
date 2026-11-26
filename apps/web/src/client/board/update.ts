@@ -4,7 +4,7 @@ import { modifyFields } from "foldkit/struct";
 
 import type { BoardApi } from "./api.js";
 import { PickVariant, RenderTake, RequestRound } from "./command.js";
-import { fit, layout, zoomAt } from "./layout.js";
+import { fit, layout, nodeId, panTo, zoomAt } from "./layout.js";
 import { Message } from "./message.js";
 import type { BoardMessage } from "./message.js";
 import { idleStatus, takeKey } from "./model.js";
@@ -127,6 +127,15 @@ const openLayer = (
       clock: () => 0,
       drag: () => Option.none(),
       note: () => "",
+      camera: (camera) => {
+        const node = graphOf(model).nodes.find(
+          (candidate) => candidate.id === nodeId.layer(asset, layer)
+        );
+
+        return node === undefined
+          ? camera
+          : panTo(camera, node, model.viewport);
+      },
       open: () => Option.some({ asset, layer }),
       rendering: (current) => [
         ...current.filter((key) => !keys.includes(key)),
@@ -137,6 +146,26 @@ const openLayer = (
     }),
   };
 };
+
+export const prerenderPicks = (model: BoardModel) =>
+  model.assets.flatMap(({ asset }) =>
+    Object.entries(asset.mix).flatMap(([layer, picked]) => {
+      const variant = asset.layers[layer]?.variants.find(
+        ({ id }) => id === picked
+      );
+
+      return variant === undefined || variant.render !== undefined
+        ? []
+        : [
+            RenderTake({
+              asset: asset.id,
+              layer,
+              studio: model.studio.id,
+              variant: variant.id,
+            }),
+          ];
+    })
+  );
 
 const round = (model: BoardModel): UpdateReturn =>
   Option.match(model.open, {
@@ -283,6 +312,15 @@ export const update = (
       model: modifyFields(model, {
         clock: (clock) => clock + Math.min(MAX_FRAME_MS, Math.max(0, elapsed)),
       }),
+    }),
+    ToggledSwitcher: () => ({
+      model: modifyFields(model, {
+        assetFilter: () => "",
+        switcherOpen: (open) => !open,
+      }),
+    }),
+    UpdatedAssetFilter: ({ value }) => ({
+      model: modifyFields(model, { assetFilter: () => value }),
     }),
     UpdatedAxis: ({ value }) => ({
       model: modifyFields(model, { axis: () => value }),

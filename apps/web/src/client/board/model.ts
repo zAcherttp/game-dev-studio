@@ -8,9 +8,18 @@ export const BoardAsset = Schema.Struct({
 
 export type BoardAssetValue = typeof BoardAsset.Type;
 
+export const CatalogEntry = Schema.Struct({
+  id: Schema.String,
+  picks: Schema.Int,
+  title: Schema.String,
+});
+
+export type CatalogEntryValue = typeof CatalogEntry.Type;
+
 export const Flags = Schema.Struct({
   assets: Schema.Array(BoardAsset),
   by: Schema.String,
+  catalog: Schema.Array(CatalogEntry),
   studio: StudioDef,
 });
 
@@ -46,10 +55,12 @@ export const Status = Schema.Struct({
 });
 
 export const Model = Schema.Struct({
+  assetFilter: Schema.String,
   assets: Schema.Array(BoardAsset),
   axis: Schema.String,
   by: Schema.String,
   camera: Camera,
+  catalog: Schema.Array(CatalogEntry),
   clock: Schema.Finite,
   drag: Schema.Option(Point),
   fitted: Schema.Boolean,
@@ -59,6 +70,7 @@ export const Model = Schema.Struct({
   roundNote: Schema.String,
   status: Status,
   studio: StudioDef,
+  switcherOpen: Schema.Boolean,
   viewport: Viewport,
 });
 
@@ -72,10 +84,12 @@ export const takeKey = (asset: string, layer: string, variant: string) =>
 export const idleStatus = { message: "", state: "idle" } as const;
 
 export const initialModel = (flags: FlagsValue): BoardModel => ({
+  assetFilter: "",
   assets: flags.assets,
   axis: "",
   by: flags.by,
   camera: { x: 0, y: 0, zoom: 1 },
+  catalog: flags.catalog,
   clock: 0,
   drag: Option.none(),
   fitted: false,
@@ -85,5 +99,6 @@ export const initialModel = (flags: FlagsValue): BoardModel => ({
   roundNote: "",
   status: idleStatus,
   studio: flags.studio,
+  switcherOpen: false,
   viewport: defaultViewport,
 });

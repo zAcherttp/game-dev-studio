@@ -18,6 +18,8 @@ export const MIN_ZOOM = 0.15;
 
 export const MAX_ZOOM = 2.5;
 
+export const FIT_MIN_ZOOM = 0.4;
+
 const FIT_PADDING = 48;
 
 const MIX_HEADER = 62;
@@ -143,6 +145,35 @@ export const lineage = (variants: readonly VariantValue[]) => {
   return { placed, rows: Math.max(1, rows) };
 };
 
+export const shownTakes = (
+  variants: readonly VariantValue[],
+  picked: string | undefined
+): readonly VariantValue[] => {
+  const byId = new Map(variants.map((variant) => [variant.id, variant]));
+  const shown = new Set<string>();
+
+  const keep = (id: string | undefined) => {
+    const variant = id === undefined ? undefined : byId.get(id);
+
+    if (variant === undefined || shown.has(variant.id)) {
+      return;
+    }
+
+    shown.add(variant.id);
+    keep(variant.parent);
+  };
+
+  for (const variant of variants) {
+    if (variant.parent !== undefined && byId.has(variant.parent)) {
+      keep(variant.id);
+    }
+  }
+
+  keep(picked);
+
+  return variants.filter((variant) => shown.has(variant.id));
+};
+
 const pickOf = (asset: AssetValue, layer: string) => {
   const picked = asset.mix[layer];
 
@@ -175,10 +206,15 @@ export const layout = (
 ): Graph => {
   const perAsset = assets.map((entry) => ({
     entry,
-    layers: orderedLayers(entry).map((layer) => ({
-      layer,
-      tree: lineage(entry.asset.layers[layer.id]?.variants ?? []),
-    })),
+    layers: orderedLayers(entry).map((layer) => {
+      const variants = entry.asset.layers[layer.id]?.variants ?? [];
+
+      return {
+        layer,
+        takes: variants.length,
+        tree: lineage(shownTakes(variants, entry.asset.mix[layer.id])),
+      };
+    }),
   }));
 
   const maxDepth = Math.max(
@@ -221,11 +257,11 @@ export const layout = (
     const { asset } = entry;
     const top = rowCursor;
 
-    const layerRows = layers.map(({ layer, tree }) => {
+    const layerRows = layers.map(({ layer, takes, tree }) => {
       const start = rowCursor;
       rowCursor += tree.rows;
 
-      return { layer, start, tree };
+      return { layer, start, takes, tree };
     });
 
     const rows = Math.max(1, rowCursor - top);
@@ -255,11 +291,11 @@ export const layout = (
       y: middle + (ROW - mixHeight) / 2,
     });
 
-    for (const { layer, start, tree } of layerRows) {
+    for (const { layer, start, takes, tree } of layerRows) {
       const layerNodeId = nodeId.layer(asset.id, layer.id);
       add({
         asset,
-        count: tree.placed.length,
+        count: takes,
         kind: "layer",
         layer,
         pick: pickOf(asset, layer.id),
@@ -340,17 +376,39 @@ export const fit = (
   graph: Pick<Graph, "width" | "height">,
   viewport: ViewportValue
 ): CameraValue => {
-  const zoom = clampZoom(
-    Math.min(
-      (viewport.width - FIT_PADDING * 2) / graph.width,
-      (viewport.height - FIT_PADDING * 2) / graph.height,
-      1
+  const zoom = Math.max(
+    FIT_MIN_ZOOM,
+    clampZoom(
+      Math.min(
+        (viewport.width - FIT_PADDING * 2) / graph.width,
+        (viewport.height - FIT_PADDING * 2) / graph.height,
+        1
+      )
     )
   );
 
+  const along = (room: number, size: number) =>
+    size * zoom + FIT_PADDING * 2 > room
+      ? FIT_PADDING
+      : (room - size * zoom) / 2;
+
   return {
-    x: (viewport.width - graph.width * zoom) / 2,
-    y: (viewport.height - graph.height * zoom) / 2,
+    x: along(viewport.width, graph.width),
+    y: along(viewport.height, graph.height),
+    zoom,
+  };
+};
+
+export const panTo = (
+  camera: CameraValue,
+  node: Pick<NodeBase, "x" | "y" | "width" | "height">,
+  viewport: ViewportValue
+): CameraValue => {
+  const zoom = Math.max(camera.zoom, FIT_MIN_ZOOM);
+
+  return {
+    x: viewport.width / 2 - (node.x + node.width / 2) * zoom,
+    y: viewport.height / 2 - (node.y + node.height / 2) * zoom,
     zoom,
   };
 };
