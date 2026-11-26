@@ -55,6 +55,7 @@ export const Model = Schema.Struct({
   fitted: Schema.Boolean,
   note: Schema.String,
   open: Schema.Option(OpenLayer),
+  rendering: Schema.Array(Schema.String),
   roundNote: Schema.String,
   status: Status,
   studio: StudioDef,
@@ -64,6 +65,9 @@ export const Model = Schema.Struct({
 export type BoardModel = typeof Model.Type;
 
 export const defaultViewport: ViewportValue = { height: 720, width: 1280 };
+
+export const takeKey = (asset: string, layer: string, variant: string) =>
+  `${asset}/${layer}/${variant}`;
 
 export const idleStatus = { message: "", state: "idle" } as const;
 
@@ -77,6 +81,7 @@ export const initialModel = (flags: FlagsValue): BoardModel => ({
   fitted: false,
   note: "",
   open: Option.none(),
+  rendering: [],
   roundNote: "",
   status: idleStatus,
   studio: flags.studio,

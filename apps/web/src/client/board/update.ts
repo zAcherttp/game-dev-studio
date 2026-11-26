@@ -3,12 +3,12 @@ import type { Update } from "foldkit";
 import { modifyFields } from "foldkit/struct";
 
 import type { BoardApi } from "./api.js";
-import { PickVariant, RequestRound } from "./command.js";
+import { PickVariant, RenderTake, RequestRound } from "./command.js";
 import { fit, layout, zoomAt } from "./layout.js";
 import { Message } from "./message.js";
 import type { BoardMessage } from "./message.js";
-import { idleStatus } from "./model.js";
-import type { BoardModel, CameraValue } from "./model.js";
+import { idleStatus, takeKey } from "./model.js";
+import type { BoardAssetValue, BoardModel, CameraValue } from "./model.js";
 import { openedLayer } from "./picker.js";
 
 type UpdateReturn = Update.Return<BoardModel, BoardMessage, BoardApi>;
@@ -71,6 +71,73 @@ const pickByKey = (model: BoardModel, index: number): UpdateReturn =>
     }
   );
 
+const withRender = (
+  assets: readonly BoardAssetValue[],
+  where: {
+    readonly asset: string;
+    readonly layer: string;
+    readonly variant: string;
+  },
+  render: NonNullable<
+    BoardAssetValue["asset"]["layers"][string]["variants"][number]["render"]
+  >
+): readonly BoardAssetValue[] =>
+  assets.map((entry) => {
+    const layer = entry.asset.layers[where.layer];
+
+    if (entry.asset.id !== where.asset || layer === undefined) {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      asset: {
+        ...entry.asset,
+        layers: {
+          ...entry.asset.layers,
+          [where.layer]: {
+            ...layer,
+            variants: layer.variants.map((variant) =>
+              variant.id === where.variant ? { ...variant, render } : variant
+            ),
+          },
+        },
+      },
+    };
+  });
+
+const openLayer = (
+  model: BoardModel,
+  asset: string,
+  layer: string
+): UpdateReturn => {
+  const takes = Option.match(openedLayer(model.assets, { asset, layer }), {
+    onNone: () => [],
+    onSome: ({ variants }) => variants,
+  });
+
+  const keys = takes.map((take) => takeKey(asset, layer, take.id));
+
+  return {
+    commands: takes.map((take) =>
+      RenderTake({ asset, layer, studio: model.studio.id, variant: take.id })
+    ),
+    model: modifyFields(model, {
+      axis: () => "",
+      clock: () => 0,
+      drag: () => Option.none(),
+      note: () => "",
+      open: () => Option.some({ asset, layer }),
+      rendering: (current) => [
+        ...current.filter((key) => !keys.includes(key)),
+        ...keys,
+      ],
+      roundNote: () => "",
+      status: () => idleStatus,
+    }),
+  };
+};
+
 const round = (model: BoardModel): UpdateReturn =>
   Option.match(model.open, {
     onNone: () => ({ model }),
@@ -130,6 +197,16 @@ export const update = (
         status: () => ({ message: reason, state: "failed" as const }),
       }),
     }),
+    FailedRender: ({ asset, layer, message: reason, variant }) => ({
+      model: modifyFields(model, {
+        rendering: (current) =>
+          current.filter((key) => key !== takeKey(asset, layer, variant)),
+        status: () => ({
+          message: `Take ${variant} did not render. ${reason}`,
+          state: "failed" as const,
+        }),
+      }),
+    }),
     FailedRound: ({ message: reason }) => ({
       model: modifyFields(model, {
         status: () => ({ message: reason, state: "failed" as const }),
@@ -162,23 +239,21 @@ export const update = (
           }),
         }),
       }),
-    OpenedLayer: ({ asset, layer }) => ({
-      model: modifyFields(model, {
-        axis: () => "",
-        clock: () => 0,
-        drag: () => Option.none(),
-        note: () => "",
-        open: () => Option.some({ asset, layer }),
-        roundNote: () => "",
-        status: () => idleStatus,
-      }),
-    }),
+    OpenedLayer: ({ asset, layer }) => openLayer(model, asset, layer),
     PressedCanvas: ({ x, y }) => ({
       model: modifyFields(model, { drag: () => Option.some({ x, y }) }),
     }),
     PressedPickKey: ({ index }) => pickByKey(model, index),
     ReleasedPointer: () => ({
       model: modifyFields(model, { drag: () => Option.none() }),
+    }),
+    RenderedTake: ({ asset, layer, render, variant }) => ({
+      model: modifyFields(model, {
+        assets: (assets) =>
+          withRender(assets, { asset, layer, variant }, render),
+        rendering: (current) =>
+          current.filter((key) => key !== takeKey(asset, layer, variant)),
+      }),
     }),
     SubmittedRound: () => round(model),
     SucceededPick: ({ asset }) => ({

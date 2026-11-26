@@ -49,6 +49,35 @@ export const RequestRound = Command.define("RequestRound", {
   messages: [Message.SucceededRound, Message.FailedRound],
 });
 
+export const RenderTake = Command.define("RenderTake", {
+  args: {
+    asset: Schema.String,
+    layer: Schema.String,
+    studio: Schema.String,
+    variant: Schema.String,
+  },
+  execute: (input) =>
+    Effect.gen(function* renderTake() {
+      const api = yield* BoardApi;
+
+      const where = {
+        asset: input.asset,
+        layer: input.layer,
+        variant: input.variant,
+      };
+
+      return yield* api.render(input).pipe(
+        Effect.map((render) => Message.RenderedTake({ ...where, render })),
+        Effect.catchTag("BoardApiFailed", (failure) =>
+          Effect.succeed(
+            Message.FailedRender({ ...where, message: failure.message })
+          )
+        )
+      );
+    }),
+  messages: [Message.RenderedTake, Message.FailedRender],
+});
+
 type CanvasMessage =
   | ReturnType<typeof Message.MeasuredCanvas>
   | ReturnType<typeof Message.WheeledCanvas>;

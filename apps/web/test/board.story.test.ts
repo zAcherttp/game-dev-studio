@@ -9,6 +9,7 @@ import { initialModel } from "../src/client/board/model.js";
 import type { BoardModel } from "../src/client/board/model.js";
 import { update } from "../src/client/board/update.js";
 import { fireFlags, fireKit } from "./fixtures/fire-kit.js";
+import { rendersOf } from "./fixtures/renders.js";
 
 const start = initialModel(fireFlags);
 
@@ -33,6 +34,7 @@ it("a key picks that column's variant with the note, and the mix follows the sto
     update,
     given(start),
     message(Message.OpenedLayer({ asset: "fire", layer: "FireLoop" })),
+    Command.resolveAll(...rendersOf("FireLoop")),
     message(Message.UpdatedNote({ value: " taller core " })),
     message(Message.PressedPickKey({ index: 2 })),
     Command.expectExact(
@@ -65,6 +67,7 @@ it("keys do nothing while the picker is closed, and a second pick waits for the 
     message(Message.PressedPickKey({ index: 1 })),
     Command.expectNone(),
     message(Message.OpenedLayer({ asset: "fire", layer: "Streaks" })),
+    Command.resolveAll(...rendersOf("Streaks")),
     message(Message.ChoseVariant({ variant: "Streaks-A" })),
     Command.resolve(PickVariant, Message.FailedPick({ message: "store down" })),
     model((current) => {
@@ -91,6 +94,7 @@ it("more along needs an axis, then asks for a round on the open layer", () => {
     update,
     given(start),
     message(Message.OpenedLayer({ asset: "fire", layer: "Fireball" })),
+    Command.resolveAll(...rendersOf("Fireball")),
     message(Message.SubmittedRound()),
     Command.expectNone(),
     model((current) => {

@@ -1,4 +1,4 @@
-import type { Asset, RoundRequest } from "@gds/model";
+import type { Asset, Render, RoundRequest } from "@gds/model";
 import { Context, DateTime, Effect, Layer, Ref } from "effect";
 
 import { BoardApiFailed } from "./board-api-failed.js";
@@ -21,6 +21,13 @@ export interface RoundInput {
   readonly note: string;
 }
 
+export interface RenderInput {
+  readonly studio: string;
+  readonly asset: string;
+  readonly layer: string;
+  readonly variant: string;
+}
+
 type AssetValue = typeof Asset.Type;
 
 export class BoardApi extends Context.Service<
@@ -32,6 +39,9 @@ export class BoardApi extends Context.Service<
     readonly round: (
       input: RoundInput
     ) => Effect.Effect<typeof RoundRequest.Type, BoardApiFailed>;
+    readonly render: (
+      input: RenderInput
+    ) => Effect.Effect<typeof Render.Type, BoardApiFailed>;
   }
 >()("@gds/web/BoardApi") {}
 
@@ -143,6 +153,21 @@ export const memoryBoardApi = (initial: readonly BoardAssetValue[]) =>
         return { ...input, at };
       });
 
-      return { pick, round };
+      const render = Effect.fn("BoardApi.memory.render")(function* render(
+        input: RenderInput
+      ) {
+        const { layer } = yield* findAsset(yield* Ref.get(store), input);
+        const found = layer.variants.find(({ id }) => id === input.variant);
+
+        if (found?.render === undefined) {
+          return yield* failed(
+            `No render for ${input.variant} on layer ${input.layer} in the fixture.`
+          );
+        }
+
+        return found.render;
+      });
+
+      return { pick, render, round };
     })
   );

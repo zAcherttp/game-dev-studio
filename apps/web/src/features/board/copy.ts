@@ -22,6 +22,7 @@ export const pickerCopy = {
   notePlaceholder: "what you like about it, or what to keep",
   pick: (label: string) => `Pick ${label}`,
   reference: "Reference",
+  rendering: (label: string) => `Rendering ${label}…`,
   roundButton: "Ask for a round",
   roundNote: "Round note",
   still: (label: string, beat: string) => `${label} at the ${beat} beat`,
