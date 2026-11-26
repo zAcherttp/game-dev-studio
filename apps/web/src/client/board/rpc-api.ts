@@ -3,6 +3,7 @@ import {
   getAssetContract,
   listStudiosContract,
   pickContract,
+  renderContract,
   roundContract,
 } from "@gds/model";
 import { Effect, Layer, Match } from "effect";
@@ -11,7 +12,7 @@ import type { RpcClientError } from "effect/rpc";
 import { RpcClient, RpcSerialization } from "effect/rpc";
 
 import { BoardApi } from "./api.js";
-import type { PickInput, RoundInput } from "./api.js";
+import type { PickInput, RenderInput, RoundInput } from "./api.js";
 import { BoardApiFailed } from "./board-api-failed.js";
 
 export const boardRpcGroup = toRpcGroup([
@@ -19,6 +20,7 @@ export const boardRpcGroup = toRpcGroup([
   getAssetContract,
   pickContract,
   roundContract,
+  renderContract,
 ]).group;
 
 export const STUDIO_RPC_PATH = "/rpc";
@@ -26,6 +28,7 @@ export const STUDIO_RPC_PATH = "/rpc";
 type StudioFailure =
   | typeof pickContract.failure.Type
   | typeof roundContract.failure.Type
+  | typeof renderContract.failure.Type
   | RpcClientError.RpcClientError;
 
 const reload = "Fix: reload the board; the asset file changed.";
@@ -64,6 +67,8 @@ export const rpcBoardApi = (url: string) =>
       return BoardApi.of({
         pick: (input: PickInput) =>
           client.pick(input).pipe(Effect.mapError(failed)),
+        render: (input: RenderInput) =>
+          client.render(input).pipe(Effect.mapError(failed)),
         round: (input: RoundInput) =>
           client.round(input).pipe(Effect.mapError(failed)),
       });

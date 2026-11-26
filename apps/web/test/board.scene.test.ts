@@ -2,6 +2,7 @@ import { it } from "@effect/vitest";
 import {
   all,
   click,
+  Command,
   expect,
   expectAll,
   given,
@@ -18,6 +19,7 @@ import { initialModel } from "../src/client/board/model.js";
 import { update } from "../src/client/board/update.js";
 import { view } from "../src/features/board/index.js";
 import { fireFlags } from "./fixtures/fire-kit.js";
+import { rendersOf } from "./fixtures/renders.js";
 
 const start = initialModel(fireFlags);
 
@@ -49,6 +51,7 @@ it("opening a layer shows the reference first and one pick button per variant", 
       Message.MeasuredCanvas({ height: 800, width: 1280 })
     ),
     click(role("button", { name: "Open Ember burst, picked G" })),
+    Command.resolveAll(...rendersOf("EmberBurst")),
     expect(role("dialog", { name: "Ember burst variants" })).toExist(),
     expect(role("figure", { name: "Variant G, current pick" })).toExist(),
     expect(role("button", { name: "Pick A" })).toExist(),

@@ -5,6 +5,7 @@ import type { Html, HtmlBuilder } from "foldkit/html";
 
 import { Message } from "../../client/board/message.js";
 import type { BoardMessage } from "../../client/board/message.js";
+import { takeKey } from "../../client/board/model.js";
 import type { BoardModel, OpenLayerValue } from "../../client/board/model.js";
 import {
   mediaSrc,
@@ -28,12 +29,16 @@ const media = (
   h: HtmlBuilder<BoardMessage>,
   variant: VariantValue,
   plan: SyncPlan,
-  clock: number
+  clock: number,
+  isRendering: boolean
 ): Html => {
   const { render } = variant;
 
   if (render === undefined) {
-    return h.div([h.Class(cls(pickerStyles.stage))]);
+    return h.div(
+      [h.Key(`${variant.id}:empty`), h.Class(cls(pickerStyles.stage))],
+      isRendering ? [pickerCopy.rendering(variant.label)] : []
+    );
   }
 
   const clip = { id: variant.id };
@@ -118,6 +123,10 @@ const variantColumn =
     const beat = model.studio.sync?.beat ?? "start";
     const isPicked = variant.id === picked;
 
+    const isRendering = Option.exists(model.open, (open) =>
+      model.rendering.includes(takeKey(open.asset, open.layer, variant.id))
+    );
+
     return h.figure(
       [
         h.Key(variant.id),
@@ -125,6 +134,7 @@ const variantColumn =
         h.AriaLabel(
           `Variant ${variant.label}${isPicked ? ", current pick" : ""}`
         ),
+        h.DataAttribute("rendering", String(isRendering)),
       ],
       [
         h.div(
@@ -134,7 +144,7 @@ const variantColumn =
             h.kbd([h.Class(cls(pickerStyles.key))], [String(index + 1)]),
           ]
         ),
-        media(h, variant, plan, model.clock),
+        media(h, variant, plan, model.clock, isRendering),
         variant.render?.still === undefined
           ? h.empty
           : h.div(

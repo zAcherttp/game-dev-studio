@@ -1,4 +1,4 @@
-import { Asset, RoundRequest } from "@gds/model";
+import { Asset, Render, RoundRequest } from "@gds/model";
 import { Schema } from "effect";
 import { defineMessageUnion } from "foldkit/message";
 
@@ -8,6 +8,12 @@ export const Message = defineMessageUnion({
   ClickedZoom: { factor: Schema.Finite },
   ClosedPicker: {},
   FailedPick: { message: Schema.String },
+  FailedRender: {
+    asset: Schema.String,
+    layer: Schema.String,
+    message: Schema.String,
+    variant: Schema.String,
+  },
   FailedRound: { message: Schema.String },
   MeasuredCanvas: { height: Schema.Finite, width: Schema.Finite },
   MovedPointer: { x: Schema.Finite, y: Schema.Finite },
@@ -15,6 +21,12 @@ export const Message = defineMessageUnion({
   PressedCanvas: { x: Schema.Finite, y: Schema.Finite },
   PressedPickKey: { index: Schema.Int },
   ReleasedPointer: {},
+  RenderedTake: {
+    asset: Schema.String,
+    layer: Schema.String,
+    render: Render,
+    variant: Schema.String,
+  },
   SubmittedRound: {},
   SucceededPick: { asset: Asset },
   SucceededRound: { request: RoundRequest },
