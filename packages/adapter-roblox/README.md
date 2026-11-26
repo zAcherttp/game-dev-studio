@@ -23,6 +23,21 @@ A render returns `{ kind: "image", path, ms, views: [{ camera, path }] }`. The v
 
 `renderMix` on a studio whose renderer is `roblox.plan` draws the first picked layer's variant with the whole mix through the same renderer.
 
+## Studio shots (`roblox.shot`) and the world check (`roblox.worldplace`)
+
+`shotStudio(settings)` draws a layer from Roblox Studio itself, for what only Studio shows (lights, `Atmosphere`, bloom). `shotRenderer` serves it as the `Renderer` and `worldplaceCheck` as the `Check`; both share one slot, one at a time.
+
+1. **Cameras.** The studio's camera file (`cameras`) lists the layer's cameras under `layers.<layer>` (`params.cameras` on a variant picks some). A shot camera is in world studs: `position`, `lookAt`, `fov` (70 when left out), no anchored `frame`. A camera with `pending`, without both points, or framed on a landmark is not placed: the render returns `Render.pending` naming each one, and Studio is not opened.
+2. **Slot.** Without `GDS_STUDIO_SLOT` the render is `pending` ("no Studio slot"). Take a slot from PC Bob first.
+3. **Scratch tree.** The game's own working tree is never touched. `<cache>/<studio>/shot/tree` is a detached `git worktree` of the game, reset to its `HEAD` plus its uncommitted diff and untracked files, so it holds the picks already applied. The rendered variant then goes in through the studio's `Apply` on that tree (a `renderMix`, `whole`, applies nothing more).
+4. **Place.** The game's Rojo project (`fresh.project.json`) is rewritten with each `$path` rooted in the scratch tree when it holds it, else in the game (`Packages`, submodules), and `scripts/studio-slot up gds-shot --project-file … --quality 21 --slot N` opens it in solo Play.
+5. **Stage.** `shot.stage` in the camera file lists dev calls run on the server before any shot, as `Module.fn(args)`: the module is found by name under `ServerScriptService`, the arguments are JSON with three tokens, `$seed` (the variant's seed, else 1), `$take.<layer>` (the variant's id on its own layer, the mix's pick on the others) and `$params.<key>`. For example `["SkyIslandDev.load($seed)", "PlaceLookDev.setIsland($take.mood)"]`.
+6. **Shots.** Per camera, the client hides its GUI, streams around the eye, sets a scriptable camera, waits `shot.settle` seconds (3), and `studio-slot shot --scale 1` saves `<cache>/<studio>/shot/<asset>/<key>/<camera>.jpg`. `note.json` beside them keeps the ms per shot, the quality and the stage outcomes. The key is a SHA-256 over the game state, the variant, the placed cameras, the stage, the quality, the settle and `SHOT_RENDERER_VERSION`.
+
+The check builds the same place from the mix, runs the stage, then reads each `where: "check"` gate inside Studio: `run` is `["Module.fn", ...JSON args]`, sent through `eval_server_runtime` (`studio-slot run --server`), never `execute_luau`. `json` is the dotted path into the returned reading (without it the value is 0 when the call returns), judged by `pass`. It returns `CheckShot` with `gates` and the shot layer's `views`, and keeps `check.json` (readings, shots, stage) in `<cache>/<studio>/shot/<asset>/check/<time>/`. The check uses seed 1.
+
+`test/shot.test.ts` holds the properties: dev calls read back their arguments and tokens, cameras wait until every one is placed, the place project's roots, and the two waiting renders.
+
 ## Cache
 
 Renders go to `<cache>/<studio>/<asset>/<layer>-<take>-<key>.{gif,still.png,json}`. The key is a SHA-256 over the backend, the kit as EasyVFX evaluates it, the layer, the take, and the mix without the rendered layer's own entry (the take replaces it). The same inputs return the kept file and the `ms` of the render that made it. `test/adapter.test.ts` holds the properties.

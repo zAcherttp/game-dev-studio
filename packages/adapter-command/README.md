@@ -16,7 +16,7 @@ The engine-free adapter: it runs the game commands a studio file names and reads
 
 ## Gates
 
-After a render, every `GateDef` with `where: "variant"` whose `layers` include the layer (or that names none) runs: `run` as argv in `cwd` (inside the checkout; a path that leaves it fails), stdin `{ ...RenderRequest, render }`. Without `json` the value is the exit code; with it, `json` is a dotted path into stdout's JSON (`figures.problems`, `rows.0.id`). `pass` judges the value: `eq` by JSON equality, `lt`/`le`/`gt`/`ge` on numbers only, `truthy`. `where: "check"` gates belong to `openCheck`.
+After a render, every `GateDef` with `where: "variant"` whose `layers` include the layer (or that names none) runs: `run` as argv in `cwd` (inside the checkout; a path that leaves it fails), stdin `{ ...RenderRequest, render }`. Without `json` the value is the exit code; with it, `json` is a dotted path into stdout's JSON (`figures.problems`, `rows.0.id`). `pass` judges the value (`judge` and `readPath` in `@gds/model`, shared with the Roblox check): `eq` by JSON equality, `lt`/`le`/`gt`/`ge` on numbers only, `truthy`. `where: "check"` gates belong to `openCheck`.
 
 The store never replaces a variant, so results go to `GateLedger`: `<GDS_GAME>/.cache/devstudio/gates/<studio>/<asset>.json`, the latest result per layer and variant. It is a rebuildable cache; the CLI attaches it to every asset it returns.
 

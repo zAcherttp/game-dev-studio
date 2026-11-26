@@ -58,6 +58,58 @@ export { easyvfxSource } from "./source.js";
 
 export { VFXLAB_CHECK, vfxlabCheck } from "./vfxlab-check.js";
 
+export {
+  CALL_MARK,
+  CallOutcome,
+  cameraLuau,
+  gateCall,
+  markedLine,
+  parseCall,
+  resolveTokens,
+  serverCallsLuau,
+} from "./dev-call.js";
+
+export type { CallContext, CameraPose, DevCall } from "./dev-call.js";
+
+export { placeProject, projectPaths, readProject } from "./scratch-place.js";
+
+export type { PlaceRoots } from "./scratch-place.js";
+
+export {
+  DEFAULT_FOV,
+  ShotCamera,
+  ShotCameraFile,
+  ShotSetup,
+  decodeShotCameras,
+  namedShotCameras,
+  shotCameras,
+} from "./shot-cameras.js";
+
+export type {
+  PlacedShot,
+  ShotCameraFileValue,
+  ShotCameras,
+} from "./shot-cameras.js";
+
+export {
+  SHOT_BACKEND,
+  SHOT_QUALITY,
+  SHOT_RENDERER_VERSION,
+  ShotNote,
+  ShotStudio,
+  WORLDPLACE_CHECK,
+  callContext,
+  checkContext,
+  pendingRender,
+  shotKeyText,
+  shotRenderer,
+  shotStudio,
+  stageCalls,
+  worldplaceCheck,
+} from "./shot-studio.js";
+
+export type { ShotKeyInputs, ShotSettings } from "./shot-studio.js";
+
 export type { VfxlabSettings } from "./vfxlab-check.js";
 
 export { beatFromSheet, brightest } from "./sync-beat.js";
