@@ -20,4 +20,6 @@ export {
   type LayerRefusal,
 } from "./layer-machine.js";
 
+export { SourcedStore, mergeSourced } from "./sourced-store.js";
+
 export { StudioPack } from "./studio-pack.js";

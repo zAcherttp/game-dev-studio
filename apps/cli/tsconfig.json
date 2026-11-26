@@ -13,6 +13,7 @@
           "effect/Path",
           "effect/ai/McpProtocol",
           "effect/ai/McpServer",
+          "effect/cli/Argument",
           "effect/cli/Command",
           "effect/cli/Flag",
           "effect/http-api/HttpApiBuilder",
@@ -26,6 +27,7 @@
           "effect/http/HttpServer",
           "effect/rpc/RpcClient",
           "effect/rpc/RpcSerialization",
+          "effect/process/ChildProcessSpawner",
           "effect/rpc/RpcServer"
         ]
       }

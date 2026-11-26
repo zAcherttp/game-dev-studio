@@ -1,9 +1,15 @@
 import { toCommand } from "@gds/capability";
 import type { Asset } from "@gds/model";
-import { Console, Effect, Layer } from "effect";
-import { Command, Flag } from "effect/cli";
+import { Console, Effect, Layer, Option } from "effect";
+import { Argument, Command, Flag } from "effect/cli";
 
-import { getAsset } from "./handlers.js";
+import {
+  getAsset,
+  getPack,
+  listAssets,
+  openCheck,
+  render,
+} from "./handlers.js";
 import {
   commandCapabilities,
   SERVE_HOST,
@@ -35,14 +41,84 @@ const renderAsset = (asset: typeof Asset.Type) =>
     }),
   ].join("\n");
 
-const capabilityCommands = commandCapabilities.map((capability) =>
-  capability === getAsset
-    ? toCommand(getAsset, {
-        positional: ["studio", "asset"],
-        render: renderAsset,
-      })
-    : toCommand(capability)
+const renderTakes = Command.make(
+  "render",
+  {
+    studio: Argument.String("studio"),
+    asset: Argument.String("asset"),
+    layer: Flag.String("layer").pipe(
+      Flag.withDescription("Layer id, as the asset names it")
+    ),
+    variant: Flag.String("variant").pipe(
+      Flag.optional,
+      Flag.withDescription(
+        "One variant id; every variant of the layer when left out"
+      )
+    ),
+  },
+  Effect.fn("Capability.render.takes")(function* renderLayer({
+    asset,
+    layer,
+    studio,
+    variant,
+  }) {
+    const stored = yield* getAsset.handler({ asset, studio });
+
+    const ids = Option.match(variant, {
+      onNone: () => (stored.layers[layer]?.variants ?? []).map(({ id }) => id),
+      onSome: (one) => [one],
+    });
+
+    if (ids.length === 0) {
+      yield* Console.error(
+        `${studio}/${asset} has no variants on layer ${layer}. Fix: name a layer from \`getAsset ${studio} ${asset}\`.`
+      );
+    }
+
+    for (const id of ids) {
+      const drawn = yield* render.handler({
+        asset,
+        layer,
+        studio,
+        variant: id,
+      });
+
+      yield* Console.log(
+        [
+          `${layer} ${id}`,
+          `${Math.round(drawn.ms)} ms`,
+          drawn.path,
+          ...(drawn.still === undefined ? [] : [drawn.still]),
+        ].join("  ")
+      );
+    }
+  })
+).pipe(
+  Command.withDescription(
+    "Render one variant, or every variant of a layer, on the asset's current mix"
+  )
 );
+
+const positional = new Map<unknown, readonly string[]>([
+  [listAssets, ["studio"]],
+  [getPack, ["studio"]],
+  [openCheck, ["studio", "asset"]],
+]);
+
+const capabilityCommands = commandCapabilities.map((capability) => {
+  if (capability === getAsset) {
+    return toCommand(getAsset, {
+      positional: ["studio", "asset"],
+      render: renderAsset,
+    });
+  }
+
+  if (capability === render) {
+    return renderTakes;
+  }
+
+  return toCommand(capability, { positional: positional.get(capability) });
+});
 
 const openapiCommand = Command.make("openapi", {}, () =>
   Console.log(JSON.stringify(http.openApi(), null, 2))

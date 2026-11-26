@@ -21,4 +21,8 @@ export {
 
 export { easyvfxSource } from "./source.js";
 
+export { VFXLAB_CHECK, vfxlabCheck } from "./vfxlab-check.js";
+
+export type { VfxlabSettings } from "./vfxlab-check.js";
+
 export { beatFromSheet, brightest } from "./sync-beat.js";

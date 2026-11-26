@@ -267,6 +267,9 @@ importers:
       '@effect/platform-node':
         specifier: 4.1.4
         version: 4.1.4(effect@4.1.4)(redis@6.2.1)
+      '@gds/adapter-roblox':
+        specifier: workspace:*
+        version: link:../../packages/adapter-roblox
       '@gds/capability':
         specifier: workspace:*
         version: link:../../packages/capability
