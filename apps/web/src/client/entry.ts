@@ -1,10 +1,9 @@
 import { Runtime } from "foldkit";
 
-import { fireFlags } from "../../test/fixtures/fire-kit.js";
 import { view } from "../features/board/index.js";
-import { memoryBoardApi } from "./board/api.js";
 import { Message } from "./board/message.js";
 import { Flags, initialModel, Model } from "./board/model.js";
+import { rpcBoardApi, STUDIO_RPC_PATH } from "./board/rpc-api.js";
 import { subscriptions } from "./board/subscriptions.js";
 import { update } from "./board/update.js";
 
@@ -16,7 +15,7 @@ const application = Runtime.makeApplication({
   container: document.querySelector("#root"),
   devTools: import.meta.env.DEV ? { Message } : false,
   init: (flags) => ({ model: initialModel(flags) }),
-  resources: memoryBoardApi(fireFlags.assets),
+  resources: rpcBoardApi(new URL(STUDIO_RPC_PATH, location.origin).href),
   subscriptions,
   update,
   view,

@@ -11,7 +11,11 @@
           "@effect/vitest",
           "effect/Arbitrary",
           "effect/FileSystem",
-          "effect/Path"
+          "effect/Path",
+          "effect/http/FetchHttpClient",
+          "effect/rpc/RpcClient",
+          "effect/rpc/RpcClientError",
+          "effect/rpc/RpcSerialization"
         ]
       }
     ],
