@@ -1,6 +1,14 @@
+import { GateLedger } from "@gds/adapter-command";
 import { FileStore, GameFolder, SourcedStore, StudioPack } from "@gds/store";
 import { Layer } from "effect";
 
+import {
+  CommandApply,
+  CommandSettings,
+  CommandSource,
+  GatedRenderer,
+  GatedStore,
+} from "./command-studios.js";
 import {
   RobloxStudios,
   StudioCheck,
@@ -11,15 +19,27 @@ import {
 export const studioLayer = (game: Layer.Layer<GameFolder>) => {
   const backends = RobloxStudios.layer;
   const files = FileStore;
+  const commands = CommandSettings;
+  const ledger = GateLedger.layer.pipe(Layer.provide(commands));
 
-  const source = StudioSource.pipe(Layer.provide(Layer.merge(files, backends)));
+  const source = CommandSource.pipe(
+    Layer.provide(StudioSource),
+    Layer.provide(Layer.mergeAll(files, backends, commands))
+  );
 
-  const store = SourcedStore.pipe(Layer.provide(Layer.merge(source, files)));
+  const store = GatedStore.pipe(
+    Layer.provide(SourcedStore),
+    Layer.provide(Layer.mergeAll(source, files, ledger))
+  );
 
-  return Layer.mergeAll(StudioPack, StudioRenderer, StudioCheck).pipe(
+  const renderer = GatedRenderer.pipe(Layer.provide(StudioRenderer));
+
+  return Layer.mergeAll(StudioPack, renderer, StudioCheck, CommandApply).pipe(
     Layer.provideMerge(store),
     Layer.provideMerge(source),
     Layer.provide(backends),
+    Layer.provide(ledger),
+    Layer.provide(commands),
     Layer.provide(game)
   );
 };

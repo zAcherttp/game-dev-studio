@@ -5,6 +5,12 @@
       "reason": "Suite test allowance for spawned CLI and published package end-to-end checks."
     }
   ],
+  "packages/adapter-command/vitest.config.ts": [
+    {
+      "budget": ["config", ["test"], "testTimeout", "30000"],
+      "reason": "Suite test allowance for specs that spawn a real child process per studio command and gate."
+    }
+  ],
   "packages/capability/test/execute-failure.test.ts": [
     {
       "budget": [

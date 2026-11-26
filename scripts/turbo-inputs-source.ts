@@ -60,6 +60,9 @@ const parameterizedReadBoundaries = new Map(
       ...hashed("scripts/oxlint-plugin-no-comments.ts"),
       ...temporary(),
     ],
+    "packages/adapter-command/src/gate-ledger.ts": temporary(
+      "<GDS_GAME>/.cache/devstudio/gates/**: the ledger the gate runs wrote, in a test-created game folder"
+    ),
     "packages/adapter-roblox/src/easyvfx-kits.ts": [
       {
         kind: "unbounded",
