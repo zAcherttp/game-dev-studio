@@ -3,7 +3,12 @@ import { Option } from "effect";
 import { Command, given, message, model, story } from "foldkit/story";
 
 import { withPick } from "../src/client/board/api.js";
-import { PickVariant, RequestRound } from "../src/client/board/command.js";
+import {
+  PickVariant,
+  RenderComposed,
+  RenderSolo,
+  RequestRound,
+} from "../src/client/board/command.js";
 import { Message } from "../src/client/board/message.js";
 import { initialModel } from "../src/client/board/model.js";
 import type { BoardModel } from "../src/client/board/model.js";
@@ -12,6 +17,13 @@ import { fireFlags, fireKit } from "./fixtures/fire-kit.js";
 import { rendersOf } from "./fixtures/renders.js";
 
 const start = initialModel(fireFlags);
+
+const stillRender = {
+  kind: "gif" as const,
+  ms: 900,
+  path: "E:/game/.cache/devstudio/vfx/fire/FireLoop-F.gif",
+  still: "E:/game/.cache/devstudio/vfx/fire/FireLoop-F.still.png",
+};
 
 const fireLoop = (current: BoardModel) =>
   current.assets[0]?.asset.layers.FireLoop;
@@ -48,6 +60,21 @@ it("a key picks that column's variant with the note, and the mix follows the sto
       })
     ),
     Command.resolve(PickVariant, Message.SucceededPick({ asset: picked })),
+    Command.resolveAll(
+      [
+        RenderSolo,
+        Message.RenderedSolo({
+          asset: "fire",
+          layer: "FireLoop",
+          render: stillRender,
+          variant: "FireLoop-F",
+        }),
+      ],
+      [
+        RenderComposed,
+        Message.RenderedComposed({ key: "fire|mix", render: stillRender }),
+      ]
+    ),
     model((current) => {
       expect(current.assets[0]?.asset.mix.FireLoop).toBe("FireLoop-F");
       expect(fireLoop(current)?.picks.at(-1)?.note).toBe("taller core");

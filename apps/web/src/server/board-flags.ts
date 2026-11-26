@@ -60,26 +60,21 @@ export const loadBoardFlags = Effect.fn("web.loadBoardFlags")(
         studio: studio.id,
       });
 
-      const stored = yield* Effect.all(
-        summaries.map(({ id }) =>
-          client.getAsset({ asset: id, studio: studio.id })
-        ),
-        { concurrency: 8 }
-      );
-
-      const catalog = stored.map((asset) => ({
-        id: asset.id,
-        picks: Object.values(asset.layers).reduce(
-          (total, layer) => total + layer.picks.length,
-          0
-        ),
-        title: asset.title,
+      const catalog = summaries.map((summary) => ({
+        id: summary.id,
+        picks: summary.picks ?? 0,
+        title: summary.title,
       }));
 
+      const chosen =
+        catalog.find(({ id }) => id === assetId) ??
+        catalog.find(({ picks }) => picks > 0) ??
+        catalog[0];
+
       const current =
-        stored.find((asset) => asset.id === assetId) ??
-        stored.find((_asset, index) => (catalog[index]?.picks ?? 0) > 0) ??
-        stored[0];
+        chosen === undefined
+          ? undefined
+          : yield* client.getAsset({ asset: chosen.id, studio: studio.id });
 
       const { layers } =
         current === undefined

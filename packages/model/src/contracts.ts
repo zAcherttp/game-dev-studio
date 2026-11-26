@@ -2,7 +2,7 @@ import { defineContract } from "@gds/capability/contract";
 import { Schema } from "effect";
 
 import { AdapterFailed } from "./adapter-failed.js";
-import { Asset, AssetSummary } from "./asset.js";
+import { Asset, AssetSummary, Mix } from "./asset.js";
 import { LayerBusy } from "./layer-busy.js";
 import { NoPick } from "./no-pick.js";
 import { NotBuilt } from "./not-built.js";
@@ -93,7 +93,7 @@ export const addVariantsContract = defineContract("addVariants", {
 export const renderContract = defineContract("render", {
   annotations: { idempotent: true },
   description:
-    "Render one variant drawn on top of the mix's other layers, through the studio's renderer.",
+    "Render one variant drawn on top of the mix's other layers, through the studio's renderer. With mix, draw exactly the variant and those layers' takes and leave every other layer out; an empty mix draws the variant alone.",
   failure: Schema.Union([
     NotBuilt,
     UnknownStudio,
@@ -105,6 +105,12 @@ export const renderContract = defineContract("render", {
   input: Schema.Struct({
     asset: assetField,
     layer: layerField,
+    mix: Schema.optionalKey(
+      Mix.annotate({
+        description:
+          "The other layers to draw with the variant, layer id to take id. Absent: the asset's current mix. Empty: the variant alone.",
+      })
+    ),
     studio: studioField,
     variant: Schema.String,
   }),

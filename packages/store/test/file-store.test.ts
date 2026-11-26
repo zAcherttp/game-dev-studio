@@ -174,26 +174,37 @@ describe("file store", () => {
     )
   );
 
-  it.effect("lists a studio's assets by id with their titles", () =>
-    withStore(() =>
-      Effect.gen(function* listsAssets() {
-        const store = yield* Store;
-        const before = yield* store.listAssets("vfx");
-        yield* store.putVariants("vfx", "ice", "core", [variant("core", "i1")]);
-        yield* store.putVariants("vfx", "fire", "core", [
-          variant("core", "f1"),
-        ]);
+  it.effect(
+    "lists a studio's assets by id with their titles and pick counts",
+    () =>
+      withStore(() =>
+        Effect.gen(function* listsAssets() {
+          const store = yield* Store;
+          const before = yield* store.listAssets("vfx");
+          yield* store.putVariants("vfx", "ice", "core", [
+            variant("core", "i1"),
+          ]);
+          yield* store.putVariants("vfx", "fire", "core", [
+            variant("core", "f1"),
+          ]);
+          yield* store.pick(
+            "vfx",
+            "fire",
+            pickOf("core", "f1", "2026-11-26T01:00:00.000Z")
+          );
 
-        const studioError = yield* store.listAssets("audio").pipe(Effect.flip);
+          const studioError = yield* store
+            .listAssets("audio")
+            .pipe(Effect.flip);
 
-        expect(before).toEqual([]);
-        expect(yield* store.listAssets("vfx")).toEqual([
-          { id: "fire", title: "fire" },
-          { id: "ice", title: "ice" },
-        ]);
-        expect(studioError).toBeInstanceOf(UnknownStudio);
-      })
-    )
+          expect(before).toEqual([]);
+          expect(yield* store.listAssets("vfx")).toEqual([
+            { id: "fire", picks: 1, title: "fire" },
+            { id: "ice", picks: 0, title: "ice" },
+          ]);
+          expect(studioError).toBeInstanceOf(UnknownStudio);
+        })
+      )
   );
 
   it.effect("lists studios and serves each studio's pack", () =>

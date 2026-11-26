@@ -22,6 +22,9 @@ import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
 import { RobloxConfig } from "./config.js";
 import { EasyvfxKits } from "./easyvfx-kits.js";
+import { picksFor } from "./exact-mix.js";
+import { kitPicks } from "./kit.js";
+import type { KitValue } from "./kit.js";
 import { cachedRender, SyncBeat } from "./render-cache.js";
 import type { RenderPaths } from "./render-cache.js";
 
@@ -40,8 +43,15 @@ const decodeReply = Schema.decodeUnknownEffect(Schema.fromJsonString(Reply));
 
 const EXITED = "gds-evfx-worker-exited";
 
+interface EvfxFrame {
+  readonly layer: string;
+  readonly picks: Readonly<Record<string, string>>;
+  readonly take: string;
+}
+
 interface EvfxJob {
   readonly beat: string | undefined;
+  readonly frame?: EvfxFrame;
   readonly gif: string;
   readonly id: string;
   readonly kit: string;
@@ -58,6 +68,21 @@ const failed = (message: string) =>
   new AdapterFailed({ adapter: EVFX_BACKEND, message });
 
 const encoder = new TextEncoder();
+
+const framingOf = (
+  request: RenderRequest,
+  kit: KitValue
+): EvfxFrame | undefined => {
+  const picks = kitPicks(kit);
+
+  return request.exact === true
+    ? {
+        layer: request.layer,
+        picks,
+        take: picks[request.layer] ?? request.variant.id,
+      }
+    : undefined;
+};
 
 const script = fileURLToPath(
   new URL("../evfx/render_take.py", import.meta.url)
@@ -166,23 +191,27 @@ export const evfxRenderer = Layer.effect(
     });
 
     const draw =
-      (request: RenderRequest, preset: string) => (paths: RenderPaths) =>
+      (request: RenderRequest, kit: KitValue) => (paths: RenderPaths) =>
         lock.withPermits(1)(
           Effect.gen(function* drawTake() {
             const live = yield* worker;
-            yield* live.send({
+
+            const base = {
               beat: config.syncBeat,
               gif: paths.gif,
               id: paths.key,
               kit: request.asset,
               layer: request.layer,
-              picks: request.mix,
-              preset,
+              picks: picksFor(request, kit),
+              preset: kit.preset,
               size: config.size,
               still: paths.still,
               take: request.variant.id,
               work: paths.work,
-            });
+            };
+
+            const frame = framingOf(request, kit);
+            yield* live.send(frame === undefined ? base : { ...base, frame });
             const reply = yield* live.next;
 
             if ("error" in reply) {
@@ -213,10 +242,12 @@ export const evfxRenderer = Layer.effect(
           .pipe(
             Effect.flatMap(({ kit }) =>
               cachedRender(
-                EVFX_BACKEND,
-                request,
+                request.exact === true
+                  ? `${EVFX_BACKEND} framed brightest`
+                  : EVFX_BACKEND,
+                { ...request, mix: picksFor(request, kit) },
                 kit,
-                draw(request, kit.preset)
+                draw(request, kit)
               )
             ),
             Effect.provide(services)

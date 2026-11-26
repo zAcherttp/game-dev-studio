@@ -238,7 +238,16 @@ export const FileStore = Layer.effect(
 
       return found.flatMap((entry) =>
         Option.isSome(entry)
-          ? [{ id: entry.value.id, title: entry.value.title }]
+          ? [
+              {
+                id: entry.value.id,
+                picks: Object.values(entry.value.layers).reduce(
+                  (total, layer) => total + layer.picks.length,
+                  0
+                ),
+                title: entry.value.title,
+              },
+            ]
           : []
       );
     });

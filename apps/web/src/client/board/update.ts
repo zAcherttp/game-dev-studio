@@ -3,8 +3,21 @@ import type { Update } from "foldkit";
 import { modifyFields } from "foldkit/struct";
 
 import type { BoardApi } from "./api.js";
-import { PickVariant, RenderTake, RequestRound } from "./command.js";
-import { fit, layout, nodeId, panTo, zoomAt } from "./layout.js";
+import {
+  PickVariant,
+  RenderComposed,
+  RenderSolo,
+  RenderTake,
+  RequestRound,
+} from "./command.js";
+import {
+  composeKey,
+  composeRequest,
+  pickedTakes,
+  withoutLayers,
+} from "./compose.js";
+import type { Picks } from "./compose.js";
+import { fit, layout, nodeId, panTo, shownTakes, zoomAt } from "./layout.js";
 import { Message } from "./message.js";
 import type { BoardMessage } from "./message.js";
 import { idleStatus, takeKey } from "./model.js";
@@ -147,25 +160,55 @@ const openLayer = (
   };
 };
 
-export const prerenderPicks = (model: BoardModel) =>
-  model.assets.flatMap(({ asset }) =>
-    Object.entries(asset.mix).flatMap(([layer, picked]) => {
-      const variant = asset.layers[layer]?.variants.find(
-        ({ id }) => id === picked
-      );
-
-      return variant === undefined || variant.render !== undefined
-        ? []
-        : [
-            RenderTake({
-              asset: asset.id,
-              layer,
-              studio: model.studio.id,
-              variant: variant.id,
-            }),
-          ];
-    })
+const soloMissing = (
+  model: BoardModel,
+  asset: string,
+  layer: string,
+  takes: readonly string[]
+) =>
+  takes.flatMap((take) =>
+    model.solo[takeKey(asset, layer, take)] === undefined
+      ? [RenderSolo({ asset, layer, studio: model.studio.id, variant: take })]
+      : []
   );
+
+const composedMissing = (model: BoardModel, asset: string, picks: Picks) => {
+  const key = composeKey(asset, picks);
+  const request = composeRequest(picks);
+
+  return request === undefined || model.composed[key] !== undefined
+    ? []
+    : [RenderComposed({ ...request, asset, key, studio: model.studio.id })];
+};
+
+const allPicks = (model: BoardModel, asset: string): Picks => {
+  const entry = model.assets.find((candidate) => candidate.asset.id === asset);
+
+  return entry === undefined ? {} : pickedTakes(entry.asset, entry.layers);
+};
+
+export const prerenderBoard = (model: BoardModel) =>
+  model.assets.flatMap(({ asset, layers }) => [
+    ...layers.flatMap((layer) =>
+      soloMissing(
+        model,
+        asset.id,
+        layer.id,
+        shownTakes(
+          asset.layers[layer.id]?.variants ?? [],
+          asset.mix[layer.id]
+        ).map(({ id }) => id)
+      )
+    ),
+    ...composedMissing(model, asset.id, pickedTakes(asset, layers)),
+  ]);
+
+const composeView = (model: BoardModel) =>
+  Option.match(model.compose, {
+    onNone: () => [],
+    onSome: ({ asset, off }) =>
+      composedMissing(model, asset, withoutLayers(allPicks(model, asset), off)),
+  });
 
 const round = (model: BoardModel): UpdateReturn =>
   Option.match(model.open, {
@@ -285,8 +328,8 @@ export const update = (
       }),
     }),
     SubmittedRound: () => round(model),
-    SucceededPick: ({ asset }) => ({
-      model: modifyFields(model, {
+    SucceededPick: ({ asset }) => {
+      const next = modifyFields(model, {
         assets: (assets) =>
           assets.map((entry) =>
             entry.asset.id === asset.id ? { ...entry, asset } : entry
@@ -295,6 +338,90 @@ export const update = (
         status: () => ({
           message: "Picked. The mix now uses it.",
           state: "done" as const,
+        }),
+      });
+
+      const before = model.assets.find((entry) => entry.asset.id === asset.id);
+
+      const changed = Object.entries(asset.mix).filter(
+        ([layer, take]) => before?.asset.mix[layer] !== take
+      );
+
+      return {
+        commands: [
+          ...changed.flatMap(([layer, take]) =>
+            soloMissing(next, asset.id, layer, [take])
+          ),
+          ...composedMissing(next, asset.id, allPicks(next, asset.id)),
+        ],
+        model: next,
+      };
+    },
+    SwitchedPickerMode: ({ mode }) => {
+      const next = modifyFields(model, { pickerMode: () => mode });
+
+      const solos = Option.match(
+        model.open.pipe(
+          Option.flatMap((open) =>
+            openedLayer(model.assets, open).pipe(
+              Option.map((view) => ({ open, view }))
+            )
+          )
+        ),
+        {
+          onNone: () => [],
+          onSome: ({ open, view }) =>
+            soloMissing(
+              model,
+              open.asset,
+              open.layer,
+              view.variants.map(({ id }) => id)
+            ),
+        }
+      );
+
+      return { commands: mode === "solo" ? solos : [], model: next };
+    },
+    OpenedCompose: ({ asset }) => {
+      const next = modifyFields(model, {
+        compose: () => Option.some({ asset, off: [] }),
+      });
+
+      return { commands: composeView(next), model: next };
+    },
+    ToggledComposeLayer: ({ layer }) => {
+      const next = modifyFields(model, {
+        compose: (compose) =>
+          compose.pipe(
+            Option.map((current) => ({
+              ...current,
+              off: current.off.includes(layer)
+                ? current.off.filter((id) => id !== layer)
+                : [...current.off, layer],
+            }))
+          ),
+      });
+
+      return { commands: composeView(next), model: next };
+    },
+    ClosedCompose: () => ({
+      model: modifyFields(model, { compose: () => Option.none() }),
+    }),
+    RenderedSolo: ({ asset, layer, render, variant }) => ({
+      model: modifyFields(model, {
+        solo: (solo) => ({ ...solo, [takeKey(asset, layer, variant)]: render }),
+      }),
+    }),
+    RenderedComposed: ({ key, render }) => ({
+      model: modifyFields(model, {
+        composed: (composed) => ({ ...composed, [key]: render }),
+      }),
+    }),
+    FailedCompose: ({ message: reason }) => ({
+      model: modifyFields(model, {
+        status: () => ({
+          message: `The composed view did not render. ${reason}`,
+          state: "failed" as const,
         }),
       }),
     }),
