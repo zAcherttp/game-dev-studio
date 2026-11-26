@@ -1,0 +1,56 @@
+{
+  "cameras": [
+    {
+      "id": "aerial",
+      "fov": 45,
+      "eye": {
+        "at": "centre",
+        "along": ["arrival", "gate"],
+        "move": [-105, 245, -260]
+      },
+      "target": {
+        "at": "centre",
+        "along": ["arrival", "gate"],
+        "move": [0, 0, -17]
+      }
+    },
+    {
+      "id": "street",
+      "fov": 70,
+      "eye": {
+        "at": "gate",
+        "along": ["gate", "market"],
+        "move": [0, 5, 0]
+      },
+      "target": {
+        "at": "gate",
+        "along": ["gate", "market"],
+        "move": [0, 5, 120]
+      },
+      "figure": {
+        "at": "gate",
+        "along": ["gate", "market"],
+        "move": [3, 0, 16]
+      }
+    },
+    {
+      "id": "arrival",
+      "fov": 70,
+      "eye": {
+        "at": "arrival",
+        "along": ["arrival", "well"],
+        "move": [0, 9, -4]
+      },
+      "target": {
+        "at": "arrival",
+        "along": ["arrival", "well"],
+        "move": [0, 4, 70]
+      },
+      "figure": {
+        "at": "arrival",
+        "along": ["arrival", "well"],
+        "move": [0, 0, 10]
+      }
+    }
+  ]
+}

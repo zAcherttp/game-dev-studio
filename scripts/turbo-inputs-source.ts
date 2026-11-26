@@ -67,6 +67,13 @@ const parameterizedReadBoundaries = new Map(
           "reads the EasyVFX checkout and game kit folders RobloxConfig names at run time; tests use EasyvfxKits.fromListing",
       },
     ],
+    "packages/adapter-roblox/src/plan-renderer.ts": [
+      {
+        kind: "unbounded",
+        reason:
+          "reads the plan the game's plan command writes, the studio's camera file, the game's Rojo project and assets/assets.md, and its own render notes under RobloxConfig's cache at run time; tests use the pure plan, camera and key modules",
+      },
+    ],
     "packages/adapter-roblox/src/render-cache.ts": temporary(),
     "packages/adapter-roblox/src/ror-renderer.ts": [
       {

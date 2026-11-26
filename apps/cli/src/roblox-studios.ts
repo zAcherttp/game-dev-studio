@@ -1,15 +1,18 @@
 import {
   EVFX_BACKEND,
   EasyvfxKits,
+  PLAN_BACKEND,
   ROR_BACKEND,
   RobloxConfig,
   VFXLAB_CHECK,
+  VILLAGE_CAMERAS,
   easyvfxSource,
   evfxRenderer,
+  planRenderer,
   rorRenderer,
   vfxlabCheck,
 } from "@gds/adapter-roblox";
-import type { RobloxSettings } from "@gds/adapter-roblox";
+import type { PlanSettings, RobloxSettings } from "@gds/adapter-roblox";
 import {
   AdapterFailed,
   Check,
@@ -39,6 +42,7 @@ type StudioValue = typeof StudioDef.Type;
 
 const ROBLOX_RENDERERS: ReadonlySet<string> = new Set([
   EVFX_BACKEND,
+  PLAN_BACKEND,
   ROR_BACKEND,
 ]);
 
@@ -62,6 +66,10 @@ const RENDER_SIZE = [360, 240] as const;
 
 const ROR_SECONDS = 1.5;
 
+const PLAN_SIZE = [960, 540] as const;
+
+const PLAN_PROJECT = "fresh.project.json";
+
 export const extraKits = (listed: string): readonly string[] =>
   listed
     .split(";")
@@ -76,6 +84,29 @@ interface RobloxBackend {
 
 const failed = (message: string) =>
   new AdapterFailed({ adapter: "roblox", message });
+
+const planRendererOr = (plan: PlanSettings | undefined) =>
+  plan === undefined
+    ? Layer.succeed(
+        Renderer,
+        Renderer.of({
+          render: () =>
+            Effect.fail(
+              failed(
+                `The ${PLAN_BACKEND} renderer has no ree. It draws plans with ror, which needs ree. Fix: set GDS_ROR_REE to the folder \`scripts/ror-ree.sh\` prints in the game checkout.`
+              )
+            ),
+        })
+      )
+    : planRenderer(plan);
+
+const rendererFor = (renderer: string, plan: PlanSettings | undefined) => {
+  if (renderer === PLAN_BACKEND) {
+    return planRendererOr(plan);
+  }
+
+  return renderer === ROR_BACKEND ? rorRenderer : evfxRenderer;
+};
 
 export class RobloxStudios extends Context.Service<
   RobloxStudios,
@@ -138,7 +169,26 @@ export class RobloxStudios extends Context.Service<
           workers: env.workers,
         };
 
+        const plan: PlanSettings | undefined = env.ree.pipe(
+          Option.map((ree) => ({
+            cameras:
+              studio.cameras === undefined
+                ? VILLAGE_CAMERAS
+                : path.join(root, studio.cameras),
+            gameRoot: root,
+            project: PLAN_PROJECT,
+            ree,
+            size: PLAN_SIZE,
+            source:
+              studio.commands?.plan === undefined
+                ? { kind: "village" as const }
+                : { kind: "command" as const, run: studio.commands.plan },
+          })),
+          Option.getOrUndefined
+        );
+
         return {
+          plan,
           roblox,
           vfxlab: {
             gameRoot: root,
@@ -148,10 +198,9 @@ export class RobloxStudios extends Context.Service<
       });
 
       const build = Effect.fnUntraced(function* build(studio: StudioValue) {
-        const { roblox, vfxlab } = yield* settingsFor(studio);
+        const { plan, roblox, vfxlab } = yield* settingsFor(studio);
 
-        const renderer =
-          studio.renderer === ROR_BACKEND ? rorRenderer : evfxRenderer;
+        const renderer = rendererFor(studio.renderer, plan);
 
         const kits = EasyvfxKits.layer.pipe(
           Layer.provideMerge(RobloxConfig.layer(roblox))
