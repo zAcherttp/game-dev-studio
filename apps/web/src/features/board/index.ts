@@ -1,3 +1,4 @@
+import type { Variant } from "@gds/model";
 import * as stylex from "@stylexjs/stylex";
 import { Option } from "effect";
 import { createLazy } from "foldkit/html";
@@ -9,10 +10,11 @@ import type { Graph, GraphEdge, GraphNode } from "../../client/board/layout.js";
 import { Message } from "../../client/board/message.js";
 import type { BoardMessage } from "../../client/board/message.js";
 import type { BoardModel } from "../../client/board/model.js";
-import { stillOf } from "../../client/board/picker.js";
 import { boardStyles } from "./board.stylex.js";
 import { boardCopy } from "./copy.js";
 import { pickerView } from "./picker.js";
+
+type VariantValue = typeof Variant.Type;
 
 type NodeOf<Kind extends GraphNode["kind"]> = Extract<
   GraphNode,
@@ -66,13 +68,13 @@ const wires = (graph: Graph, h: HtmlBuilder<BoardMessage>) => {
 
 const preview = (
   h: HtmlBuilder<BoardMessage>,
-  path: string | undefined,
+  render: VariantValue["render"],
   alt: string
 ): Html =>
-  path === undefined
+  render === undefined
     ? h.div([h.Class(cls(boardStyles.emptyPreview))], [boardCopy.noPick])
     : h.img([
-        h.Src(stillOf(path)),
+        h.Src(render.still ?? render.path),
         h.Alt(alt),
         h.Class(cls(boardStyles.preview)),
         h.Draggable(false),
@@ -135,7 +137,7 @@ const layerNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"layer">) =>
         h.span([h.Class(cls(boardStyles.meta))], [`${node.count} takes`])
       ),
       h.div([h.Class(cls(boardStyles.title))], [node.layer.title]),
-      preview(h, node.pick?.render?.path, `${node.layer.title} pick still`),
+      preview(h, node.pick?.render, `${node.layer.title} pick still`),
     ]
   );
 
@@ -165,7 +167,7 @@ const variantNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"variant">) =>
       ),
       preview(
         h,
-        node.variant.render?.path,
+        node.variant.render,
         `${node.layer.title} ${node.variant.label} still`
       ),
     ]

@@ -1,5 +1,5 @@
 import type { PackDef, StudioDef, Variant } from "@gds/model";
-import { Option, Schema } from "effect";
+import { Option } from "effect";
 
 import type { BoardAssetValue, OpenLayerValue } from "./model.js";
 import type { SyncClip } from "./sync.js";
@@ -45,16 +45,15 @@ export const openedLayer = (
   });
 };
 
-const decodeBeat = Schema.decodeUnknownOption(Schema.Finite);
-
 export const beatMsOf = (
   studio: typeof StudioDef.Type,
   variant: VariantValue
 ) => {
-  const beat = studio.sync?.beat;
-  const value = beat === undefined ? undefined : variant.params[beat];
+  const beat = variant.render?.beat;
 
-  return Option.getOrElse(decodeBeat(value), () => 0);
+  return beat === undefined || beat.name !== studio.sync?.beat
+    ? 0
+    : beat.t * 1000;
 };
 
 export const syncClips = (
@@ -72,8 +71,6 @@ export const syncClips = (
           },
         ]
   );
-
-export const stillOf = (path: string) => path.replace(/\.gif$/u, ".beat.png");
 
 const media = /\.(?:gif|png|jpe?g|webp)$/u;
 

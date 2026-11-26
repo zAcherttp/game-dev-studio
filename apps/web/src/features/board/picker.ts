@@ -9,7 +9,6 @@ import type { BoardModel, OpenLayerValue } from "../../client/board/model.js";
 import {
   openedLayer,
   referenceOf,
-  stillOf,
   syncClips,
 } from "../../client/board/picker.js";
 import { cycleOf, hasStarted, syncPlan } from "../../client/board/sync.js";
@@ -40,9 +39,17 @@ const media = (
   const cycle = cycleOf(plan, clock);
 
   if (!hasStarted(plan, clip, clock)) {
+    if (render.still === undefined) {
+      return h.div([
+        h.Key(`${variant.id}:wait`),
+        h.Class(cls(pickerStyles.stage)),
+        h.DataAttribute("cycle", "waiting"),
+      ]);
+    }
+
     return h.img([
       h.Key(`${variant.id}:wait`),
-      h.Src(stillOf(render.path)),
+      h.Src(render.still),
       h.Alt(pickerCopy.loop(variant.label)),
       h.Class(cls(pickerStyles.stage, pickerStyles.waiting)),
       h.DataAttribute("cycle", "waiting"),
@@ -127,13 +134,13 @@ const variantColumn =
           ]
         ),
         media(h, variant, plan, model.clock),
-        variant.render === undefined
+        variant.render?.still === undefined
           ? h.empty
           : h.div(
               [h.Class(cls(pickerStyles.stillRow))],
               [
                 h.img([
-                  h.Src(stillOf(variant.render.path)),
+                  h.Src(variant.render.still),
                   h.Alt(pickerCopy.still(variant.label, beat)),
                   h.Class(cls(pickerStyles.still)),
                 ]),
