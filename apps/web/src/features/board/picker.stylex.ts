@@ -163,11 +163,12 @@ export const pickerStyles = stylex.create({
     color: "#111114",
   },
   composeBody: {
+    alignContent: "start",
     display: "grid",
     gap: "14px",
-    gridTemplateColumns: "minmax(0, 3fr) minmax(220px, 1fr)",
+    gridTemplateColumns: "minmax(0, 1fr)",
     minHeight: 0,
-    "@media (max-width: 900px)": { gridTemplateColumns: "1fr" },
+    overflowY: "auto",
   },
   composeStage: {
     alignItems: "center",
@@ -210,8 +211,6 @@ export const pickerStyles = stylex.create({
   composeLayers: {
     display: "grid",
     gap: "14px",
-    minHeight: 0,
-    overflowY: "auto",
   },
   composeLayer: { display: "grid", gap: "8px" },
   composeLayerHead: {
@@ -222,7 +221,7 @@ export const pickerStyles = stylex.create({
   composeCards: {
     display: "grid",
     gap: "10px",
-    gridAutoColumns: "minmax(220px, 1fr)",
+    gridAutoColumns: "minmax(280px, 1fr)",
     gridAutoFlow: "column",
     overflowX: "auto",
     paddingBottom: "4px",
@@ -278,7 +277,28 @@ export const pickerStyles = stylex.create({
     padding: "6px",
     textAlign: "center",
   },
-  mixStage: { display: "grid", gap: "8px", minWidth: 0 },
+  mixPane: {
+    backgroundColor: "#0a0a0c",
+    borderRadius: "10px",
+    color: muted,
+    display: "grid",
+    justifyItems: "center",
+    padding: "8px",
+  },
+  mixStage: {
+    display: "grid",
+    gap: "8px",
+    justifyItems: "center",
+    minWidth: 0,
+    width: "100%",
+  },
+  mixImage: {
+    display: "block",
+    height: "42vh",
+    objectFit: "contain",
+    width: "100%",
+  },
+  mixStrip: { maxWidth: "540px", width: "100%" },
   diff: {
     fontFamily: mono,
     fontSize: "11px",
@@ -288,6 +308,7 @@ export const pickerStyles = stylex.create({
   },
   diffFrom: { color: muted, textDecorationLine: "line-through" },
   compare: {
+    alignItems: "start",
     display: "grid",
     gap: "12px",
     gridAutoColumns: "minmax(320px, 1fr)",

@@ -271,6 +271,30 @@ const withGates = (
   ),
 });
 
+const keepRenders = (
+  shown: BoardAssetValue["asset"],
+  stored: BoardAssetValue["asset"]
+): BoardAssetValue["asset"] => ({
+  ...stored,
+  layers: Object.fromEntries(
+    Object.entries(stored.layers).map(([id, layer]) => [
+      id,
+      {
+        ...layer,
+        variants: layer.variants.map((variant) => {
+          const render =
+            variant.render ??
+            shown.layers[id]?.variants.find(
+              (candidate) => candidate.id === variant.id
+            )?.render;
+
+          return render === undefined ? variant : { ...variant, render };
+        }),
+      },
+    ])
+  ),
+});
+
 const afterTake = (model: BoardModel, asset: string): UpdateReturn => {
   const composing = Option.exists(
     model.compose,
@@ -436,7 +460,9 @@ export const update = (
       const next = modifyFields(model, {
         assets: (assets) =>
           assets.map((entry) =>
-            entry.asset.id === asset.id ? { ...entry, asset } : entry
+            entry.asset.id === asset.id
+              ? { ...entry, asset: keepRenders(entry.asset, asset) }
+              : entry
           ),
         note: () => "",
         status: () => ({

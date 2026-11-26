@@ -53,9 +53,18 @@ const strip = (
   label: string,
   selected: Option.Option<string>,
   onPick: (camera: string) => BoardMessage
+): Html => stripIn(false, h, render, label, selected, onPick);
+
+const stripIn = (
+  extra: stylex.StyleXStyles | false,
+  h: HtmlBuilder<BoardMessage>,
+  render: RenderValue,
+  label: string,
+  selected: Option.Option<string>,
+  onPick: (camera: string) => BoardMessage
 ): Html =>
   h.div(
-    [h.Class(cls(pickerStyles.strip)), h.AriaLabel(label)],
+    [h.Class(cls(pickerStyles.strip, extra)), h.AriaLabel(label)],
     viewsOf(render).map((view) =>
       h.button(
         [
@@ -123,12 +132,17 @@ const mixStage = (
             ? composeCopy.mix(entry.asset.title)
             : `${composeCopy.mix(entry.asset.title)}, ${camera}`
         ),
-        h.Class(cls(pickerStyles.composeImage)),
+        h.Class(cls(pickerStyles.mixImage)),
       ]),
       views.length === 0
         ? h.empty
-        : strip(h, render, composeCopy.mixCameras, Option.some(camera), (id) =>
-            Message.ChoseMixCamera({ camera: id })
+        : stripIn(
+            pickerStyles.mixStrip,
+            h,
+            render,
+            composeCopy.mixCameras,
+            Option.some(camera),
+            (id) => Message.ChoseMixCamera({ camera: id })
           ),
     ]
   );
@@ -513,7 +527,7 @@ export const composeView = (
             [
               h.div(
                 [
-                  h.Class(cls(pickerStyles.composeStage)),
+                  h.Class(cls(pickerStyles.mixPane)),
                   h.Role("group"),
                   h.AriaLabel(composeCopy.mix(entry.asset.title)),
                 ],

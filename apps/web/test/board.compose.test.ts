@@ -105,7 +105,20 @@ it.prop(
       "2026-11-26T00:00:00.000Z"
     );
 
-    const done = update(chose.model, Message.SucceededPick({ asset }));
+    const stored = {
+      ...asset,
+      layers: Object.fromEntries(
+        Object.entries(asset.layers).map(([id, layer]) => [
+          id,
+          {
+            ...layer,
+            variants: layer.variants.map(({ render: _drawn, ...bare }) => bare),
+          },
+        ])
+      ),
+    };
+
+    const done = update(chose.model, Message.SucceededPick({ asset: stored }));
     const after = done.model.assets[0]?.asset;
 
     const nextKey = composeKey(
