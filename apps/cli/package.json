@@ -22,6 +22,7 @@
     "@gds/core": "workspace:*",
     "@gds/devtools": "workspace:*",
     "@gds/model": "workspace:*",
+    "@gds/store": "workspace:*",
     "effect": "4.1.4"
   },
   "devDependencies": {

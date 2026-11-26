@@ -1,7 +1,9 @@
 import { toCommand } from "@gds/capability";
+import type { Asset } from "@gds/model";
 import { Console, Effect, Layer } from "effect";
 import { Command, Flag } from "effect/cli";
 
+import { getAsset } from "./handlers.js";
 import {
   commandCapabilities,
   SERVE_HOST,
@@ -16,8 +18,30 @@ import { VERSION } from "./version.js";
 
 export { VERSION } from "./version.js";
 
+const renderAsset = (asset: typeof Asset.Type) =>
+  [
+    `${asset.studio}/${asset.id}: ${asset.title}`,
+    ...Object.entries(asset.layers).map(([id, layer]) => {
+      const mixed = asset.mix[id];
+
+      const parts = [
+        `${layer.variants.length} variants`,
+        `${layer.picks.length} picks`,
+        ...(mixed === undefined ? [] : [`mix ${mixed}`]),
+        ...(layer.making === undefined ? [] : ["making"]),
+      ];
+
+      return `  ${id}: ${parts.join(", ")}`;
+    }),
+  ].join("\n");
+
 const capabilityCommands = commandCapabilities.map((capability) =>
-  toCommand(capability)
+  capability === getAsset
+    ? toCommand(getAsset, {
+        positional: ["studio", "asset"],
+        render: renderAsset,
+      })
+    : toCommand(capability)
 );
 
 const openapiCommand = Command.make("openapi", {}, () =>

@@ -15,11 +15,11 @@ import { McpServer } from "effect/ai";
 import { HttpRouter } from "effect/http";
 import { HttpApiBuilder, HttpApiScalar } from "effect/http-api";
 
+import { studioCapabilities } from "./handlers.js";
 import { mcpProtocols } from "./mcp-protocols.js";
-import { stubCapabilities } from "./stubs.js";
 import { VERSION } from "./version.js";
 
-export const capabilities = [...stubCapabilities] as const;
+export const capabilities = [...studioCapabilities] as const;
 
 export const cliCapabilities = capabilities;
 

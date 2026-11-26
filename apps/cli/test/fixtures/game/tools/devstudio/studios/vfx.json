@@ -1,0 +1,29 @@
+{
+  "gates": ["budget"],
+  "id": "vfx",
+  "layers": [
+    {
+      "id": "core",
+      "order": 0,
+      "renderKind": "gif",
+      "title": "Core"
+    },
+    {
+      "id": "sparks",
+      "order": 1,
+      "renderKind": "gif",
+      "title": "Sparks"
+    }
+  ],
+  "pack": {
+    "files": [
+      {
+        "path": "docs/vfx.md",
+        "why": "Kit rules for every VFX asset"
+      }
+    ]
+  },
+  "renderKinds": ["gif"],
+  "renderer": "roblox",
+  "title": "VFX"
+}
