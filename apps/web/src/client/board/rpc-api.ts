@@ -4,6 +4,7 @@ import {
   listStudiosContract,
   pickContract,
   renderContract,
+  renderMixContract,
   roundContract,
 } from "@gds/model";
 import { Effect, Layer, Match } from "effect";
@@ -12,7 +13,7 @@ import type { RpcClientError } from "effect/rpc";
 import { RpcClient, RpcSerialization } from "effect/rpc";
 
 import { BoardApi } from "./api.js";
-import type { PickInput, RenderInput, RoundInput } from "./api.js";
+import type { MixInput, PickInput, RenderInput, RoundInput } from "./api.js";
 import { BoardApiFailed } from "./board-api-failed.js";
 
 export const boardRpcGroup = toRpcGroup([
@@ -21,6 +22,7 @@ export const boardRpcGroup = toRpcGroup([
   pickContract,
   roundContract,
   renderContract,
+  renderMixContract,
 ]).group;
 
 export const STUDIO_RPC_PATH = "/rpc";
@@ -29,6 +31,7 @@ type StudioFailure =
   | typeof pickContract.failure.Type
   | typeof roundContract.failure.Type
   | typeof renderContract.failure.Type
+  | typeof getAssetContract.failure.Type
   | RpcClientError.RpcClientError;
 
 const reload = "Fix: reload the board; the asset file changed.";
@@ -69,6 +72,10 @@ export const rpcBoardApi = (url: string) =>
           client.pick(input).pipe(Effect.mapError(failed)),
         render: (input: RenderInput) =>
           client.render(input).pipe(Effect.mapError(failed)),
+        getAsset: (input: MixInput) =>
+          client.getAsset(input).pipe(Effect.mapError(failed)),
+        renderMix: (input: MixInput) =>
+          client.renderMix(input).pipe(Effect.mapError(failed)),
         round: (input: RoundInput) =>
           client.round(input).pipe(Effect.mapError(failed)),
       });

@@ -3,9 +3,12 @@ import { Schema } from "effect";
 import { defineMessageUnion } from "foldkit/message";
 
 export const Message = defineMessageUnion({
+  ChoseComposeVariant: { layer: Schema.String, variant: Schema.String },
+  ChoseMixCamera: { camera: Schema.String },
   ChoseVariant: { variant: Schema.String },
   ClickedFit: {},
   ClickedZoom: { factor: Schema.Finite },
+  ClosedCamera: {},
   ClosedCompose: {},
   ClosedPicker: {},
   FailedCompose: { key: Schema.String, message: Schema.String },
@@ -17,8 +20,10 @@ export const Message = defineMessageUnion({
     variant: Schema.String,
   },
   FailedRound: { message: Schema.String },
+  LoadedAsset: { asset: Asset },
   MeasuredCanvas: { height: Schema.Finite, width: Schema.Finite },
   MovedPointer: { x: Schema.Finite, y: Schema.Finite },
+  OpenedCamera: { camera: Schema.String, layer: Schema.String },
   OpenedCompose: { asset: Schema.String },
   OpenedLayer: { asset: Schema.String, layer: Schema.String },
   PressedCanvas: { x: Schema.Finite, y: Schema.Finite },
@@ -39,7 +44,6 @@ export const Message = defineMessageUnion({
   },
   SubmittedRound: {},
   SwitchedPickerMode: { mode: Schema.Literals(["mix", "solo"]) },
-  ToggledComposeLayer: { layer: Schema.String },
   SucceededPick: { asset: Asset },
   SucceededRound: { request: RoundRequest },
   TickedClock: { elapsed: Schema.Finite },

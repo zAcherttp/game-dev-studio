@@ -37,7 +37,7 @@ it("a key picks that column's variant with the note, and the mix follows the sto
       layer: "FireLoop",
       note: "taller core",
       studio: "vfx",
-      variant: "FireLoop-F",
+      variant: "FireLoop-G",
     },
     "2026-11-25T00:00:00.000Z"
   );
@@ -48,7 +48,7 @@ it("a key picks that column's variant with the note, and the mix follows the sto
     message(Message.OpenedLayer({ asset: "fire", layer: "FireLoop" })),
     Command.resolveAll(...rendersOf("FireLoop")),
     message(Message.UpdatedNote({ value: " taller core " })),
-    message(Message.PressedPickKey({ index: 2 })),
+    message(Message.PressedPickKey({ index: 3 })),
     Command.expectExact(
       PickVariant({
         asset: "fire",
@@ -56,7 +56,7 @@ it("a key picks that column's variant with the note, and the mix follows the sto
         layer: "FireLoop",
         note: "taller core",
         studio: "vfx",
-        variant: "FireLoop-F",
+        variant: "FireLoop-G",
       })
     ),
     Command.resolve(PickVariant, Message.SucceededPick({ asset: picked })),
@@ -67,7 +67,7 @@ it("a key picks that column's variant with the note, and the mix follows the sto
           asset: "fire",
           layer: "FireLoop",
           render: stillRender,
-          variant: "FireLoop-F",
+          variant: "FireLoop-G",
         }),
       ],
       [
@@ -76,7 +76,7 @@ it("a key picks that column's variant with the note, and the mix follows the sto
       ]
     ),
     model((current) => {
-      expect(current.assets[0]?.asset.mix.FireLoop).toBe("FireLoop-F");
+      expect(current.assets[0]?.asset.mix.FireLoop).toBe("FireLoop-G");
       expect(fireLoop(current)?.picks.at(-1)?.note).toBe("taller core");
       expect(fireLoop(current)?.picks.length).toBe(
         (fireKit.layers.FireLoop?.picks.length ?? 0) + 1

@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { NodeServices } from "@effect/platform-node";
 import { describe, expect, it } from "@effect/vitest";
 import { invokerFor } from "@gds/capability";
-import { AdapterFailed, Apply } from "@gds/model";
+import { AdapterFailed, Apply, Asset } from "@gds/model";
 import type { StudioDef } from "@gds/model";
 import { GameFolder } from "@gds/store";
 import { Effect, FileSystem, Layer, Path, Schema } from "effect";
@@ -477,6 +477,49 @@ describe("command studio", () => {
                 },
               },
             });
+          }),
+        Layer.empty,
+        commandStudio
+      )
+  );
+});
+
+describe("command studio mix", () => {
+  it.effect(
+    "draws the whole mix through the studio's renderer without running any variant gate",
+    () =>
+      inGame(
+        (invoke) =>
+          Effect.gen(function* drawMix() {
+            const stool = { asset: "stool", studio: "vfx" };
+
+            const picked = yield* invoke("pick", {
+              ...stool,
+              by: "phat",
+              layer: "core",
+              note: "",
+              variant: "t2",
+            });
+
+            const mix = yield* invoke("renderMix", stool);
+            const asset = yield* invoke("getAsset", stool);
+
+            expect(picked.ok).toBe(true);
+            expect(mix).toMatchObject({ ok: true, value: { kind: "image" } });
+            expect(asset).toMatchObject({
+              ok: true,
+              value: { mix: { core: "t2" } },
+            });
+
+            const stored = yield* Schema.decodeUnknownEffect(Asset)(
+              asset.ok ? asset.value : undefined
+            );
+
+            expect(
+              Object.values(stored.layers).flatMap(({ variants }) =>
+                variants.flatMap(({ gates }) => gates ?? [])
+              )
+            ).toEqual([]);
           }),
         Layer.empty,
         commandStudio

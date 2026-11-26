@@ -16,9 +16,17 @@ export const CatalogEntry = Schema.Struct({
 
 export type CatalogEntryValue = typeof CatalogEntry.Type;
 
+export const CameraCompare = Schema.Struct({
+  camera: Schema.String,
+  layer: Schema.String,
+});
+
+export type CameraCompareValue = typeof CameraCompare.Type;
+
 export const ComposeState = Schema.Struct({
   asset: Schema.String,
-  off: Schema.Array(Schema.String),
+  compare: Schema.Option(CameraCompare),
+  mixCamera: Schema.Option(Schema.String),
 });
 
 export type ComposeStateValue = typeof ComposeState.Type;
