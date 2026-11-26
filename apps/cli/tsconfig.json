@@ -23,7 +23,10 @@
           "effect/http/HttpClientRequest",
           "effect/http/HttpClientResponse",
           "effect/http/HttpRouter",
-          "effect/http/HttpServer"
+          "effect/http/HttpServer",
+          "effect/rpc/RpcClient",
+          "effect/rpc/RpcSerialization",
+          "effect/rpc/RpcServer"
         ]
       }
     ]
