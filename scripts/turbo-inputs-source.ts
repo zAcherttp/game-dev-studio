@@ -59,6 +59,28 @@ const parameterizedReadBoundaries = new Map(
       ...hashed("scripts/oxlint-plugin-no-comments.ts"),
       ...temporary(),
     ],
+    "packages/adapter-roblox/src/easyvfx-kits.ts": [
+      {
+        kind: "unbounded",
+        reason:
+          "reads the EasyVFX checkout and game kit folders RobloxConfig names at run time; tests use EasyvfxKits.fromListing",
+      },
+    ],
+    "packages/adapter-roblox/src/render-cache.ts": temporary(),
+    "packages/adapter-roblox/src/ror-renderer.ts": [
+      {
+        kind: "unbounded",
+        reason:
+          "reads the game's assets/assets.md, art/vfx/out and kit folders RobloxConfig names at run time to draw local textures; no test reads them",
+      },
+    ],
+    "packages/adapter-roblox/src/sync-beat.ts": [
+      {
+        kind: "unbounded",
+        reason:
+          "reads beat sheets from the game kit folders RobloxConfig names at run time; no test reads them",
+      },
+    ],
     "packages/motion/test/vendoring.test.ts": hashed(
       "packages/motion/src/*.pure.ts"
     ),
