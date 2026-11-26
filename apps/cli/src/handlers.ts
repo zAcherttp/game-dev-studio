@@ -106,13 +106,27 @@ export const addVariants = implement(
       return yield* new UnknownLayer({ ...where, layer: stray.layer });
     }
 
+    const entry = stored?.layers[layer];
+
     yield* addToLayer(
-      factsOf(where, stored?.layers[layer]),
+      factsOf(where, entry),
       variants.map(({ id }) => id)
     );
 
+    const roundParent =
+      entry?.making === undefined ? undefined : entry.picks.at(-1)?.variant;
+
+    const parented =
+      roundParent === undefined
+        ? variants
+        : variants.map((variant) =>
+            variant.parent === undefined
+              ? { ...variant, parent: roundParent }
+              : variant
+          );
+
     return yield* Store.use((store) =>
-      store.putVariants(studio, asset, layer, variants)
+      store.putVariants(studio, asset, layer, parented)
     );
   })
 );

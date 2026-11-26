@@ -73,7 +73,7 @@ const tagOf = (outcome: { readonly ok: boolean; readonly error?: unknown }) =>
 
 describe("studio capabilities", () => {
   it.effect(
-    "a round keeps its parent: the next variants point at the pick",
+    "a round keeps its parent: the next variants point at the pick unless they name their own",
     () =>
       inGame((invoke) =>
         Effect.gen(function* keepsParent() {
@@ -85,7 +85,7 @@ describe("studio capabilities", () => {
           const request = yield* invoke("round", roundInput);
           yield* invoke("addVariants", {
             ...where,
-            variants: [variant("c3", "c1")],
+            variants: [variant("c3", "c2"), variant("c4")],
           });
 
           const asset = yield* invoke("getAsset", {
@@ -103,7 +103,8 @@ describe("studio capabilities", () => {
                   variants: [
                     { id: "c1" },
                     { id: "c2" },
-                    { id: "c3", parent: "c1" },
+                    { id: "c3", parent: "c2" },
+                    { id: "c4", parent: "c1" },
                   ],
                 },
               },

@@ -1,29 +1,26 @@
-import { AdapterFailed, Check, Renderer } from "@gds/model";
-import { FileStore, GameFolder, StudioPack } from "@gds/store";
-import { Effect, Layer } from "effect";
+import { FileStore, GameFolder, SourcedStore, StudioPack } from "@gds/store";
+import { Layer } from "effect";
 
-const notConnected = (adapter: string, port: string) =>
-  new AdapterFailed({
-    adapter,
-    message: `No ${port} adapter is connected yet, so the dev studio cannot ${adapter === "renderer" ? "draw a variant" : "open the engine check"}. Fix: provide a \`${port}\` layer in \`apps/cli/src/studio-layer.ts\`.`,
-  });
+import {
+  RobloxStudios,
+  StudioCheck,
+  StudioRenderer,
+  StudioSource,
+} from "./roblox-studios.js";
 
-export const RendererNotConnected = Layer.succeed(
-  Renderer,
-  Renderer.of({
-    render: () => Effect.fail(notConnected("renderer", "Renderer")),
-  })
-);
+export const studioLayer = (game: Layer.Layer<GameFolder>) => {
+  const backends = RobloxStudios.layer;
+  const files = FileStore;
 
-export const CheckNotConnected = Layer.succeed(
-  Check,
-  Check.of({ open: () => Effect.fail(notConnected("check", "Check")) })
-);
+  const source = StudioSource.pipe(Layer.provide(Layer.merge(files, backends)));
 
-export const studioLayer = (game: Layer.Layer<GameFolder>) =>
-  Layer.mergeAll(StudioPack, RendererNotConnected, CheckNotConnected).pipe(
-    Layer.provideMerge(FileStore),
+  const store = SourcedStore.pipe(Layer.provide(Layer.merge(source, files)));
+
+  return Layer.mergeAll(StudioPack, StudioRenderer, StudioCheck).pipe(
+    Layer.provideMerge(store),
+    Layer.provide(backends),
     Layer.provide(game)
   );
+};
 
 export const configuredStudioLayer = studioLayer(GameFolder.layer);
