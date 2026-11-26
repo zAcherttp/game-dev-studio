@@ -25,6 +25,7 @@ const gameEnv = (game: string | undefined) => {
 
 const toolNames = [
   "listStudios",
+  "listAssets",
   "getAsset",
   "addVariants",
   "render",
