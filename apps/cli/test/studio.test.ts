@@ -189,8 +189,24 @@ describe("studio capabilities", () => {
         });
 
         const asset = yield* invoke("getAsset", kit);
+        const layers = yield* invoke("layersOf", kit);
+
+        const defaults = yield* invoke("layersOf", {
+          asset: "fire",
+          studio: "vfx",
+        });
 
         expect([first.ok, second.ok]).toEqual([true, true]);
+        expect(layers).toMatchObject({
+          ok: true,
+          value: {
+            layers: [
+              { id: "Anticipation", order: 0, title: "Anticipation" },
+              { id: "Streaks", order: 1, title: "Streaks" },
+            ],
+          },
+        });
+        expect(tagOf(defaults)).toBe("UnknownAsset");
         expect(asset).toMatchObject({
           ok: true,
           value: {

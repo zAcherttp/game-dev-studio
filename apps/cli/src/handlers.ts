@@ -3,6 +3,7 @@ import {
   Check,
   Pack,
   Renderer,
+  Source,
   Store,
   UnknownLayer,
   UnknownStudio,
@@ -10,6 +11,7 @@ import {
   addVariantsContract,
   getAssetContract,
   getPackContract,
+  layersOfContract,
   listAssetsContract,
   listStudiosContract,
   openCheckContract,
@@ -77,6 +79,35 @@ export const listAssets = implement(listAssetsContract, ({ studio }) =>
 
 export const getAsset = implement(getAssetContract, ({ asset, studio }) =>
   getStoredAsset(studio, asset)
+);
+
+export const layersOf = implement(
+  layersOfContract,
+  Effect.fn("layersOf")(function* layersOf({ asset, studio }) {
+    const def = yield* studioDef(studio);
+    const stored = yield* getStoredAsset(studio, asset);
+
+    const sourced = yield* Source.use((source) =>
+      source.layersOf(studio, asset)
+    ).pipe(
+      Effect.catchTag(["UnknownStudio", "UnknownAsset"], () =>
+        Effect.succeed([])
+      )
+    );
+
+    const known = new Map(
+      [...def.layers, ...sourced].map((layer) => [layer.id, layer])
+    );
+
+    const renderKind = def.layers[0]?.renderKind ?? def.renderKinds[0] ?? "gif";
+
+    return {
+      layers: Object.keys(stored.layers).map((id, order) => ({
+        ...(known.get(id) ?? { id, renderKind, title: id }),
+        order,
+      })),
+    };
+  })
 );
 
 export const addVariants = implement(
@@ -204,6 +235,7 @@ export const studioCapabilities = [
   listStudios,
   listAssets,
   getAsset,
+  layersOf,
   addVariants,
   render,
   pick,

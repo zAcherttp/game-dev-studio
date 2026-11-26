@@ -27,6 +27,7 @@ const toolNames = [
   "listStudios",
   "listAssets",
   "getAsset",
+  "layersOf",
   "addVariants",
   "render",
   "pick",
@@ -209,7 +210,7 @@ const initialize = [
 ] as const;
 
 describe("built MCP server", () => {
-  it("lists the eight capabilities as tools over stdio", async () => {
+  it("lists every capability as a tool over stdio", async () => {
     const responses = await mcpConversation([
       ...initialize,
       { id: 2, jsonrpc: "2.0", method: "tools/list", params: {} },

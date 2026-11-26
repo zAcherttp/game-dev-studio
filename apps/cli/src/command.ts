@@ -6,6 +6,7 @@ import { Argument, Command, Flag } from "effect/cli";
 import {
   getAsset,
   getPack,
+  layersOf,
   listAssets,
   openCheck,
   render,
@@ -102,6 +103,7 @@ const renderTakes = Command.make(
 const positional = new Map<unknown, readonly string[]>([
   [listAssets, ["studio"]],
   [getPack, ["studio"]],
+  [layersOf, ["studio", "asset"]],
   [openCheck, ["studio", "asset"]],
 ]);
 
