@@ -13,7 +13,7 @@ const isList = Schema.is(Schema.Array(Schema.Json));
 
 const isRecord = Schema.is(Schema.Record(Schema.String, Schema.Json));
 
-const sortedKeys = (_key: string, value: Schema.Json): Schema.Json =>
+export const sortedKeys = (_key: string, value: Schema.Json): Schema.Json =>
   isList(value) || !isRecord(value)
     ? value
     : Object.fromEntries(

@@ -12,6 +12,39 @@ export { Kit, KitListing, kitPicks, takesOfLayer } from "./kit.js";
 
 export { RenderNote, SyncBeat, cachedRender } from "./render-cache.js";
 
+export { Anchor, CameraDef, CameraSet, placeCameras } from "./plan-cameras.js";
+
+export type { CameraSetValue, PlacedCamera } from "./plan-cameras.js";
+
+export { UnknownCamera } from "./unknown-camera.js";
+
+export { UnknownLandmark } from "./unknown-landmark.js";
+
+export {
+  CENTRE,
+  PlanBody,
+  PlanPart,
+  decodePlan,
+  drawnParts,
+} from "./plan-file.js";
+
+export type { Plan } from "./plan-file.js";
+
+export { PLAN_RENDERER_VERSION, planKey, planKeyText } from "./plan-key.js";
+
+export {
+  PLAN_BACKEND,
+  PlanNote,
+  VILLAGE_CAMERAS,
+  chosenCameras,
+  planRenderer,
+  seedOf,
+} from "./plan-renderer.js";
+
+export type { PlanSettings, PlanSource } from "./plan-renderer.js";
+
+export { projectMounts } from "./project-mounts.js";
+
 export { otherLayers, renderKey, renderKeyText } from "./render-key.js";
 
 export {

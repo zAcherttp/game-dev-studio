@@ -1,5 +1,7 @@
+import { PLAN_BACKEND } from "@gds/adapter-roblox";
 import { implement } from "@gds/capability/implement";
 import {
+  AdapterFailed,
   Apply,
   Check,
   Pack,
@@ -189,8 +191,50 @@ export const render = implement(
   })
 );
 
-export const renderMix = implement(renderMixContract, () =>
-  Effect.fail(notBuilt(renderMixContract.name))
+export const renderMix = implement(
+  renderMixContract,
+  Effect.fn("renderMix")(function* renderMix({ asset, studio }) {
+    const def = yield* studioDef(studio);
+
+    if (def.renderer !== PLAN_BACKEND) {
+      return yield* notBuilt(renderMixContract.name);
+    }
+
+    const stored = yield* getStoredAsset(studio, asset);
+
+    const order = [
+      ...def.layers.toSorted((a, b) => a.order - b.order).map(({ id }) => id),
+      ...Object.keys(stored.layers),
+    ];
+
+    const layer = order.find((id) => stored.mix[id] !== undefined);
+
+    if (layer === undefined) {
+      return yield* new AdapterFailed({
+        adapter: "renderMix",
+        message: `Asset ${asset} in studio ${studio} has no picks, so it has no mix to draw. renderMix draws the picked variants together. Fix: pick a variant with \`pick\` first.`,
+      });
+    }
+
+    const variant = stored.mix[layer] ?? "";
+    const entry = yield* layerOf(stored, { asset, layer, studio });
+    const found = entry.variants.find(({ id }) => id === variant);
+
+    if (found === undefined) {
+      return yield* new UnknownVariant({ asset, layer, studio, variant });
+    }
+
+    return yield* Renderer.use((renderer) =>
+      renderer.render({
+        asset,
+        exact: true,
+        layer,
+        mix: stored.mix,
+        studio,
+        variant: found,
+      })
+    );
+  })
 );
 
 export const pick = implement(
