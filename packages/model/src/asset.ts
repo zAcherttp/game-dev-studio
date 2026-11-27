@@ -34,6 +34,12 @@ export const Asset = Schema.Struct({
 
 export const AssetSummary = Schema.Struct({
   id: Schema.String,
+  kind: Schema.optionalKey(
+    Schema.String.annotate({
+      description:
+        "What sort of asset this is in its studio, such as a house or a dungeon room. Gates with kinds run only on assets of those kinds.",
+    })
+  ),
   picks: Schema.optionalKey(
     Schema.Int.annotate({
       description:

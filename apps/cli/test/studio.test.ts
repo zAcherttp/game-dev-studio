@@ -411,6 +411,24 @@ const commandStudio: typeof StudioDef.Encoded = {
       title: "Coplanar fights",
       where: "variant",
     },
+    {
+      id: "room",
+      json: "fights",
+      kinds: ["room"],
+      pass: { op: "eq", value: 0 },
+      run: run("gate"),
+      title: "Rooms only",
+      where: "variant",
+    },
+    {
+      id: "piece",
+      json: "fights",
+      kinds: ["piece"],
+      pass: { op: "ge", value: 0 },
+      run: run("gate"),
+      title: "Pieces only",
+      where: "variant",
+    },
   ],
   id: "vfx",
   layers: [
@@ -455,7 +473,9 @@ describe("command studio", () => {
 
             expect(assets).toMatchObject({
               ok: true,
-              value: { assets: [{ id: "stool", title: "Stool" }] },
+              value: {
+                assets: [{ id: "stool", kind: "piece", title: "Stool" }],
+              },
             });
             expect([passing.ok, failing.ok]).toEqual([true, true]);
             expect(asset).toMatchObject({
@@ -465,17 +485,61 @@ describe("command studio", () => {
                   core: {
                     variants: [
                       {
-                        gates: [{ id: "fights", ok: true, value: 0 }],
+                        gates: [
+                          { id: "fights", ok: true, value: 0 },
+                          { id: "piece", ok: true, value: 0 },
+                        ],
                         id: "t1",
                       },
                       {
-                        gates: [{ id: "fights", ok: false, value: 2 }],
+                        gates: [
+                          { id: "fights", ok: false, value: 2 },
+                          { id: "piece", ok: true, value: 2 },
+                        ],
                         id: "t2",
                       },
                     ],
                   },
                 },
               },
+            });
+          }),
+        Layer.empty,
+        commandStudio
+      )
+  );
+});
+
+describe("command studio pick", () => {
+  it.effect(
+    "refuses a pick of a variant that fails a gate with FailsGate",
+    () =>
+      inGame(
+        (invoke) =>
+          Effect.gen(function* pickGated() {
+            const stool = { asset: "stool", layer: "core", studio: "vfx" };
+
+            const choose = (chosen: string) =>
+              invoke("pick", {
+                ...stool,
+                by: "phat",
+                note: "",
+                variant: chosen,
+              });
+
+            yield* invoke("render", { ...stool, variant: "t1" });
+            yield* invoke("render", { ...stool, variant: "t2" });
+
+            const refused = yield* choose("t2");
+            const picked = yield* choose("t1");
+
+            expect(tagOf(refused)).toBe("FailsGate");
+            expect(refused).toMatchObject({
+              error: { gates: ["fights"], variant: "t2" },
+            });
+            expect(picked).toMatchObject({
+              ok: true,
+              value: { mix: { core: "t1" } },
             });
           }),
         Layer.empty,

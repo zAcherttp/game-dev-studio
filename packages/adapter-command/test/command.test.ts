@@ -113,8 +113,8 @@ describe("studio commands", () => {
         );
 
         expect(yield* source.listAssets("props")).toEqual([
-          { id: "Kit/Stool", title: "Stool" },
-          { id: "village", title: "Village" },
+          { id: "Kit/Stool", kind: "piece", title: "Stool" },
+          { id: "village", kind: "map", title: "Village" },
         ]);
         expect(yield* source.takesOf("props", "Kit/Stool", "paint")).toEqual([
           {

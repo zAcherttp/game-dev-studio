@@ -11,6 +11,7 @@ import type { Render, Variant } from "./variant.js";
 export interface RenderRequest {
   readonly studio: string;
   readonly asset: string;
+  readonly kind?: string;
   readonly layer: string;
   readonly variant: typeof Variant.Type;
   readonly mix: typeof Mix.Type;

@@ -40,6 +40,8 @@ export const failureMessage = (failure: StudioFailure): string =>
   Match.value(failure).pipe(
     Match.tagsExhaustive({
       AdapterFailed: ({ message }) => message,
+      FailsGate: ({ gates, variant }) =>
+        `Variant ${variant} fails ${gates.join(", ")}, so it cannot be picked. Fix: make a variant that passes, or fix the failing gate.`,
       LayerBusy: ({ layer }) =>
         `Layer ${layer} is making a round, so it cannot take a pick. Fix: wait for its new variants.`,
       NoPick: ({ layer }) =>

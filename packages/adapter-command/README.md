@@ -18,6 +18,8 @@ The engine-free adapter: it runs the game commands a studio file names and reads
 
 After a render, every `GateDef` with `where: "variant"` whose `layers` include the layer (or that names none) runs: `run` as argv in `cwd` (inside the checkout; a path that leaves it fails), stdin `{ ...RenderRequest, render }`. Without `json` the value is the exit code; with it, `json` is a dotted path into stdout's JSON (`figures.problems`, `rows.0.id`). `pass` judges the value (`judge` and `readPath` in `@gds/model`, shared with the Roblox check): `eq` by JSON equality, `lt`/`le`/`gt`/`ge` on numbers only, `truthy`. `where: "check"` gates belong to `openCheck`.
 
+Gates by asset (Recommended, Claude, 2026-11-27): a gate with `kinds` runs only on assets whose `AssetSummary.kind` (as the studio's `assets` command prints it) is in the list, both as a variant gate and in the check, so a village never runs the dungeon gates. A gate without `kinds` runs on every asset; an asset without a kind runs only those. A variant whose latest gate results hold a failure cannot be picked: `pick` fails with `FailsGate` naming the failing gate ids (world-studio-4), the same rule the board applies.
+
 The store never replaces a variant, so results go to `GateLedger`: `<GDS_GAME>/.cache/devstudio/gates/<studio>/<asset>.json`, the latest result per layer and variant. It is a rebuildable cache; the CLI attaches it to every asset it returns.
 
 ## Wiring

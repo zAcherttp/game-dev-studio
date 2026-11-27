@@ -1,6 +1,7 @@
 import {
   AdapterFailed,
   GateResult,
+  gateApplies,
   judge,
   readPath,
   ruleText,
@@ -14,12 +15,14 @@ type Json = Schema.Json;
 
 export const variantGates = (
   studio: typeof StudioDef.Type,
-  layer: string
+  layer: string,
+  kind?: string
 ): readonly (typeof GateDef.Type)[] =>
   studio.gates.filter(
     (gate) =>
       gate.where === "variant" &&
-      (gate.layers === undefined || gate.layers.includes(layer))
+      (gate.layers === undefined || gate.layers.includes(layer)) &&
+      gateApplies(gate, kind)
   );
 
 const decodeJson = Schema.decodeUnknownOption(
@@ -84,6 +87,6 @@ export const runGates = (
   request: RenderRequest,
   render: typeof Render.Type
 ) =>
-  Effect.forEach(variantGates(studio, request.layer), (gate) =>
+  Effect.forEach(variantGates(studio, request.layer, request.kind), (gate) =>
     runGate(gate, request, render)
   );

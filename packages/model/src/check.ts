@@ -8,6 +8,7 @@ import type { CheckShot } from "./round.js";
 export interface CheckRequest {
   readonly studio: string;
   readonly asset: string;
+  readonly kind?: string;
   readonly mix: typeof Mix.Type;
 }
 

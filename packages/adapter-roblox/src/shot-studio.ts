@@ -3,6 +3,7 @@ import {
   Check,
   GateResult,
   Renderer,
+  gateApplies,
   judge,
   readPath,
   ruleText,
@@ -624,7 +625,9 @@ export const shotStudio = (settings: ShotSettings) =>
             Effect.mapError((problem) => failed(problem.message))
           );
 
-          const gates = settings.gates.filter((gate) => gate.where === "check");
+          const gates = settings.gates.filter(
+            (gate) => gate.where === "check" && gateApplies(gate, request.kind)
+          );
 
           const calls = yield* Effect.all(
             gates.map((gate) =>
