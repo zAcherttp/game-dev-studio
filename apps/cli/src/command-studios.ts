@@ -21,6 +21,8 @@ import type { Context } from "effect";
 import type { Path } from "effect/Path";
 import type { ChildProcessSpawner } from "effect/process";
 
+import { assetKind } from "./asset-kind.js";
+
 type StudioValue = typeof StudioDef.Type;
 
 type CommandServices =
@@ -119,6 +121,7 @@ export const GatedRenderer = Layer.effect(
   Effect.gen(function* makeGatedRenderer() {
     const inner = yield* Renderer;
     const store = yield* Store;
+    const source = yield* Source;
     const ledger = yield* GateLedger;
     const services = yield* Effect.context<CommandServices>();
     const commands = commandsFor(services);
@@ -145,9 +148,21 @@ export const GatedRenderer = Layer.effect(
             return render;
           }
 
-          const results = yield* runGates(studio, request, render).pipe(
-            Effect.provideContext(services)
-          );
+          const kinded =
+            request.kind === undefined &&
+            studio.gates.some((gate) => gate.kinds !== undefined);
+
+          const kind = kinded
+            ? yield* assetKind(request.studio, request.asset).pipe(
+                Effect.provideService(Source, source)
+              )
+            : request.kind;
+
+          const results = yield* runGates(
+            studio,
+            kind === undefined ? request : { ...request, kind },
+            render
+          ).pipe(Effect.provideContext(services));
 
           if (results.length > 0) {
             yield* ledger.record(

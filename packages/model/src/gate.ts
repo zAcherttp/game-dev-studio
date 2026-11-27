@@ -21,6 +21,12 @@ export const GateDef = Schema.Struct({
     })
   ),
   id: Schema.String,
+  kinds: Schema.optionalKey(
+    Schema.Array(Schema.String).annotate({
+      description:
+        "The asset kinds the gate runs on, as the studio's asset list names them; every asset when left out. An asset with no kind runs only gates without kinds.",
+    })
+  ),
   json: Schema.optionalKey(
     Schema.String.annotate({
       description:
@@ -47,6 +53,12 @@ export const GateDef = Schema.Struct({
 });
 
 type Json = Schema.Json;
+
+export const gateApplies = (
+  gate: typeof GateDef.Type,
+  kind: string | undefined
+): boolean =>
+  gate.kinds === undefined || (kind !== undefined && gate.kinds.includes(kind));
 
 const sameJson = Schema.toEquivalence(Schema.Json);
 

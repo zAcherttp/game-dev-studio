@@ -86,8 +86,18 @@ export const SourcedStore = Layer.effect(
         const sourced = yield* sourcedSummaries(studio);
         const known = new Set(stored.map(({ id }) => id));
 
+        const kinds = new Map(
+          Option.getOrElse(sourced, () => []).flatMap(({ id, kind }) =>
+            kind === undefined ? [] : [[id, kind] as const]
+          )
+        );
+
         return [
-          ...stored,
+          ...stored.map((summary) => {
+            const kind = kinds.get(summary.id);
+
+            return kind === undefined ? summary : { ...summary, kind };
+          }),
           ...Option.getOrElse(sourced, () => []).filter(
             ({ id }) => !known.has(id)
           ),

@@ -3,6 +3,7 @@ import { Schema } from "effect";
 
 import { AdapterFailed } from "./adapter-failed.js";
 import { Asset, AssetSummary, Mix } from "./asset.js";
+import { FailsGate } from "./fails-gate.js";
 import { LayerBusy } from "./layer-busy.js";
 import { NoPick } from "./no-pick.js";
 import { NotBuilt } from "./not-built.js";
@@ -119,7 +120,7 @@ export const renderContract = defineContract("render", {
 
 export const pickContract = defineContract("pick", {
   description:
-    "Pick one variant for a layer. It replaces that layer's earlier pick in the mix; the history keeps both. No pick while the layer is making. When the studio applies picks to the game, a failed apply fails the pick and records nothing.",
+    "Pick one variant for a layer. It replaces that layer's earlier pick in the mix; the history keeps both. No pick while the layer is making, and none of a variant that fails a gate (FailsGate). When the studio applies picks to the game, a failed apply fails the pick and records nothing.",
   failure: Schema.Union([
     NotBuilt,
     UnknownStudio,
@@ -127,6 +128,7 @@ export const pickContract = defineContract("pick", {
     UnknownLayer,
     UnknownVariant,
     LayerBusy,
+    FailsGate,
     AdapterFailed,
   ]),
   input: Schema.Struct({

@@ -3,6 +3,7 @@ import {
   AdapterFailed,
   Apply,
   Check,
+  FailsGate,
   Pack,
   Renderer,
   Source,
@@ -31,6 +32,8 @@ import {
   roundOnLayer,
 } from "@gds/store";
 import { DateTime, Effect, Option } from "effect";
+
+import { assetKind } from "./asset-kind.js";
 
 interface Where {
   readonly studio: string;
@@ -243,6 +246,21 @@ export const pick = implement(
     yield* pickOnLayer(factsOf(where, entry), variant);
 
     const chosen = entry.variants.find(({ id }) => id === variant);
+
+    const failing = (chosen?.gates ?? [])
+      .filter(({ ok }) => !ok)
+      .map(({ id }) => id);
+
+    if (failing.length > 0) {
+      return yield* new FailsGate({
+        asset,
+        gates: failing,
+        layer,
+        studio,
+        variant,
+      });
+    }
+
     const applier = yield* Effect.serviceOption(Apply);
 
     if (chosen !== undefined && Option.isSome(applier)) {
@@ -283,9 +301,16 @@ export const openCheck = implement(
   openCheckContract,
   Effect.fn("openCheck")(function* openCheck(input) {
     const stored = yield* getStoredAsset(input.studio, input.asset);
+    const kind = yield* assetKind(input.studio, input.asset);
+
+    const request = {
+      asset: input.asset,
+      mix: stored.mix,
+      studio: input.studio,
+    };
 
     return yield* Check.use((check) =>
-      check.open({ asset: input.asset, mix: stored.mix, studio: input.studio })
+      check.open(kind === undefined ? request : { ...request, kind })
     );
   })
 );
