@@ -11,11 +11,13 @@ export {
   contracts,
   getAssetContract,
   getPackContract,
+  launchContract,
   layersOfContract,
   listAssetsContract,
   listStudiosContract,
   openCheckContract,
   pickContract,
+  recordContract,
   renderContract,
   renderMixContract,
   roundContract,
@@ -26,11 +28,16 @@ export { FailsGate } from "./fails-gate.js";
 export {
   GateDef,
   GatePass,
+  blocksPick,
   gateApplies,
+  gateResult,
+  gateUnread,
   judge,
   readPath,
   ruleText,
 } from "./gate.js";
+
+export { InputChange, InputRecord } from "./input-record.js";
 
 export { LayerBusy } from "./layer-busy.js";
 
@@ -70,6 +77,7 @@ export { UnknownVariant } from "./unknown-variant.js";
 
 export {
   GateResult,
+  Launch,
   Render,
   RenderBeat,
   RenderView,

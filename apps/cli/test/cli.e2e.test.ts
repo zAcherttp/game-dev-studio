@@ -35,6 +35,8 @@ const toolNames = [
   "round",
   "getPack",
   "openCheck",
+  "launch",
+  "record",
 ] as const;
 
 const decodeOpenApi = Schema.decodeUnknownSync(

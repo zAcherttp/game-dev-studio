@@ -1,12 +1,11 @@
 import {
   AdapterFailed,
   Check,
-  GateResult,
   Renderer,
   gateApplies,
-  judge,
+  gateResult,
+  gateUnread,
   readPath,
-  ruleText,
 } from "@gds/model";
 import type {
   Applied,
@@ -174,12 +173,10 @@ const judged = (
   outcome: typeof CallOutcome.Type | undefined
 ) => {
   if (outcome === undefined || !outcome.ok) {
-    return GateResult.make({
-      id: gate.id,
-      note: `${gate.title}: ${gate.run[0]} failed in Studio: ${outcome?.error ?? "no reading"}`,
-      ok: false,
-      value: null,
-    });
+    return gateUnread(
+      gate,
+      `${gate.title}: ${gate.run[0]} failed in Studio: ${outcome?.error ?? "no reading"}`
+    );
   }
 
   const read =
@@ -188,22 +185,13 @@ const judged = (
       : readPath(outcome.value ?? null, gate.json);
 
   if (Option.isNone(read)) {
-    return GateResult.make({
-      id: gate.id,
-      note: `${gate.title}: the reading of ${gate.run[0]} has no ${gate.json ?? ""}`,
-      ok: false,
-      value: null,
-    });
+    return gateUnread(
+      gate,
+      `${gate.title}: the reading of ${gate.run[0]} has no ${gate.json ?? ""}`
+    );
   }
 
-  const ok = judge(gate.pass, read.value);
-
-  return GateResult.make({
-    id: gate.id,
-    note: `${gate.title}: ${JSON.stringify(read.value)} ${ok ? "meets" : "fails"} ${ruleText(gate.pass)}`,
-    ok,
-    value: read.value,
-  });
+  return gateResult(gate, read.value);
 };
 
 export class ShotStudio extends Context.Service<

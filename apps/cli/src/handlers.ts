@@ -12,13 +12,17 @@ import {
   UnknownStudio,
   UnknownVariant,
   addVariantsContract,
+  blocksPick,
   getAssetContract,
   getPackContract,
+  launchContract,
   layersOfContract,
   listAssetsContract,
   listStudiosContract,
+  notBuilt,
   openCheckContract,
   pickContract,
+  recordContract,
   renderContract,
   renderMixContract,
   roundContract,
@@ -248,7 +252,7 @@ export const pick = implement(
     const chosen = entry.variants.find(({ id }) => id === variant);
 
     const failing = (chosen?.gates ?? [])
-      .filter(({ ok }) => !ok)
+      .filter(blocksPick)
       .map(({ id }) => id);
 
     if (failing.length > 0) {
@@ -315,6 +319,14 @@ export const openCheck = implement(
   })
 );
 
+export const launch = implement(launchContract, () =>
+  Effect.fail(notBuilt(launchContract.name))
+);
+
+export const record = implement(recordContract, () =>
+  Effect.fail(notBuilt(recordContract.name))
+);
+
 export const studioCapabilities = [
   listStudios,
   listAssets,
@@ -327,4 +339,6 @@ export const studioCapabilities = [
   round,
   getPack,
   openCheck,
+  launch,
+  record,
 ] as const;

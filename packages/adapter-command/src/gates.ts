@@ -1,17 +1,8 @@
-import {
-  AdapterFailed,
-  GateResult,
-  gateApplies,
-  judge,
-  readPath,
-  ruleText,
-} from "@gds/model";
+import { AdapterFailed, gateApplies, gateResult, readPath } from "@gds/model";
 import type { GateDef, Render, RenderRequest, StudioDef } from "@gds/model";
 import { Effect, Option, Schema } from "effect";
 
 import { runArgv, tailOf } from "./run-command.js";
-
-type Json = Schema.Json;
 
 export const variantGates = (
   studio: typeof StudioDef.Type,
@@ -28,17 +19,6 @@ export const variantGates = (
 const decodeJson = Schema.decodeUnknownOption(
   Schema.fromJsonString(Schema.Json)
 );
-
-const finish = (gate: typeof GateDef.Type, value: Json) => {
-  const ok = judge(gate.pass, value);
-
-  return GateResult.make({
-    id: gate.id,
-    note: `${gate.title}: ${JSON.stringify(value)} ${ok ? "meets" : "fails"} ${ruleText(gate.pass)}`,
-    ok,
-    value,
-  });
-};
 
 export const runGate = Effect.fnUntraced(function* runGate(
   gate: typeof GateDef.Type,
@@ -58,7 +38,7 @@ export const runGate = Effect.fnUntraced(function* runGate(
   const { json } = gate;
 
   if (json === undefined) {
-    return finish(gate, ran.code);
+    return gateResult(gate, ran.code);
   }
 
   const parsed = decodeJson(ran.stdout.trim());
@@ -79,7 +59,7 @@ export const runGate = Effect.fnUntraced(function* runGate(
     });
   }
 
-  return finish(gate, value.value);
+  return gateResult(gate, value.value);
 });
 
 export const runGates = (

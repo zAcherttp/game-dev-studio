@@ -6,6 +6,8 @@ export const RenderKind = Schema.Literals([
   "gif",
   "model",
   "numbers",
+  "playable",
 ]).annotate({
-  description: "What a render produces, so a viewer knows how to show it.",
+  description:
+    "What a render produces, so a viewer knows how to show it. playable: a take that runs; the render carries its launch.",
 });
