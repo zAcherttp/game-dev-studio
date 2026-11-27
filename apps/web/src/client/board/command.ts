@@ -145,6 +145,76 @@ export const LoadAsset = Command.define("LoadAsset", {
   messages: [Message.LoadedAsset, Message.FailedPick],
 });
 
+export const LaunchTake = Command.define("LaunchTake", {
+  args: {
+    asset: Schema.String,
+    layer: Schema.String,
+    studio: Schema.String,
+    take: Schema.String,
+  },
+  execute: (input) =>
+    Effect.gen(function* launchTake() {
+      const api = yield* BoardApi;
+
+      const where = {
+        asset: input.asset,
+        layer: input.layer,
+        variant: input.take,
+      };
+
+      return yield* api.launch(input).pipe(
+        Effect.map((render) => Message.Launched({ ...where, render })),
+        Effect.catchTag("BoardApiFailed", (failure) =>
+          Effect.succeed(
+            Message.FailedLaunch({ ...where, message: failure.message })
+          )
+        )
+      );
+    }),
+  messages: [Message.Launched, Message.FailedLaunch],
+});
+
+export const LoadFrames = Command.define("LoadFrames", {
+  args: { key: Schema.String, path: Schema.String },
+  execute: ({ key, path }) =>
+    Effect.gen(function* loadFrames() {
+      const api = yield* BoardApi;
+
+      return yield* api.frames(path).pipe(
+        Effect.map((frames) => Message.LoadedFrames({ frames, key })),
+        Effect.catchTag("BoardApiFailed", (failure) =>
+          Effect.succeed(
+            Message.FailedFrames({ key, message: failure.message })
+          )
+        )
+      );
+    }),
+  messages: [Message.LoadedFrames, Message.FailedFrames],
+});
+
+export const RecordInput = Command.define("RecordInput", {
+  args: { asset: Schema.String, studio: Schema.String },
+  execute: (input) =>
+    Effect.gen(function* recordInput() {
+      const api = yield* BoardApi;
+
+      return yield* api.record(input).pipe(
+        Effect.map(({ record }) =>
+          Message.Recorded({ asset: input.asset, record })
+        ),
+        Effect.catchTag("BoardApiFailed", (failure) =>
+          Effect.succeed(
+            Message.FailedRecord({
+              asset: input.asset,
+              message: failure.message,
+            })
+          )
+        )
+      );
+    }),
+  messages: [Message.Recorded, Message.FailedRecord],
+});
+
 type CanvasMessage =
   | ReturnType<typeof Message.MeasuredCanvas>
   | ReturnType<typeof Message.WheeledCanvas>;

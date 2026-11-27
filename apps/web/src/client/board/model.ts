@@ -1,6 +1,8 @@
 import { Asset, LayerDef, Render, StudioDef } from "@gds/model";
 import { Option, Schema } from "effect";
 
+import { FrameLog } from "./playable.js";
+
 export const BoardAsset = Schema.Struct({
   asset: Asset,
   layers: Schema.Array(LayerDef),
@@ -81,9 +83,12 @@ export const Model = Schema.Struct({
   composed: Schema.Record(Schema.String, Render),
   drag: Schema.Option(Point),
   fitted: Schema.Boolean,
+  frames: Schema.Record(Schema.String, FrameLog),
+  launching: Schema.Array(Schema.String),
   note: Schema.String,
   open: Schema.Option(OpenLayer),
   pickerMode: Schema.Literals(["mix", "solo"]),
+  recording: Schema.Array(Schema.String),
   rendering: Schema.Array(Schema.String),
   roundNote: Schema.String,
   solo: Schema.Record(Schema.String, Render),
@@ -114,9 +119,12 @@ export const initialModel = (flags: FlagsValue): BoardModel => ({
   composed: {},
   drag: Option.none(),
   fitted: false,
+  frames: {},
+  launching: [],
   note: "",
   open: Option.none(),
   pickerMode: "mix",
+  recording: [],
   rendering: [],
   roundNote: "",
   solo: {},

@@ -1,3 +1,4 @@
+import { blocksPick } from "@gds/model";
 import type { Asset, LayerDef, Render, Variant } from "@gds/model";
 import { Option, Predicate, Schema } from "effect";
 
@@ -27,6 +28,18 @@ export const pickedTakes = (
     })
   );
 
+export const drawnPicks = (
+  picks: Picks,
+  layers: readonly (typeof LayerDef.Type)[]
+): Picks =>
+  Object.fromEntries(
+    Object.entries(picks).filter(
+      ([layer]) =>
+        layers.find((candidate) => candidate.id === layer)?.renderKind !==
+        "playable"
+    )
+  );
+
 export const takeName = (
   layerTitle: string,
   variant: { readonly id: string; readonly label: string }
@@ -42,7 +55,7 @@ export const composeKey = (asset: string, picks: Picks) =>
     .join(",")}`;
 
 export const failingGates = (variant: VariantValue) =>
-  (variant.gates ?? []).filter((gate) => !gate.ok);
+  (variant.gates ?? []).filter(blocksPick);
 
 export const isPickable = (variant: VariantValue) =>
   failingGates(variant).length === 0;

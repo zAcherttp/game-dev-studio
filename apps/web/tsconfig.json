@@ -13,6 +13,8 @@
           "effect/FileSystem",
           "effect/Path",
           "effect/http/FetchHttpClient",
+          "effect/http/HttpClient",
+          "effect/http/HttpClientResponse",
           "effect/rpc/RpcClient",
           "effect/rpc/RpcClientError",
           "effect/rpc/RpcSerialization"

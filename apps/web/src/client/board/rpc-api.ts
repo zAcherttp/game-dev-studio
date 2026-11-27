@@ -1,20 +1,30 @@
 import { toRpcGroup } from "@gds/capability/rpc-group";
 import {
   getAssetContract,
+  launchContract,
   listStudiosContract,
   pickContract,
+  recordContract,
   renderContract,
   renderMixContract,
   roundContract,
 } from "@gds/model";
 import { Effect, Layer, Match } from "effect";
-import { FetchHttpClient } from "effect/http";
+import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/http";
 import type { RpcClientError } from "effect/rpc";
 import { RpcClient, RpcSerialization } from "effect/rpc";
 
 import { BoardApi } from "./api.js";
-import type { MixInput, PickInput, RenderInput, RoundInput } from "./api.js";
+import type {
+  LaunchInput,
+  MixInput,
+  PickInput,
+  RenderInput,
+  RoundInput,
+} from "./api.js";
 import { BoardApiFailed } from "./board-api-failed.js";
+import { mediaSrc } from "./picker.js";
+import { FrameLog } from "./playable.js";
 
 export const boardRpcGroup = toRpcGroup([
   listStudiosContract,
@@ -23,6 +33,8 @@ export const boardRpcGroup = toRpcGroup([
   roundContract,
   renderContract,
   renderMixContract,
+  launchContract,
+  recordContract,
 ]).group;
 
 export const STUDIO_RPC_PATH = "/rpc";
@@ -68,6 +80,19 @@ export const rpcBoardApi = (url: string) =>
     BoardApi,
     Effect.gen(function* makeRpcBoardApi() {
       const client = yield* RpcClient.make(boardRpcGroup);
+      const http = yield* HttpClient.HttpClient;
+
+      const frames = (path: string) =>
+        http.get(mediaSrc(path)).pipe(
+          Effect.flatMap(HttpClientResponse.filterStatusOk),
+          Effect.flatMap(HttpClientResponse.schemaBodyJson(FrameLog)),
+          Effect.mapError(
+            (failure) =>
+              new BoardApiFailed({
+                message: `The frame strip at ${path} did not load (${failure._tag}). Fix: launch the take again so its replay writes the strip.`,
+              })
+          )
+        );
 
       return BoardApi.of({
         pick: (input: PickInput) =>
@@ -80,6 +105,11 @@ export const rpcBoardApi = (url: string) =>
           client.renderMix(input).pipe(Effect.mapError(failed)),
         round: (input: RoundInput) =>
           client.round(input).pipe(Effect.mapError(failed)),
+        launch: (input: LaunchInput) =>
+          client.launch(input).pipe(Effect.mapError(failed)),
+        record: (input: MixInput) =>
+          client.record(input).pipe(Effect.mapError(failed)),
+        frames,
       });
     })
   ).pipe(

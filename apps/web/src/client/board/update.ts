@@ -4,8 +4,11 @@ import { modifyFields } from "foldkit/struct";
 
 import type { BoardApi } from "./api.js";
 import {
+  LaunchTake,
   LoadAsset,
+  LoadFrames,
   PickVariant,
+  RecordInput,
   RenderComposed,
   RenderSolo,
   RenderTake,
@@ -13,6 +16,7 @@ import {
 } from "./command.js";
 import {
   composeKey,
+  drawnPicks,
   failingGates,
   gateValue,
   isWaiting,
@@ -25,6 +29,7 @@ import type { BoardMessage } from "./message.js";
 import { idleStatus, takeKey } from "./model.js";
 import type { BoardAssetValue, BoardModel, CameraValue } from "./model.js";
 import { openedLayer } from "./picker.js";
+import { isPlayable } from "./playable.js";
 
 type UpdateReturn = Update.Return<BoardModel, BoardMessage, BoardApi>;
 
@@ -157,6 +162,89 @@ const withRender = (
     };
   });
 
+const layerKindOf = (model: BoardModel, asset: string, layer: string) =>
+  model.assets
+    .find((entry) => entry.asset.id === asset)
+    ?.layers.find((candidate) => candidate.id === layer)?.renderKind;
+
+const isPlayableLayer = (model: BoardModel, asset: string, layer: string) =>
+  layerKindOf(model, asset, layer) === "playable";
+
+const framesFor = (
+  model: BoardModel,
+  where: { readonly asset: string; readonly layer: string },
+  takes: readonly {
+    readonly id: string;
+    readonly render?: NonNullable<
+      BoardAssetValue["asset"]["layers"][string]["variants"][number]["render"]
+    >;
+  }[]
+) =>
+  takes.flatMap((take) => {
+    const key = takeKey(where.asset, where.layer, take.id);
+    const path = take.render?.numbers;
+
+    return path === undefined ||
+      !isPlayable(take.render) ||
+      model.frames[key] !== undefined
+      ? []
+      : [LoadFrames({ key, path })];
+  });
+
+const openPlayable = (
+  model: BoardModel,
+  asset: string,
+  layer: string,
+  takes: Parameters<typeof framesFor>[2]
+): UpdateReturn => ({
+  commands: framesFor(model, { asset, layer }, takes),
+  model: modifyFields(model, {
+    axis: () => "",
+    clock: () => 0,
+    drag: () => Option.none(),
+    note: () => "",
+    open: () => Option.some({ asset, layer }),
+    roundNote: () => "",
+    status: () => idleStatus,
+  }),
+});
+
+const play = (model: BoardModel, variant: string): UpdateReturn =>
+  Option.match(model.open, {
+    onNone: () => ({ model }),
+    onSome: (open) => {
+      const key = takeKey(open.asset, open.layer, variant);
+
+      if (model.launching.includes(key)) {
+        return { model };
+      }
+
+      return {
+        commands: [
+          LaunchTake({
+            asset: open.asset,
+            layer: open.layer,
+            studio: model.studio.id,
+            take: variant,
+          }),
+        ],
+        model: modifyFields(model, {
+          launching: (current) => [...current, key],
+        }),
+      };
+    },
+  });
+
+const record = (model: BoardModel, asset: string): UpdateReturn =>
+  model.recording.includes(asset)
+    ? { model }
+    : {
+        commands: [RecordInput({ asset, studio: model.studio.id })],
+        model: modifyFields(model, {
+          recording: (current) => [...current, asset],
+        }),
+      };
+
 const openLayer = (
   model: BoardModel,
   asset: string,
@@ -166,6 +254,10 @@ const openLayer = (
     onNone: () => [],
     onSome: ({ variants }) => variants,
   });
+
+  if (isPlayableLayer(model, asset, layer)) {
+    return openPlayable(model, asset, layer, takes);
+  }
 
   const keys = takes.map((take) => takeKey(asset, layer, take.id));
 
@@ -204,7 +296,7 @@ const soloMissing = (
   layer: string,
   takes: readonly string[]
 ) =>
-  takes.flatMap((take) =>
+  (isPlayableLayer(model, asset, layer) ? [] : takes).flatMap((take) =>
     model.solo[takeKey(asset, layer, take)] === undefined
       ? [RenderSolo({ asset, layer, studio: model.studio.id, variant: take })]
       : []
@@ -214,7 +306,10 @@ const composedMissing = (model: BoardModel, asset: string, picks: Picks) => {
   const key = composeKey(asset, picks);
   const known = model.composed[key];
 
-  return Object.keys(picks).length === 0 ||
+  const layers =
+    model.assets.find((entry) => entry.asset.id === asset)?.layers ?? [];
+
+  return Object.keys(drawnPicks(picks, layers)).length === 0 ||
     (known !== undefined && !isWaiting(known))
     ? []
     : [RenderComposed({ asset, key, studio: model.studio.id })];
@@ -223,24 +318,26 @@ const composedMissing = (model: BoardModel, asset: string, picks: Picks) => {
 const takesMissing = (model: BoardModel, asset: string) => {
   const entry = model.assets.find((candidate) => candidate.asset.id === asset);
 
-  return (entry?.layers ?? []).flatMap((layer) =>
-    (entry?.asset.layers[layer.id]?.variants ?? []).flatMap((variant) =>
-      (variant.render !== undefined && !isWaiting(variant.render)) ||
-      model.rendering.includes(takeKey(asset, layer.id, variant.id))
-        ? []
-        : [
-            {
-              command: RenderTake({
-                asset,
-                layer: layer.id,
-                studio: model.studio.id,
-                variant: variant.id,
-              }),
-              key: takeKey(asset, layer.id, variant.id),
-            },
-          ]
-    )
-  );
+  return (entry?.layers ?? [])
+    .filter((layer) => layer.renderKind !== "playable")
+    .flatMap((layer) =>
+      (entry?.asset.layers[layer.id]?.variants ?? []).flatMap((variant) =>
+        (variant.render !== undefined && !isWaiting(variant.render)) ||
+        model.rendering.includes(takeKey(asset, layer.id, variant.id))
+          ? []
+          : [
+              {
+                command: RenderTake({
+                  asset,
+                  layer: layer.id,
+                  studio: model.studio.id,
+                  variant: variant.id,
+                }),
+                key: takeKey(asset, layer.id, variant.id),
+              },
+            ]
+      )
+    );
 };
 
 const allPicks = (model: BoardModel, asset: string): Picks => {
@@ -270,6 +367,12 @@ const withGates = (
     ])
   ),
 });
+
+const withRecords = (
+  shown: BoardAssetValue["asset"],
+  loaded: BoardAssetValue["asset"]
+): BoardAssetValue["asset"] =>
+  loaded.records === undefined ? shown : { ...shown, records: loaded.records };
 
 const keepRenders = (
   shown: BoardAssetValue["asset"],
@@ -364,6 +467,65 @@ export const update = (
 ): UpdateReturn =>
   Message.match<UpdateReturn>(message, {
     ChoseVariant: ({ variant }) => pick(model, variant),
+    ClickedPlay: ({ variant }) => play(model, variant),
+    ClickedRecord: ({ asset }) => record(model, asset),
+    Launched: ({ asset, layer, render, variant }) => {
+      const key = takeKey(asset, layer, variant);
+
+      const next = modifyFields(model, {
+        assets: (assets) =>
+          withRender(assets, { asset, layer, variant }, render),
+        frames: (frames) =>
+          Object.fromEntries(
+            Object.entries(frames).filter(([known]) => known !== key)
+          ),
+        launching: (current) => current.filter((known) => known !== key),
+      });
+
+      return {
+        commands: framesFor(next, { asset, layer }, [{ id: variant, render }]),
+        model: next,
+      };
+    },
+    FailedLaunch: ({ asset, layer, message: reason, variant }) => ({
+      model: modifyFields(model, {
+        launching: (current) =>
+          current.filter((key) => key !== takeKey(asset, layer, variant)),
+        status: () => ({
+          message: `Take ${variant} did not launch. ${reason}`,
+          state: "failed" as const,
+        }),
+      }),
+    }),
+    LoadedFrames: ({ frames, key }) => ({
+      model: modifyFields(model, {
+        frames: (current) => ({ ...current, [key]: frames }),
+      }),
+    }),
+    FailedFrames: ({ message: reason }) => ({
+      model: modifyFields(model, {
+        status: () => ({ message: reason, state: "failed" as const }),
+      }),
+    }),
+    Recorded: ({ asset, record: id }) => ({
+      commands: [LoadAsset({ asset, studio: model.studio.id })],
+      model: modifyFields(model, {
+        recording: (current) => current.filter((known) => known !== asset),
+        status: () => ({
+          message: `Recorded input ${id}. Every take of ${asset} replays it.`,
+          state: "done" as const,
+        }),
+      }),
+    }),
+    FailedRecord: ({ asset, message: reason }) => ({
+      model: modifyFields(model, {
+        recording: (current) => current.filter((known) => known !== asset),
+        status: () => ({
+          message: `Recording on ${asset} did not start. ${reason}`,
+          state: "failed" as const,
+        }),
+      }),
+    }),
     ClickedFit: () => ({
       model: modifyFields(model, { camera: () => fitted(model) }),
     }),
@@ -450,7 +612,10 @@ export const update = (
         assets: (assets) =>
           assets.map((entry) =>
             entry.asset.id === asset.id
-              ? { ...entry, asset: withGates(entry.asset, asset) }
+              ? {
+                  ...entry,
+                  asset: withRecords(withGates(entry.asset, asset), asset),
+                }
               : entry
           ),
       }),
