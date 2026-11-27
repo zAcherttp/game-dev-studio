@@ -1,5 +1,7 @@
 import { Option, Predicate, Schema } from "effect";
 
+import { GateResult } from "./variant.js";
+
 const Comparison = Schema.Literals(["lt", "le", "gt", "ge"]).annotate({
   description: "How the read value compares to the pass value.",
 });
@@ -38,7 +40,12 @@ export const GateDef = Schema.Struct({
       description: "The layers the gate runs on; every layer when left out.",
     })
   ),
-  pass: GatePass,
+  pass: Schema.optionalKey(
+    GatePass.annotate({
+      description:
+        "The rule the value must meet. Left out, the gate is a reading: its value is shown and never blocks a pick.",
+    })
+  ),
   run: Schema.NonEmptyArray(Schema.String).annotate({
     description: "The command and its arguments, run without a shell.",
   }),
@@ -49,7 +56,7 @@ export const GateDef = Schema.Struct({
   }),
 }).annotate({
   description:
-    "A gate as data: a command, where it runs, and the rule its value must pass. Its outcome is a GateResult.",
+    "A gate as data: a command, where it runs, and the rule its value must pass, or no rule for a reading. Its outcome is a GateResult.",
 });
 
 type Json = Schema.Json;
@@ -134,3 +141,43 @@ export const judge = (pass: typeof GatePass.Type, value: Json): boolean => {
 
 export const ruleText = (pass: typeof GatePass.Type): string =>
   "truthy" in pass ? "truthy" : `${pass.op} ${JSON.stringify(pass.value)}`;
+
+export const gateResult = (
+  gate: typeof GateDef.Type,
+  value: Json
+): typeof GateResult.Type => {
+  const shown = `${gate.title}: ${JSON.stringify(value)}`;
+
+  if (gate.pass === undefined) {
+    return GateResult.make({
+      id: gate.id,
+      note: shown,
+      ok: true,
+      reading: true,
+      value,
+    });
+  }
+
+  const ok = judge(gate.pass, value);
+
+  return GateResult.make({
+    id: gate.id,
+    note: `${shown} ${ok ? "meets" : "fails"} ${ruleText(gate.pass)}`,
+    ok,
+    value,
+  });
+};
+
+export const gateUnread = (
+  gate: typeof GateDef.Type,
+  note: string
+): typeof GateResult.Type => {
+  const base = { id: gate.id, note, ok: false, value: null };
+
+  return GateResult.make(
+    gate.pass === undefined ? { ...base, reading: true } : base
+  );
+};
+
+export const blocksPick = (result: typeof GateResult.Type): boolean =>
+  !result.ok && result.reading !== true;

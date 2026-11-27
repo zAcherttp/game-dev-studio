@@ -1,0 +1,37 @@
+[
+  {
+    "id": "combat.frames.startup",
+    "title": "Combat frames: startup of the first strike, in ticks",
+    "run": ["python", "tools/devstudio/combat/frames.py"],
+    "json": "strikes.0.startup",
+    "where": "variant"
+  },
+  {
+    "id": "combat.frames.active",
+    "title": "Combat frames: active of the first strike, in ticks",
+    "run": ["python", "tools/devstudio/combat/frames.py"],
+    "json": "strikes.0.active",
+    "where": "variant"
+  },
+  {
+    "id": "combat.frames.recovery",
+    "title": "Combat frames: recovery of the first strike, in ticks",
+    "run": ["python", "tools/devstudio/combat/frames.py"],
+    "json": "strikes.0.recovery",
+    "where": "variant"
+  },
+  {
+    "id": "combat.frames.hitstopTicks",
+    "title": "Combat frames: hitstopTicks of the first strike, in ticks",
+    "run": ["python", "tools/devstudio/combat/frames.py"],
+    "json": "strikes.0.hitstopTicks",
+    "where": "variant"
+  },
+  {
+    "id": "combat.frames.advantageOnHit",
+    "title": "Combat frames: advantageOnHit of the first strike, in ticks",
+    "run": ["python", "tools/devstudio/combat/frames.py"],
+    "json": "strikes.0.advantageOnHit",
+    "where": "variant"
+  }
+]

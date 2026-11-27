@@ -196,6 +196,40 @@ export const renderMixContract = defineContract("renderMix", {
   output: Render,
 });
 
+export const launchContract = defineContract("launch", {
+  description:
+    "Launch one take of a playable layer. The studio's adapter fills the launch (command, arguments, directory) and starts it, with the take's overrides. Returns the playable render: the launch it ran and, when a replay ran, the replay video in views and the frame strip in numbers.",
+  failure: Schema.Union([
+    NotBuilt,
+    UnknownStudio,
+    UnknownAsset,
+    UnknownLayer,
+    UnknownVariant,
+    AdapterFailed,
+  ]),
+  input: Schema.Struct({
+    asset: assetField,
+    layer: layerField,
+    studio: studioField,
+    take: Schema.String.annotate({
+      description: "Take id inside the layer: one of its variants.",
+    }),
+  }),
+  output: Render,
+});
+
+export const recordContract = defineContract("record", {
+  description:
+    "Record a play session's input on an asset and keep it in the asset's records, so every take of the asset replays the same input. Returns the record's id.",
+  failure: Schema.Union([NotBuilt, UnknownStudio, UnknownAsset, AdapterFailed]),
+  input: Schema.Struct({ asset: assetField, studio: studioField }),
+  output: Schema.Struct({
+    record: Schema.String.annotate({
+      description: "The id of the InputRecord now in the asset's records.",
+    }),
+  }),
+});
+
 export const contracts = [
   listStudiosContract,
   listAssetsContract,
@@ -208,4 +242,6 @@ export const contracts = [
   roundContract,
   getPackContract,
   openCheckContract,
+  launchContract,
+  recordContract,
 ] as const;

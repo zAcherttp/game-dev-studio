@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 
+import { InputRecord } from "./input-record.js";
 import { Pick } from "./pick.js";
 import { RoundRequest } from "./round.js";
 import { Variant } from "./variant.js";
@@ -28,6 +29,12 @@ export const Asset = Schema.Struct({
   id: Schema.String,
   layers: Schema.Record(Schema.String, AssetLayer),
   mix: Mix,
+  records: Schema.optionalKey(
+    Schema.Array(InputRecord).annotate({
+      description:
+        "Input records every take of the asset replays, oldest first. A take never owns a record.",
+    })
+  ),
   studio: Schema.String,
   title: Schema.String,
 });

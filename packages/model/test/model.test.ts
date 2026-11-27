@@ -6,11 +6,17 @@ import {
   Asset,
   GateDef,
   NotBuilt,
+  Render,
   StudioDef,
+  blocksPick,
   contracts,
+  gateResult,
+  gateUnread,
+  judge,
   notBuilt,
   rendererOf,
 } from "../src/index.js";
+import combatGates from "./fixtures/combat-gates.json" with { type: "json" };
 import vfxGates from "./fixtures/vfx-gates.json" with { type: "json" };
 
 const AssetFile = Schema.fromJsonString(Asset);
@@ -140,8 +146,70 @@ describe("model", () => {
     ).toThrow();
   });
 
-  it("names eleven distinct contracts and lets each one fail as not built", () => {
-    expect(new Set(contracts.map((contract) => contract.name)).size).toBe(11);
+  it("a playable render with a launch, a replay video and a frame strip decodes and re-encodes to the same text", () => {
+    const RenderFile = Schema.fromJsonString(Render);
+
+    const text = JSON.stringify({
+      kind: "playable",
+      launch: {
+        args: ["--take", "t1", "--replay", "first.rec.json"],
+        command: "stage",
+        cwd: "tools/stage",
+      },
+      ms: 4200,
+      numbers: "cache/combat/flow/t1/first.frames.json",
+      path: "cache/combat/flow/t1/first.mp4",
+      views: [{ camera: "side", path: "cache/combat/flow/t1/first.mp4" }],
+    });
+
+    expect(
+      Schema.encodeSync(RenderFile)(Schema.decodeSync(RenderFile)(text))
+    ).toBe(text);
+  });
+
+  it("refuses a playable render without a launch, and a launch on any other kind", () => {
+    const launch = { args: [], command: "stage" };
+
+    expect(() =>
+      Schema.decodeUnknownSync(Render)({ kind: "playable", ms: 0, path: "" })
+    ).toThrow("carries a launch");
+    expect(() =>
+      Schema.decodeUnknownSync(Render)({ kind: "gif", launch, ms: 0, path: "" })
+    ).toThrow("carries a launch");
+  });
+
+  it("decodes the combat frame gates as readings, which carry no pass rule", () => {
+    const gates = Schema.decodeUnknownSync(Schema.Array(GateDef))(combatGates);
+
+    expect(gates.length).toBeGreaterThan(0);
+    expect(gates.every((gate) => gate.pass === undefined)).toBe(true);
+  });
+
+  it.prop(
+    "a reading never blocks a pick, read or unread; a pass gate blocks exactly when its rule fails",
+    { note: Schema.String, value: Schema.Json },
+    ({ note, value }) => {
+      const [reading] = Schema.decodeUnknownSync(Schema.Array(GateDef))(
+        combatGates
+      );
+
+      const [audit] = Schema.decodeUnknownSync(Schema.Array(GateDef))(vfxGates);
+
+      if (reading === undefined || audit?.pass === undefined) {
+        throw new Error("fixtures lost their gates");
+      }
+
+      expect(blocksPick(gateResult(reading, value))).toBe(false);
+      expect(blocksPick(gateUnread(reading, note))).toBe(false);
+      expect(blocksPick(gateResult(audit, value))).toBe(
+        !judge(audit.pass, value)
+      );
+      expect(blocksPick(gateUnread(audit, note))).toBe(true);
+    }
+  );
+
+  it("names thirteen distinct contracts and lets each one fail as not built", () => {
+    expect(new Set(contracts.map((contract) => contract.name)).size).toBe(13);
 
     for (const contract of contracts) {
       const encoded = Schema.encodeUnknownSync(contract.failure)(
