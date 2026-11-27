@@ -26,7 +26,7 @@ An experienced solo developer drove an AI through a large, detailed asset. Phát
 **Inferred from the image.** The set reads as about nine separate pieces, each a plausible single request:
 
 | Piece | Where it sits | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Hood | head | dark cloth, small metal studs along the edge |
 | Wrapped scarf | neck | soft folds, same cloth as the hood |
 | Dragon-head pauldron | one shoulder only | the hero piece; sculpted head, horns, layered plates, a glowing gem eye |

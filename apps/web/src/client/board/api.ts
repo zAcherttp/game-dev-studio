@@ -3,6 +3,7 @@ import { Context, DateTime, Effect, Layer, Ref } from "effect";
 
 import { BoardApiFailed } from "./board-api-failed.js";
 import type { BoardAssetValue } from "./model.js";
+import type { FrameLogValue } from "./playable.js";
 
 export interface PickInput {
   readonly studio: string;
@@ -34,6 +35,13 @@ export interface RenderInput {
   readonly mix?: Readonly<Record<string, string>>;
 }
 
+export interface LaunchInput {
+  readonly studio: string;
+  readonly asset: string;
+  readonly layer: string;
+  readonly take: string;
+}
+
 type AssetValue = typeof Asset.Type;
 
 export class BoardApi extends Context.Service<
@@ -54,6 +62,15 @@ export class BoardApi extends Context.Service<
     readonly getAsset: (
       input: MixInput
     ) => Effect.Effect<AssetValue, BoardApiFailed>;
+    readonly launch: (
+      input: LaunchInput
+    ) => Effect.Effect<typeof Render.Type, BoardApiFailed>;
+    readonly record: (
+      input: MixInput
+    ) => Effect.Effect<{ readonly record: string }, BoardApiFailed>;
+    readonly frames: (
+      path: string
+    ) => Effect.Effect<FrameLogValue, BoardApiFailed>;
   }
 >()("@gds/web/BoardApi") {}
 
@@ -117,9 +134,15 @@ export const withPick = (
 
 export type MixRenders = (asset: AssetValue) => typeof Render.Type | undefined;
 
+export interface PlayFixture {
+  readonly launches?: Readonly<Record<string, typeof Render.Type>>;
+  readonly frames?: Readonly<Record<string, FrameLogValue>>;
+}
+
 export const memoryBoardApi = (
   initial: readonly BoardAssetValue[],
-  mixRenders?: MixRenders
+  mixRenders?: MixRenders,
+  play: PlayFixture = {}
 ) =>
   Layer.effect(
     BoardApi,
@@ -217,6 +240,67 @@ export const memoryBoardApi = (
         return asset;
       });
 
-      return { getAsset, pick, render, renderMix, round };
+      const launch = Effect.fn("BoardApi.memory.launch")(function* launch(
+        input: LaunchInput
+      ) {
+        yield* findAsset(yield* Ref.get(store), input);
+        const launched = play.launches?.[input.take];
+
+        if (launched === undefined) {
+          return yield* failed(
+            `No launch for ${input.take} on layer ${input.layer} in the fixture.`
+          );
+        }
+
+        return launched;
+      });
+
+      const record = Effect.fn("BoardApi.memory.record")(function* record(
+        input: MixInput
+      ) {
+        const assets = yield* Ref.get(store);
+        const asset = assets.get(input.asset);
+
+        if (asset === undefined || asset.studio !== input.studio) {
+          return yield* failed(`No asset ${input.asset} in ${input.studio}.`);
+        }
+
+        const id = `rec-${(asset.records ?? []).length + 1}`;
+
+        const next = {
+          ...asset,
+          records: [
+            ...(asset.records ?? []),
+            { id, start: {}, tickRate: 60, ticks: [], version: 1 as const },
+          ],
+        };
+
+        yield* Ref.set(store, new Map([...assets, [input.asset, next]]));
+
+        return { record: id };
+      });
+
+      const frames = Effect.fn("BoardApi.memory.frames")(function* frames(
+        path: string
+      ) {
+        const found = play.frames?.[path];
+
+        if (found === undefined) {
+          return yield* failed(`No frame strip at ${path} in the fixture.`);
+        }
+
+        return found;
+      });
+
+      return {
+        frames,
+        getAsset,
+        launch,
+        pick,
+        record,
+        render,
+        renderMix,
+        round,
+      };
     })
   );

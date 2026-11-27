@@ -10,6 +10,8 @@ export const boardCopy = {
   fit: "Fit",
   hint: "Drag to pan, wheel to zoom, open a layer to pick",
   noPick: "no pick yet",
+  playable: "playable: open to play",
+  playableMix: "Playable takes: open a layer to play them",
   title: (studio: string) => `${studio} studio board`,
   zoomIn: "Zoom in",
   zoomOut: "Zoom out",
@@ -47,6 +49,30 @@ export const switcherCopy = {
   filterPlaceholder: "type to filter",
   label: "Assets in this studio",
   picks: (count: number) => (count === 1 ? "1 pick" : `${count} picks`),
+};
+
+export const playableCopy = {
+  axisEnd: (ticks: number) => `+${ticks}`,
+  axisHit: "first hit",
+  axisStart: (ticks: number) => `${ticks}`,
+  launching: (label: string) => `Launching ${label}…`,
+  movie: (label: string) => `${label} replay`,
+  noFrames: "no frame strip yet",
+  noMovie: (label: string) => `${label} has no replay yet. Play it.`,
+  noReading: "—",
+  parity: "parity",
+  play: (label: string) => `Play ${label}`,
+  ran: (command: string) => `ran ${command}`,
+  reading: "reading",
+  readings: (label: string) => `${label} readings`,
+  record: (asset: string) => `Record input on ${asset}`,
+  recordLabel: "Record",
+  recording: "Recording…",
+  records: (count: number) => (count === 1 ? "1 record" : `${count} records`),
+  strip: (label: string) => `${label} frame strip`,
+  strips: "Frame strips on one tick axis, aligned on the first hit",
+  sync: (period: number) =>
+    `Replays loop together; every take meets at its first hit (${Math.round(period)} ms cycle)`,
 };
 
 export const pickerCopy = {

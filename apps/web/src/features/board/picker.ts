@@ -16,8 +16,9 @@ import {
 } from "../../client/board/picker.js";
 import { cycleOf, hasStarted, syncPlan } from "../../client/board/sync.js";
 import type { SyncPlan } from "../../client/board/sync.js";
-import { pickerCopy } from "./copy.js";
+import { pickerCopy, playableCopy } from "./copy.js";
 import { pickerStyles } from "./picker.stylex.js";
+import { gateVerdict, playableBoard, recordButton } from "./playable.js";
 
 type VariantValue = typeof Variant.Type;
 
@@ -99,11 +100,12 @@ const gateRows = (h: HtmlBuilder<BoardMessage>, variant: VariantValue): Html =>
                       h.Class(
                         cls(
                           pickerStyles.gateCell,
-                          gate.ok ? pickerStyles.pass : pickerStyles.fail
+                          gate.reading !== true &&
+                            (gate.ok ? pickerStyles.pass : pickerStyles.fail)
                         )
                       ),
                     ],
-                    [gate.ok ? "pass" : "fail"]
+                    [gateVerdict(gate)]
                   ),
                   h.td([h.Class(cls(pickerStyles.gateCell))], [gate.note]),
                 ]
@@ -315,8 +317,61 @@ export const pickerView = (
             })
           : takes;
 
-      const plan = syncPlan(syncClips(model.studio, variants));
+      const isPlayable = layer.renderKind === "playable";
+
+      const played = isPlayable
+        ? Option.some(
+            playableBoard(
+              h,
+              model,
+              { asset: asset.id, layer: layer.id },
+              takes,
+              picked
+            )
+          )
+        : Option.none();
+
+      const plan = Option.match(played, {
+        onNone: () => syncPlan(syncClips(model.studio, variants)),
+        onSome: (board) => board.plan,
+      });
+
       const beat = model.studio.sync?.beat ?? "start";
+
+      const modes = isPlayable
+        ? [
+            h.span(
+              [h.Class(cls(pickerStyles.sub))],
+              [playableCopy.records((asset.records ?? []).length)]
+            ),
+            recordButton(h, model.recording, asset, pickerStyles.ghost),
+          ]
+        : [
+            modeButton(h, model, "mix", pickerCopy.inMix),
+            modeButton(h, model, "solo", pickerCopy.alone),
+          ];
+
+      const columns = Option.match(played, {
+        onNone: () =>
+          h.div(
+            [h.Class(cls(pickerStyles.columns))],
+            [
+              referenceColumn(h, model, plan),
+              ...variants.map(variantColumn(h, model, plan, picked)),
+            ]
+          ),
+        onSome: (board) =>
+          h.div(
+            [h.Class(cls(pickerStyles.composeBody))],
+            [
+              h.div(
+                [h.Class(cls(pickerStyles.columns))],
+                [referenceColumn(h, model, plan), ...board.columns]
+              ),
+              board.strips,
+            ]
+          ),
+      });
 
       return h.div(
         [h.Class(cls(pickerStyles.backdrop))],
@@ -336,14 +391,17 @@ export const pickerView = (
                   h.span([h.Class(cls(pickerStyles.sub))], [asset.title]),
                   h.span(
                     [h.Class(cls(pickerStyles.sub))],
-                    [pickerCopy.sync(beat, plan.period)]
+                    [
+                      isPlayable
+                        ? playableCopy.sync(plan.period)
+                        : pickerCopy.sync(beat, plan.period),
+                    ]
                   ),
                   h.span(
                     [h.Class(cls(pickerStyles.sub))],
                     [pickerCopy.history(history.length)]
                   ),
-                  modeButton(h, model, "mix", pickerCopy.inMix),
-                  modeButton(h, model, "solo", pickerCopy.alone),
+                  ...modes,
                   h.span([h.Class(cls(pickerStyles.spacer))]),
                   h.p(
                     [
@@ -368,13 +426,7 @@ export const pickerView = (
                   ),
                 ]
               ),
-              h.div(
-                [h.Class(cls(pickerStyles.columns))],
-                [
-                  referenceColumn(h, model, plan),
-                  ...variants.map(variantColumn(h, model, plan, picked)),
-                ]
-              ),
+              columns,
               footer(h, model),
             ]
           ),

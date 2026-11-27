@@ -7,6 +7,7 @@ import type { Document, Html, HtmlBuilder } from "foldkit/html";
 import { WatchCanvas } from "../../client/board/command.js";
 import {
   composeKey,
+  drawnPicks,
   pickedTakes,
   takeName,
 } from "../../client/board/compose.js";
@@ -20,8 +21,9 @@ import { takeKey } from "../../client/board/model.js";
 import { mediaSrc } from "../../client/board/picker.js";
 import { boardStyles } from "./board.stylex.js";
 import { composeView } from "./compose.js";
-import { boardCopy } from "./copy.js";
+import { boardCopy, playableCopy } from "./copy.js";
 import { pickerView } from "./picker.js";
+import { recordButton } from "./playable.js";
 import { switcherView } from "./switcher.js";
 
 type VariantValue = typeof Variant.Type;
@@ -81,8 +83,12 @@ const preview = (
   render: VariantValue["render"],
   alt: string
 ): Html =>
-  render === undefined
-    ? h.div([h.Class(cls(boardStyles.emptyPreview))], [boardCopy.noPick])
+  render === undefined ||
+  (render.kind === "playable" && render.still === undefined)
+    ? h.div(
+        [h.Class(cls(boardStyles.emptyPreview))],
+        [render === undefined ? boardCopy.noPick : boardCopy.playable]
+      )
     : h.img([
         h.Src(mediaSrc(render.still ?? render.path)),
         h.Alt(alt),
@@ -109,22 +115,41 @@ const studioNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"studio">) =>
     ]
   );
 
-const assetNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"asset">) =>
-  h.div(
+const assetNode = (
+  h: HtmlBuilder<BoardMessage>,
+  node: NodeOf<"asset">,
+  renders: Renders
+) => {
+  const playable = renders.playableAssets.includes(node.asset.id);
+
+  return h.div(
     [h.Key(node.id), h.Class(cls(boardStyles.node)), h.Style(place(node))],
     [
-      header(h, "asset"),
+      header(
+        h,
+        "asset",
+        playable
+          ? recordButton(h, renders.recording, node.asset, boardStyles.tool)
+          : h.empty
+      ),
       h.div([h.Class(cls(boardStyles.title))], [node.asset.title]),
       h.div(
         [h.Class(cls(boardStyles.meta))],
-        [`${Object.keys(node.asset.layers).length} layers`]
+        [
+          playable
+            ? `${Object.keys(node.asset.layers).length} layers · ${playableCopy.records((node.asset.records ?? []).length)}`
+            : `${Object.keys(node.asset.layers).length} layers`,
+        ]
       ),
     ]
   );
+};
 
 interface Renders {
   readonly solo: BoardModel["solo"];
   readonly composed: BoardModel["composed"];
+  readonly recording: BoardModel["recording"];
+  readonly playableAssets: readonly string[];
 }
 
 const soloOf = (
@@ -210,6 +235,22 @@ const variantNode = (
     ]
   );
 
+const mixText = (
+  picks: Readonly<Record<string, string>>,
+  layers: NodeOf<"mix">["layers"],
+  loop: VariantValue["render"]
+) => {
+  if (Object.keys(picks).length === 0) {
+    return boardCopy.noPicks;
+  }
+
+  if (Object.keys(drawnPicks(picks, layers)).length === 0) {
+    return boardCopy.playableMix;
+  }
+
+  return loop?.pending ?? boardCopy.composing;
+};
+
 const mixNode = (
   h: HtmlBuilder<BoardMessage>,
   node: NodeOf<"mix">,
@@ -234,11 +275,7 @@ const mixNode = (
           loop === undefined || loop.pending !== undefined
             ? h.span(
                 [h.Class(cls(boardStyles.mixLoopEmpty))],
-                [
-                  Object.keys(picks).length === 0
-                    ? boardCopy.noPicks
-                    : (loop?.pending ?? boardCopy.composing),
-                ]
+                [mixText(picks, node.layers, loop)]
               )
             : h.img([
                 h.Src(mediaSrc(loop.path)),
@@ -296,7 +333,7 @@ const nodeView = (
   }
 
   if (node.kind === "asset") {
-    return assetNode(h, node);
+    return assetNode(h, node, renders);
   }
 
   if (node.kind === "layer") {
@@ -334,7 +371,12 @@ const toolbar = (model: BoardModel, h: HtmlBuilder<BoardMessage>): Html =>
       h.span([h.Class(cls(boardStyles.crumb))], [model.studio.title]),
       switcherView(model, h),
       h.span([h.Class(cls(boardStyles.spacer))]),
-      h.span([h.Class(cls(boardStyles.hint))], [boardCopy.hint]),
+      Option.isNone(model.open) && model.status.message !== ""
+        ? h.span(
+            [h.Role("status"), h.Class(cls(boardStyles.hint))],
+            [model.status.message]
+          )
+        : h.span([h.Class(cls(boardStyles.hint))], [boardCopy.hint]),
       toolButton(
         h,
         "−",
@@ -356,9 +398,16 @@ const graphView = (
   assets: BoardModel["assets"],
   solo: BoardModel["solo"],
   composed: BoardModel["composed"],
+  recording: BoardModel["recording"],
   h: HtmlBuilder<BoardMessage>
 ): Html => {
-  const renders = { composed, solo };
+  const playableAssets = assets
+    .filter((entry) =>
+      entry.layers.some((layer) => layer.renderKind === "playable")
+    )
+    .map((entry) => entry.asset.id);
+
+  const renders = { composed, playableAssets, recording, solo };
   const graph = layout(studio, assets);
 
   return h.div(
@@ -421,6 +470,7 @@ export const view = (
                   model.assets,
                   model.solo,
                   model.composed,
+                  model.recording,
                   h,
                 ]),
               ]
