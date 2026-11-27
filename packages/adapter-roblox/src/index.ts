@@ -35,13 +35,12 @@ export { PLAN_RENDERER_VERSION, planKey, planKeyText } from "./plan-key.js";
 export {
   PLAN_BACKEND,
   PlanNote,
-  VILLAGE_CAMERAS,
   chosenCameras,
   planRenderer,
   seedOf,
 } from "./plan-renderer.js";
 
-export type { PlanSettings, PlanSource } from "./plan-renderer.js";
+export type { PlanSettings } from "./plan-renderer.js";
 
 export { projectMounts } from "./project-mounts.js";
 

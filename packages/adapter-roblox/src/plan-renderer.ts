@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 
 import { AdapterFailed, Renderer } from "@gds/model";
 import type { Render, RenderRequest } from "@gds/model";
-import { Clock, Effect, Layer, Option, Schema } from "effect";
+import { Clock, Effect, Layer, Option, Schema, Stream } from "effect";
 import type { Digest } from "effect/crypto/Digest";
 import { layerWebCrypto } from "effect/crypto/Digest";
 import { FileSystem } from "effect/FileSystem";
@@ -10,7 +10,7 @@ import { Path } from "effect/Path";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
 import { RobloxConfig } from "./config.js";
-import { CameraSet, placeCameras } from "./plan-cameras.js";
+import { placeCameras } from "./plan-cameras.js";
 import type { PlacedCamera } from "./plan-cameras.js";
 import { decodePlan, drawnParts } from "./plan-file.js";
 import type { Plan } from "./plan-file.js";
@@ -22,21 +22,12 @@ export const PLAN_BACKEND = "roblox.plan";
 
 const script = fileURLToPath(new URL("../ror/draw-plan.luau", import.meta.url));
 
-export const VILLAGE_CAMERAS = fileURLToPath(
-  new URL("../ror/village-cameras.json", import.meta.url)
-);
-
-export type PlanSource =
-  | { readonly kind: "command"; readonly run: readonly [string, ...string[]] }
-  | { readonly kind: "village" };
-
 export interface PlanSettings {
-  readonly cameras: string;
   readonly gameRoot: string;
   readonly project: string;
   readonly ree: string;
+  readonly run: readonly [string, ...string[]];
   readonly size: readonly [number, number];
-  readonly source: PlanSource;
 }
 
 const RorSummary = Schema.Struct({
@@ -48,10 +39,6 @@ const RorSummary = Schema.Struct({
 
 const decodeSummary = Schema.decodeUnknownEffect(
   Schema.fromJsonString(RorSummary)
-);
-
-const decodeCameras = Schema.decodeUnknownEffect(
-  Schema.fromJsonString(CameraSet)
 );
 
 export const PlanNote = Schema.Struct({
@@ -121,7 +108,8 @@ export const planRenderer = (settings: PlanSettings) =>
         command: string,
         args: readonly string[],
         what: string,
-        fix: string
+        fix: string,
+        input?: string
       ) =>
         spawner
           .string(
@@ -129,6 +117,10 @@ export const planRenderer = (settings: PlanSettings) =>
               cwd: settings.gameRoot,
               env: { ROR_REE: settings.ree },
               extendEnv: true,
+              stdin:
+                input === undefined
+                  ? "ignore"
+                  : { stream: Stream.make(new TextEncoder().encode(input)) },
             })
           )
           .pipe(
@@ -142,48 +134,17 @@ export const planRenderer = (settings: PlanSettings) =>
       const exists = (where: string) =>
         fs.exists(where).pipe(Effect.orElseSucceed(() => false));
 
-      const planText = (request: RenderRequest, work: string) =>
-        Effect.gen(function* makePlanText() {
-          if (settings.source.kind === "command") {
-            const [command, ...args] = settings.source.run;
+      const planText = (request: RenderRequest) => {
+        const [command, ...args] = settings.run;
 
-            const asked = JSON.stringify({
-              asset: request.asset,
-              layer: request.layer,
-              mix: request.mix,
-              params: request.variant.params,
-              seed: seedOf(request),
-              studio: request.studio,
-              variant: request.variant.id,
-            });
-
-            return yield* run(
-              command,
-              [...args, asked],
-              `The studio's plan command ${command}`,
-              "run the studio's `commands.plan` by hand with the request JSON as its last argument; it must print the plan JSON."
-            );
-          }
-
-          const out = path.join(work, "village.json");
-
-          yield* run(
-            "lune",
-            [
-              "run",
-              "tools/island/village.luau",
-              "plan",
-              out,
-              String(seedOf(request)),
-            ],
-            "lune tools/island/village.luau plan",
-            "run `rokit install` in the game checkout, then `lune run tools/island/village.luau plan out.json 1`."
-          );
-
-          return yield* fs
-            .readFileString(out)
-            .pipe(Effect.mapError(unreadable(out)));
-        });
+        return run(
+          command,
+          args,
+          `The studio's plan command ${command}`,
+          "run the studio's `commands.plan` by hand in the game checkout with the render request JSON on stdin; it must print the plan JSON.",
+          JSON.stringify(request)
+        );
+      };
 
       const textures = Effect.gen(function* textures() {
         const registry = yield* fs
@@ -336,14 +297,8 @@ export const planRenderer = (settings: PlanSettings) =>
             "plan"
           );
 
-          const scratch = path.join(home, "work", request.variant.id);
-
-          yield* fs
-            .makeDirectory(scratch, { recursive: true })
-            .pipe(Effect.mapError(unreadable(scratch)));
-
           const planStarted = yield* Clock.currentTimeMillis;
-          const text = yield* planText(request, scratch);
+          const text = yield* planText(request);
           const planMs = (yield* Clock.currentTimeMillis) - planStarted;
 
           const plan = yield* decodePlan(text).pipe(
@@ -354,17 +309,13 @@ export const planRenderer = (settings: PlanSettings) =>
             )
           );
 
-          const camerasText = yield* fs
-            .readFileString(settings.cameras)
-            .pipe(Effect.mapError(unreadable(settings.cameras)));
+          if (plan.cameras === undefined) {
+            return yield* failed(
+              `The plan of ${request.studio} ${request.asset}, layer ${request.layer}, names no cameras. ${PLAN_BACKEND} draws only the cameras the plan command placed on its own plan. Fix: make the studio's \`commands.plan\` print \`cameras\` for this layer and asset.`
+            );
+          }
 
-          const cameraSet = yield* decodeCameras(camerasText).pipe(
-            Effect.mapError((problem) =>
-              failed(
-                `The camera file ${settings.cameras} is not a camera set: ${problem.message.slice(0, 300)}. It lists named cameras by landmark. Fix: follow \`ror/village-cameras.json\` in @gds/adapter-roblox.`
-              )
-            )
-          );
+          const cameraSet = { cameras: plan.cameras };
 
           const cameras = yield* placeCameras(
             cameraSet,

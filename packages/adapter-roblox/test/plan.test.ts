@@ -265,3 +265,41 @@ describe("project mounts", () => {
       })
   );
 });
+
+describe("plan cameras from the plan command", () => {
+  it.effect(
+    "keeps the cameras a plan command placed itself, and none when it placed none",
+    () =>
+      Effect.gen(function* readCameras() {
+        const wall = {
+          cf: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+          kind: "Wall",
+          size: [4, 4, 4],
+        } as const;
+
+        const placed = {
+          eye: { at: [92, 40, -118] },
+          fov: 40,
+          id: "house.three",
+          target: { at: [0, 22, 0] },
+        } as const;
+
+        const withCameras = yield* Schema.encodeEffect(PlanBody)({
+          cameras: [placed],
+          landmarks: {},
+          parts: [wall],
+        });
+
+        const without = yield* Schema.encodeEffect(PlanBody)({
+          landmarks: {},
+          parts: [wall],
+        });
+
+        const own = yield* decodePlan(JSON.stringify(withCameras));
+        const bare = yield* decodePlan(JSON.stringify(without));
+
+        expect(own.cameras?.map(({ id }) => id)).toEqual(["house.three"]);
+        expect(bare.cameras).toBeUndefined();
+      })
+  );
+});

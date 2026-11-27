@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
 
-import { Point } from "./plan-cameras.js";
+import { CameraDef, Point } from "./plan-cameras.js";
 
 const Rgb = Schema.Tuple([Schema.Finite, Schema.Finite, Schema.Finite]);
 
@@ -20,6 +20,12 @@ export const PlanPart = Schema.Struct({
 }).pipe(Schema.encodeKeys({ form: "shape" }));
 
 export const PlanBody = Schema.Struct({
+  cameras: Schema.optionalKey(
+    Schema.NonEmptyArray(CameraDef).annotate({
+      description:
+        "Cameras the plan command placed itself, for this plan. When present they replace the studio's camera file.",
+    })
+  ),
   frame: Schema.optionalKey(Schema.Array(Schema.Finite)),
   landmarks: Schema.Record(Schema.String, Point),
   parts: Schema.Array(PlanPart),
@@ -32,6 +38,10 @@ const VillageFile = Schema.Struct({
 const PlanText = Schema.fromJsonString(Schema.Union([PlanBody, VillageFile]));
 
 export interface Plan {
+  readonly cameras?: readonly [
+    typeof CameraDef.Type,
+    ...(typeof CameraDef.Type)[],
+  ];
   readonly landmarks: Readonly<Record<string, typeof Point.Type>>;
   readonly parts: readonly (typeof PlanPart.Type)[];
 }
@@ -41,7 +51,7 @@ export const CENTRE = "centre";
 const fromBody = (body: typeof PlanBody.Type): Plan => {
   const [x, y, z] = body.frame ?? [];
 
-  return {
+  const placed: Plan = {
     landmarks:
       x === undefined ||
       y === undefined ||
@@ -51,6 +61,10 @@ const fromBody = (body: typeof PlanBody.Type): Plan => {
         : { ...body.landmarks, [CENTRE]: [x, y, z] },
     parts: body.parts,
   };
+
+  return body.cameras === undefined
+    ? placed
+    : { ...placed, cameras: body.cameras };
 };
 
 export const decodePlan = (text: string) =>
