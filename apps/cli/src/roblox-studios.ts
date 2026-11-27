@@ -9,7 +9,6 @@ import {
   SHOT_QUALITY,
   VFXLAB_CHECK,
   WORLDPLACE_CHECK,
-  VILLAGE_CAMERAS,
   easyvfxSource,
   evfxRenderer,
   planRenderer,
@@ -112,24 +111,23 @@ interface RobloxBackend {
 const failed = (message: string) =>
   new AdapterFailed({ adapter: "roblox", message });
 
-const planRendererOr = (plan: PlanSettings | undefined) =>
-  plan === undefined
+type PlanSetup =
+  | { readonly kind: "ready"; readonly settings: PlanSettings }
+  | { readonly kind: "missing"; readonly why: string };
+
+const planRendererOr = (plan: PlanSetup) =>
+  plan.kind === "missing"
     ? Layer.succeed(
         Renderer,
         Renderer.of({
-          render: () =>
-            Effect.fail(
-              failed(
-                `The ${PLAN_BACKEND} renderer has no ree. It draws plans with ror, which needs ree. Fix: set GDS_ROR_REE to the folder \`scripts/ror-ree.sh\` prints in the game checkout.`
-              )
-            ),
+          render: () => Effect.fail(failed(plan.why)),
         })
       )
-    : planRenderer(plan);
+    : planRenderer(plan.settings);
 
 const rendererFor = (
   renderer: string,
-  plan: PlanSettings | undefined,
+  plan: PlanSetup,
   shots: Layer.Layer<ShotStudio>
 ) => {
   if (renderer === PLAN_BACKEND) {
@@ -209,23 +207,30 @@ export class RobloxStudios extends Context.Service<
           workers: env.workers,
         };
 
-        const plan: PlanSettings | undefined = env.ree.pipe(
-          Option.map((ree) => ({
-            cameras:
-              studio.cameras === undefined
-                ? VILLAGE_CAMERAS
-                : path.join(root, studio.cameras),
-            gameRoot: root,
-            project: PLAN_PROJECT,
-            ree,
-            size: PLAN_SIZE,
-            source:
-              studio.commands?.plan === undefined
-                ? { kind: "village" as const }
-                : { kind: "command" as const, run: studio.commands.plan },
-          })),
-          Option.getOrUndefined
-        );
+        const planCommand = studio.commands?.plan;
+
+        const plan: PlanSetup =
+          planCommand === undefined
+            ? {
+                kind: "missing",
+                why: `The ${PLAN_BACKEND} renderer draws the plan the studio's \`commands.plan\` prints, and studio ${studio.id} names none. Fix: add "commands": { "plan": [program, ...args] } to \`tools/devstudio/studios/${studio.id}.json\`.`,
+              }
+            : Option.match(env.ree, {
+                onNone: (): PlanSetup => ({
+                  kind: "missing",
+                  why: `The ${PLAN_BACKEND} renderer has no ree. It draws plans with ror, which needs ree. Fix: set GDS_ROR_REE to the folder \`scripts/ror-ree.sh\` prints in the game checkout.`,
+                }),
+                onSome: (ree): PlanSetup => ({
+                  kind: "ready",
+                  settings: {
+                    gameRoot: root,
+                    project: PLAN_PROJECT,
+                    ree,
+                    run: planCommand,
+                    size: PLAN_SIZE,
+                  },
+                }),
+              });
 
         const applyAt: ShotSettings["apply"] = (where, request) =>
           commandStudio(studio).pipe(
