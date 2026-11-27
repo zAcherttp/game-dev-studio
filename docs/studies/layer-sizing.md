@@ -18,7 +18,9 @@ A layer is small enough when all five hold:
 4. **One reference crop.** It has its own target: a frame range of a reference clip, a crop of a reference still, or a written line from the story block ("a thin white arc, gone in 3 frames"). If no crop or line fits it, it is not a layer yet.
 5. **Judgeable in one look.** Phát can say yes or no to it in a few seconds, seen alone and seen in the mix. If judging it needs a second layer to be right first, merge them or settle the other one first.
 
-A typical effect has 4 to 9 layers. VFX.LAB's 26 starter effects hold 6 to 14 each, most 6 to 9. Past about 10, group layers (impact: flash, ring, sparks) so the group can be dimmed, hidden and picked as one, as Effekseer hides a subtree.
+Layers made one at a time still read as one effect when they obey a few shared rules: a palette, an edge or trim treatment, a glow colour. Pablo's nine armor pieces match because of exactly that. The story block states these rules once, and every layer's pack carries them.
+
+A typical effect has 4 to 9 layers, usually with one hero layer (the slash arc, the impact flash) that earns the most rounds. VFX.LAB's 26 starter effects hold 6 to 14 each, most 6 to 9. Past about 10, group layers (impact: flash, ring, sparks) so the group can be dimmed, hidden and picked as one, as Effekseer hides a subtree.
 
 ## How a layer is verified alone
 
@@ -52,4 +54,4 @@ A typical effect has 4 to 9 layers. VFX.LAB's 26 starter effects hold 6 to 14 ea
 
 - [Effekseer](./effekseer.md): fixed parameter groups per part, subtree visibility, one viewer for the whole.
 - [VFX.LAB](./vfx-lab.md): role-named typed layers with a shared base, a shared path as spine, 6 to 9 layers per effect.
-- [Pablo's armor](./pablo-layered-vfx.md): split by a natural boundary, one reference per piece, each piece judged in place.
+- [Pablo's armor](./pablo-layered-vfx.md): split by a natural boundary, shared palette and trim rules, a hero piece, each piece judged in place.
