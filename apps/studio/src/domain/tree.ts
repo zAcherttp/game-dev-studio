@@ -40,7 +40,26 @@ export const SORTS = ["tree", "status", "name"] as const;
 
 export type Sort = (typeof SORTS)[number];
 
+export const SHOWS = ["all", "unclaimed", "claimed"] as const;
+
+export type Show = (typeof SHOWS)[number];
+
+export interface Filter {
+  readonly owner: string;
+  readonly query: string;
+  readonly show: Show;
+  readonly status: string;
+}
+
+export const NO_FILTER: Filter = {
+  owner: "",
+  query: "",
+  show: "all",
+  status: "",
+};
+
 export interface Row {
+  readonly context: boolean;
   readonly depth: number;
   readonly node: TreeNodeValue;
 }
@@ -82,25 +101,90 @@ const sorted = (nodes: readonly TreeNodeValue[], sort: Sort) => {
   return nodes;
 };
 
+export const isFiltered = (filter: Filter) =>
+  filter.show !== "all" ||
+  filter.owner !== "" ||
+  filter.status !== "" ||
+  filter.query.trim() !== "";
+
+const isClaimed = (node: TreeNodeValue) =>
+  (node.owner ?? "") !== "" || (node.issue ?? "") !== "";
+
+const showMatches = (node: TreeNodeValue, show: Show) => {
+  if (show === "unclaimed") {
+    return isClaimable(node);
+  }
+
+  if (show === "claimed") {
+    return isFeature(node) && isClaimed(node);
+  }
+
+  return true;
+};
+
+export const matches = (node: TreeNodeValue, filter: Filter) => {
+  const words = filter.query.toLowerCase().split(/\s+/u).filter(Boolean);
+  const hay = `${node.title} ${node.summary ?? ""}`.toLowerCase();
+
+  return (
+    showMatches(node, filter.show) &&
+    (filter.owner === "" || node.owner === filter.owner) &&
+    (filter.status === "" || node.status === filter.status) &&
+    words.every((word) => hay.includes(word))
+  );
+};
+
 const rowsOf = (
   node: TreeNodeValue,
   depth: number,
-  sort: Sort
+  sort: Sort,
+  filter: Filter
 ): readonly Row[] =>
-  sorted(node.children ?? [], sort).flatMap((child) => [
-    { depth, node: child },
-    ...rowsOf(child, depth + 1, sort),
-  ]);
+  sorted(node.children ?? [], sort).flatMap((child) => {
+    const below = rowsOf(child, depth + 1, sort, filter);
+    const hit = matches(child, filter);
 
-export const outline = (root: TreeNodeValue, sort: Sort): readonly Area[] =>
-  (root.children ?? []).map((area) => {
-    const rows = rowsOf(area, 0, sort);
-    const features = rows.filter((row) => isFeature(row.node));
+    return hit || below.length > 0
+      ? [{ context: !hit, depth, node: child }, ...below]
+      : [];
+  });
 
-    return {
-      live: features.filter((row) => row.node.status === "live").length,
-      node: area,
-      rows,
-      total: features.length,
-    };
+export const owners = (root: TreeNodeValue): readonly string[] => {
+  const found = new Set<string>();
+
+  const walk = (node: TreeNodeValue) => {
+    if ((node.owner ?? "") !== "") {
+      found.add(node.owner ?? "");
+    }
+
+    for (const child of node.children ?? []) {
+      walk(child);
+    }
+  };
+
+  walk(root);
+
+  return [...found].toSorted((a, b) => a.localeCompare(b));
+};
+
+export const outline = (
+  root: TreeNodeValue,
+  sort: Sort,
+  filter: Filter
+): readonly Area[] =>
+  (root.children ?? []).flatMap((area) => {
+    const all = rowsOf(area, 0, sort, NO_FILTER);
+    const rows = isFiltered(filter) ? rowsOf(area, 0, sort, filter) : all;
+    const features = all.filter((row) => isFeature(row.node));
+
+    return rows.length === 0
+      ? []
+      : [
+          {
+            live: features.filter((row) => row.node.status === "live").length,
+            node: area,
+            rows,
+            total: features.length,
+          },
+        ];
   });
