@@ -27,6 +27,32 @@ export const PickVariant = Command.define("PickVariant", {
   messages: [Message.SucceededPick, Message.FailedPick],
 });
 
+export const LikeTake = Command.define("LikeTake", {
+  args: {
+    asset: Schema.String,
+    by: Schema.String,
+    keep: Schema.Boolean,
+    layer: Schema.String,
+    note: Schema.String,
+    studio: Schema.String,
+    variant: Schema.String,
+  },
+  execute: (input) =>
+    Effect.gen(function* likeTake() {
+      const api = yield* BoardApi;
+
+      return yield* api.like(input).pipe(
+        Effect.map((asset) =>
+          Message.SucceededLike({ asset, keep: input.keep })
+        ),
+        Effect.catchTag("BoardApiFailed", (failure) =>
+          Effect.succeed(Message.FailedLike({ message: failure.message }))
+        )
+      );
+    }),
+  messages: [Message.SucceededLike, Message.FailedLike],
+});
+
 export const RequestRound = Command.define("RequestRound", {
   args: {
     asset: Schema.String,

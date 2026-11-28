@@ -3,8 +3,10 @@ import type { Effect } from "effect";
 
 import type { AdapterFailed } from "./adapter-failed.js";
 import type { Asset, AssetSummary } from "./asset.js";
+import type { Like } from "./like.js";
 import type { Pick } from "./pick.js";
 import type { RoundRequest } from "./round.js";
+import type { StoryBlock } from "./story.js";
 import type { StudioDef } from "./studio.js";
 import type { UnknownAsset } from "./unknown-asset.js";
 import type { UnknownStudio } from "./unknown-studio.js";
@@ -55,6 +57,19 @@ export class Store extends Context.Service<
       typeof Asset.Type,
       UnknownStudio | UnknownAsset | AdapterFailed
     >;
+    readonly like: (
+      studio: string,
+      asset: string,
+      like: typeof Like.Type
+    ) => Effect.Effect<
+      typeof Asset.Type,
+      UnknownStudio | UnknownAsset | AdapterFailed
+    >;
+    readonly writeStory: (
+      studio: string,
+      asset: string,
+      block: Omit<typeof StoryBlock.Type, "version">
+    ) => Effect.Effect<typeof Asset.Type, UnknownStudio | AdapterFailed>;
     readonly history: (
       studio: string,
       asset: string,

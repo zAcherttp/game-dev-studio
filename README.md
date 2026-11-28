@@ -12,7 +12,7 @@ corepack enable              # pnpm 11.3.0 from packageManager
 pnpm install
 pnpm turbo run check test build --summarize
 pnpm cli -- listStudios      # every capability answers "not built" until its lane lands
-pnpm cli mcp                 # MCP over stdio: listStudios, listAssets, layersOf, getAsset, addVariants, render, renderMix, pick, round, getPack, openCheck, launch, record
+pnpm cli mcp                 # MCP over stdio: listStudios, listAssets, layersOf, getAsset, addVariants, render, renderMix, pick, round, getPack, openCheck, launch, record, writeStory, like
 pnpm dev                     # the board at http://game-dev-studio.localhost:1355
 ```
 

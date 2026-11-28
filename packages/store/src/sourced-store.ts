@@ -197,6 +197,11 @@ export const SourcedStore = Layer.effect(
       getAsset,
       history: inner.history,
       listAssets,
+      like: (studio, asset, liked) =>
+        ensureStored(studio, asset, liked.layer).pipe(
+          Effect.andThen(inner.like(studio, asset, liked)),
+          Effect.andThen(getAsset(studio, asset))
+        ),
       listStudios: inner.listStudios,
       pick: (studio, asset, chosen) =>
         ensureStored(studio, asset, chosen.layer).pipe(
@@ -211,6 +216,18 @@ export const SourcedStore = Layer.effect(
         ensureStored(studio, asset, request.layer).pipe(
           Effect.andThen(inner.round(studio, asset, request)),
           Effect.andThen(getAsset(studio, asset))
+        ),
+      writeStory: (studio, asset, block) =>
+        inner.writeStory(studio, asset, block).pipe(
+          Effect.andThen(getAsset(studio, asset)),
+          Effect.catchTag("UnknownAsset", () =>
+            Effect.fail(
+              new AdapterFailed({
+                adapter: "store",
+                message: `The story block of ${studio}/${asset} was written and then the asset could not be read back. The picks folder changed while it was written. Fix: read the asset again with \`getAsset\`.`,
+              })
+            )
+          )
         ),
     });
   })

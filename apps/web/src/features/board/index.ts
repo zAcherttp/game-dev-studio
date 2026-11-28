@@ -106,6 +106,38 @@ const header = (
     [h.span([h.Class(cls(boardStyles.kind))], [kind]), extra]
   );
 
+const storyNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"story">) =>
+  h.section(
+    [
+      h.Key(node.id),
+      h.Class(cls(boardStyles.node)),
+      h.Style(place(node)),
+      h.AriaLabel(boardCopy.storyLabel(node.asset.title, node.story.version)),
+    ],
+    [
+      header(
+        h,
+        "story",
+        h.span(
+          [h.Class(cls(boardStyles.meta))],
+          [`${boardCopy.story(node.story.version)} · ${node.story.by}`]
+        )
+      ),
+      h.div([h.Class(cls(boardStyles.title))], [node.story.title]),
+      h.p([h.Class(cls(boardStyles.storyWords))], [node.story.words]),
+      h.div(
+        [h.Class(cls(boardStyles.meta))],
+        [
+          boardCopy.storyFacts(
+            node.story.references.length,
+            node.story.beat,
+            node.story.layers?.length ?? 0
+          ),
+        ]
+      ),
+    ]
+  );
+
 const studioNode = (h: HtmlBuilder<BoardMessage>, node: NodeOf<"studio">) =>
   h.div(
     [h.Key(node.id), h.Class(cls(boardStyles.node)), h.Style(place(node))],
@@ -199,6 +231,27 @@ const layerNode = (
     ]
   );
 
+const takeState = (node: NodeOf<"variant">) => {
+  if (node.isPicked) {
+    return ", picked";
+  }
+
+  return node.isLiked ? ", liked" : "";
+};
+
+const variantBadge = (
+  h: HtmlBuilder<BoardMessage>,
+  node: NodeOf<"variant">
+): Html => {
+  if (node.isPicked) {
+    return h.span([h.Class(cls(boardStyles.badge))], ["PICK"]);
+  }
+
+  return node.isLiked
+    ? h.span([h.Class(cls(boardStyles.liked))], [boardCopy.liked])
+    : h.span([h.Class(cls(boardStyles.meta))], [node.variant.label]);
+};
+
 const variantNode = (
   h: HtmlBuilder<BoardMessage>,
   node: NodeOf<"variant">,
@@ -211,22 +264,14 @@ const variantNode = (
       h.Class(cls(boardStyles.node, boardStyles.nodeButton, boardStyles.focus)),
       h.Style(place(node)),
       h.AriaLabel(
-        `${node.layer.title} variant ${node.variant.label}${
-          node.isPicked ? ", picked" : ""
-        }`
+        `${node.layer.title} variant ${node.variant.label}${takeState(node)}`
       ),
       h.OnClick(
         Message.OpenedLayer({ asset: node.asset.id, layer: node.layer.id })
       ),
     ],
     [
-      header(
-        h,
-        `round ${node.round}`,
-        node.isPicked
-          ? h.span([h.Class(cls(boardStyles.badge))], ["PICK"])
-          : h.span([h.Class(cls(boardStyles.meta))], [node.variant.label])
-      ),
+      header(h, `round ${node.round}`, variantBadge(h, node)),
       preview(
         h,
         soloOf(renders, node.asset.id, node.layer.id, node.variant),
@@ -334,6 +379,10 @@ const nodeView = (
 
   if (node.kind === "asset") {
     return assetNode(h, node, renders);
+  }
+
+  if (node.kind === "story") {
+    return storyNode(h, node);
   }
 
   if (node.kind === "layer") {

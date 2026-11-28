@@ -2,6 +2,7 @@ import { toRpcGroup } from "@gds/capability/rpc-group";
 import {
   getAssetContract,
   launchContract,
+  likeContract,
   listStudiosContract,
   pickContract,
   recordContract,
@@ -17,6 +18,7 @@ import { RpcClient, RpcSerialization } from "effect/rpc";
 import { BoardApi } from "./api.js";
 import type {
   LaunchInput,
+  LikeInput,
   MixInput,
   PickInput,
   RenderInput,
@@ -35,14 +37,15 @@ export const boardRpcGroup = toRpcGroup([
   renderMixContract,
   launchContract,
   recordContract,
+  likeContract,
 ]).group;
 
 export const STUDIO_RPC_PATH = "/rpc";
 
 type StudioFailure =
   | typeof pickContract.failure.Type
+  | typeof likeContract.failure.Type
   | typeof roundContract.failure.Type
-  | typeof renderContract.failure.Type
   | typeof getAssetContract.failure.Type
   | RpcClientError.RpcClientError;
 
@@ -97,6 +100,8 @@ export const rpcBoardApi = (url: string) =>
       return BoardApi.of({
         pick: (input: PickInput) =>
           client.pick(input).pipe(Effect.mapError(failed)),
+        like: (input: LikeInput) =>
+          client.like(input).pipe(Effect.mapError(failed)),
         render: (input: RenderInput) =>
           client.render(input).pipe(Effect.mapError(failed)),
         getAsset: (input: MixInput) =>

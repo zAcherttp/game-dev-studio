@@ -13,8 +13,11 @@ import {
   UnknownVariant,
   addVariantsContract,
   blocksPick,
+  currentStory,
   getAssetContract,
   getPackContract,
+  likeContract,
+  likedTakes,
   launchContract,
   layersOfContract,
   listAssetsContract,
@@ -26,6 +29,7 @@ import {
   renderContract,
   renderMixContract,
   roundContract,
+  writeStoryContract,
 } from "@gds/model";
 import type { Asset } from "@gds/model";
 import {
@@ -166,8 +170,19 @@ export const addVariants = implement(
               : variant
           );
 
+    const answered = currentStory(stored?.story)?.version;
+
+    const stamped =
+      answered === undefined
+        ? parented
+        : parented.map((variant) =>
+            variant.story === undefined
+              ? { ...variant, story: answered }
+              : variant
+          );
+
     return yield* Store.use((store) =>
-      store.putVariants(studio, asset, layer, parented)
+      store.putVariants(studio, asset, layer, stamped)
     );
   })
 );
@@ -297,6 +312,45 @@ export const round = implement(
   })
 );
 
+export const writeStory = implement(
+  writeStoryContract,
+  Effect.fn("writeStory")(function* writeStory(input) {
+    const { asset, studio, ...words } = input;
+
+    yield* studioDef(studio);
+
+    const at = yield* now;
+
+    return yield* Store.use((store) =>
+      store.writeStory(studio, asset, { ...words, at })
+    );
+  })
+);
+
+export const like = implement(
+  likeContract,
+  Effect.fn("like")(function* like(input) {
+    const { asset, by, keep, layer, note, studio, variant } = input;
+    const where = { asset, layer, studio };
+    const stored = yield* getStoredAsset(studio, asset);
+    const entry = yield* layerOf(stored, where);
+
+    if (!entry.variants.some(({ id }) => id === variant)) {
+      return yield* new UnknownVariant({ ...where, variant });
+    }
+
+    if (likedTakes(entry.likes).includes(variant) === keep) {
+      return stored;
+    }
+
+    const at = yield* now;
+
+    return yield* Store.use((store) =>
+      store.like(studio, asset, { at, by, keep, layer, note, variant })
+    );
+  })
+);
+
 export const getPack = implement(getPackContract, ({ studio }) =>
   Pack.use((pack) => pack.get(studio))
 );
@@ -341,4 +395,6 @@ export const studioCapabilities = [
   openCheck,
   launch,
   record,
+  writeStory,
+  like,
 ] as const;

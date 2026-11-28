@@ -1,4 +1,5 @@
-import type { Asset, LayerDef, Variant } from "@gds/model";
+import { currentStory, likedTakes } from "@gds/model";
+import type { Asset, LayerDef, StoryBlockValue, Variant } from "@gds/model";
 
 import type { BoardAssetValue, CameraValue, ViewportValue } from "./model.js";
 
@@ -30,6 +31,7 @@ export const nodeSize = {
   asset: { height: 96, width: 190 },
   layer: { height: 134, width: 176 },
   mix: { height: 300, width: 240 },
+  story: { height: 134, width: 400 },
   studio: { height: 96, width: 190 },
   variant: { height: 124, width: 164 },
 } as const;
@@ -48,6 +50,11 @@ export type GraphNode =
   | (NodeBase & { readonly kind: "studio"; readonly title: string })
   | (NodeBase & { readonly kind: "asset"; readonly asset: AssetValue })
   | (NodeBase & {
+      readonly kind: "story";
+      readonly asset: AssetValue;
+      readonly story: StoryBlockValue;
+    })
+  | (NodeBase & {
       readonly kind: "layer";
       readonly asset: AssetValue;
       readonly layer: LayerDefValue;
@@ -60,6 +67,7 @@ export type GraphNode =
       readonly layer: LayerDefValue;
       readonly variant: VariantValue;
       readonly isPicked: boolean;
+      readonly isLiked: boolean;
       readonly round: number;
     })
   | (NodeBase & {
@@ -89,6 +97,7 @@ export const nodeId = {
   asset: (asset: string) => `asset:${asset}`,
   layer: (asset: string, layer: string) => `layer:${asset}/${layer}`,
   mix: (asset: string) => `mix:${asset}`,
+  story: (asset: string) => `story:${asset}`,
   studio: (studio: string) => `studio:${studio}`,
   variant: (asset: string, layer: string, variant: string) =>
     `variant:${asset}/${layer}/${variant}`,
@@ -147,7 +156,8 @@ export const lineage = (variants: readonly VariantValue[]) => {
 
 export const shownTakes = (
   variants: readonly VariantValue[],
-  picked: string | undefined
+  picked: string | undefined,
+  liked: readonly string[] = []
 ): readonly VariantValue[] => {
   const byId = new Map(variants.map((variant) => [variant.id, variant]));
   const shown = new Set<string>();
@@ -170,6 +180,10 @@ export const shownTakes = (
   }
 
   keep(picked);
+
+  for (const id of liked) {
+    keep(id);
+  }
 
   return variants.filter((variant) => shown.has(variant.id));
 };
@@ -207,14 +221,18 @@ export const layout = (
   const perAsset = assets.map((entry) => ({
     entry,
     layers: orderedLayers(entry).map((layer) => {
-      const variants = entry.asset.layers[layer.id]?.variants ?? [];
+      const state = entry.asset.layers[layer.id];
+      const variants = state?.variants ?? [];
+      const liked = likedTakes(state?.likes);
 
       return {
         layer,
+        liked,
         takes: variants.length,
-        tree: lineage(shownTakes(variants, entry.asset.mix[layer.id])),
+        tree: lineage(shownTakes(variants, entry.asset.mix[layer.id], liked)),
       };
     }),
+    story: currentStory(entry.asset.story),
   }));
 
   const maxDepth = Math.max(
@@ -253,15 +271,26 @@ export const layout = (
 
   let rowCursor = 0;
 
-  const assetBands = perAsset.map(({ entry, layers }) => {
+  const assetBands = perAsset.map(({ entry, layers, story }) => {
     const { asset } = entry;
     const top = rowCursor;
 
-    const layerRows = layers.map(({ layer, takes, tree }) => {
+    if (story !== undefined) {
+      add({
+        asset,
+        kind: "story",
+        story,
+        ...centredIn("story", COLUMN * 2, top * ROW),
+        id: nodeId.story(asset.id),
+      });
+      rowCursor += 1;
+    }
+
+    const layerRows = layers.map(({ layer, liked, takes, tree }) => {
       const start = rowCursor;
       rowCursor += tree.rows;
 
-      return { layer, start, takes, tree };
+      return { layer, liked, start, takes, tree };
     });
 
     const rows = Math.max(1, rowCursor - top);
@@ -291,7 +320,7 @@ export const layout = (
       y: middle + (ROW - mixHeight) / 2,
     });
 
-    for (const { layer, start, takes, tree } of layerRows) {
+    for (const { layer, liked, start, takes, tree } of layerRows) {
       const layerNodeId = nodeId.layer(asset.id, layer.id);
       add({
         asset,
@@ -308,6 +337,7 @@ export const layout = (
       )) {
         add({
           asset,
+          isLiked: liked.includes(placed.variant.id),
           isPicked: asset.mix[layer.id] === placed.variant.id,
           kind: "variant",
           layer,
@@ -323,7 +353,7 @@ export const layout = (
       }
     }
 
-    return { asset, layerRows, middle };
+    return { asset, hasStory: story !== undefined, layerRows, middle };
   });
 
   const totalRows = Math.max(1, rowCursor);
@@ -334,8 +364,12 @@ export const layout = (
     id: nodeId.studio(studio.id),
   });
 
-  for (const { asset, layerRows } of assetBands) {
+  for (const { asset, hasStory, layerRows } of assetBands) {
     connect("structure", nodeId.studio(studio.id), nodeId.asset(asset.id));
+
+    if (hasStory) {
+      connect("structure", nodeId.asset(asset.id), nodeId.story(asset.id));
+    }
 
     for (const { layer, tree } of layerRows) {
       const layerNodeId = nodeId.layer(asset.id, layer.id);
