@@ -4,6 +4,8 @@ import * as Server from "foldkit/experimental/server";
 import { Flags, initialModel } from "./client/board/model.js";
 import { view } from "./features/board/index.js";
 import { loadBoardFlags } from "./server/board-flags.js";
+import { hubHtml, loadStudioLinks, pageHtml } from "./server/hub.js";
+import { loadPages } from "./server/pages.js";
 
 export const prerenderPaths: readonly string[] = [];
 
@@ -13,18 +15,60 @@ export const renderDocument: Server.DocumentRenderer = (application, assets) =>
 const PICKER = "Phát";
 
 const studioOf = (pathname: string) => {
-  const match =
-    /^\/(?:studio\/(?<id>[\w-]+)(?:\/(?<asset>[\w.-]+))?\/?)?$/u.exec(pathname);
+  const match = /^\/studio\/(?<id>[\w-]+)(?:\/(?<asset>[\w.-]+))?\/?$/u.exec(
+    pathname
+  );
 
   return match === null
     ? undefined
     : { asset: match.groups?.asset, id: match.groups?.id };
 };
 
+const htmlPage = (html: string, status = 200) =>
+  Server.Responded(
+    new Response(html, {
+      headers: { "content-type": "text/html; charset=utf-8" },
+      status,
+    })
+  );
+
+const pageIdOf = (pathname: string) =>
+  /^\/page\/(?<id>[\w-]+)\/?$/u.exec(pathname)?.groups?.id;
+
+const renderHub = Effect.fn("web.renderHub")(function* renderHub() {
+  const pages = yield* loadPages();
+  const studios = yield* loadStudioLinks();
+
+  return htmlPage(hubHtml(studios, pages));
+});
+
+const renderFramedPage = Effect.fn("web.renderFramedPage")(
+  function* renderFramedPage(id: string) {
+    const pages = yield* loadPages();
+    const page = pages.find((entry) => entry.id === id);
+
+    return page === undefined
+      ? Server.Responded(new Response("Not found", { status: 404 }))
+      : htmlPage(pageHtml(page, pages));
+  }
+);
+
 const renderBoard = Effect.fn("web.renderBoard")(function* renderBoard(
   request: Request
 ) {
-  const route = studioOf(new URL(request.url).pathname);
+  const { pathname } = new URL(request.url);
+
+  if (pathname === "/") {
+    return yield* renderHub();
+  }
+
+  const pageId = pageIdOf(pathname);
+
+  if (pageId !== undefined) {
+    return yield* renderFramedPage(pageId);
+  }
+
+  const route = studioOf(pathname);
 
   if (route === undefined) {
     return Server.Responded(new Response("Not found", { status: 404 }));
@@ -55,8 +99,11 @@ const unavailablePage = (message: string) =>
 export const renderPage = (request: Request) =>
   Effect.runPromise(
     renderBoard(request).pipe(
-      Effect.catchTag("BoardUnavailable", (failure) =>
-        Effect.succeed(unavailablePage(failure.message))
-      )
+      Effect.catchTags({
+        BoardUnavailable: (failure) =>
+          Effect.succeed(unavailablePage(failure.message)),
+        PagesInvalid: (failure) =>
+          Effect.succeed(unavailablePage(failure.message)),
+      })
     )
   );

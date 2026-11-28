@@ -30,6 +30,7 @@ These rules cover browser code under `apps/web/src/client/`, `features/`, `dev/c
 | `client/reader/update.ts` | Pure reader transitions |
 | `client/reader/init.ts` and `client/reader/command.ts` | Server and browser initialization and named clipboard Commands |
 | `client/motion/` and `features/motion/` | The `/systems/motion` demo Submodel: a `@rat-stack/motion` clock, tweens and spring in the Model, `ClickedTarget` and `ClickedReplayCurves`, and the curve gallery view. `client/reader/subscriptions.ts` lifts its animation-frame and reduced-motion subscriptions into the reader |
+| `server/pages.ts` and `server/hub.ts` | The hub at `/` (studios and the host's pages) and `/page/<id>` (a page in a frame): plain server HTML with no browser runtime, since the client entry hydrates only the board. Pages come from `GDS_PAGES`, a JSON list of `{ id, title, url, hint? }` the host passes |
 | `server/` and `entry.server.ts` | Server rendering and RPC forwarding; never import them into browser features |
 | `website.ts` | Cloudflare composition through Alchemy's `Cloudflare.Website.Foldkit`; the deployed Worker is the entry `@foldkit/vite-plugin` generates from `entry.server.ts`. Never import it into browser features |
 
