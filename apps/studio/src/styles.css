@@ -1,5 +1,7 @@
 :root {
   color-scheme: dark;
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
   --bg: #0b0d12;
   --panel: #141821;
   --line: #262c38;
@@ -26,9 +28,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font:
-    14px/1.5 system-ui,
-    sans-serif;
+  font: 14px/1.5 var(--font-sans);
 }
 a {
   color: inherit;
@@ -443,4 +443,17 @@ blockquote {
 }
 .row .title {
   flex: 1;
+}
+code,
+.tally,
+.feature .status,
+.feature .owner,
+.claim-button,
+.state,
+.count,
+.me,
+.sort-label,
+.choice .n,
+.where {
+  font-family: var(--font-mono);
 }
