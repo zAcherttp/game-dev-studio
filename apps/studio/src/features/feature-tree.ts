@@ -7,17 +7,43 @@ import { GetTree } from "../client/queries/get-tree.ts";
 import { failureText, Studio } from "../client/studio.ts";
 import { Page } from "../domain/page.ts";
 import type { Area, Row, TreeNodeValue } from "../domain/tree.ts";
-import { isClaimable, isFeature, outline, SORTS } from "../domain/tree.ts";
+import {
+  isClaimable,
+  isFeature,
+  isFiltered,
+  outline,
+  owners,
+  SHOWS,
+  SORTS,
+  STATUSES,
+} from "../domain/tree.ts";
 
 const SORT_LABELS = { name: "Name", status: "Status", tree: "Tree order" };
 
+const SHOW_LABELS = {
+  all: "All",
+  claimed: "Claimed",
+  unclaimed: "Unclaimed",
+};
+
 export const FeatureTreeMessage = UiSchema.TaggedEnum({
+  ChoseOwner: { owner: Schema.String },
+  ChoseShow: { show: Schema.Literals(SHOWS) },
   ChoseSort: { sort: Schema.Literals(SORTS) },
+  ChoseStatus: { status: Schema.String },
+  ClickedClear: {},
+  UpdatedQuery: { query: Schema.String },
 });
 
 const FeatureTreeDef = Html.component({
   message: FeatureTreeMessage,
-  model: Schema.Struct({ sort: Schema.Literals(SORTS) }),
+  model: Schema.Struct({
+    owner: Schema.String,
+    query: Schema.String,
+    show: Schema.Literals(SHOWS),
+    sort: Schema.Literals(SORTS),
+    status: Schema.String,
+  }),
   name: "FeatureTree",
   props: Schema.Struct({ page: Page }),
   queries: {
@@ -41,7 +67,7 @@ const row = FeatureTreeDef.fragment((h, entry: Row) => {
 
   return h.li
     .key(node.id)
-    .class("feature")
+    .class("feature", entry.context && "context")
     .attr("style", `--depth: ${entry.depth}`)
     .children(
       h.span.class(`dot status-${status}`).attr("aria-hidden", "true"),
@@ -82,18 +108,32 @@ const area = FeatureTreeDef.fragment((h, entry: Area) =>
 );
 
 export const FeatureTreeNoDeps = FeatureTreeDef.make({
-  init: () => ({ sort: "tree" as const }),
+  init: () => ({
+    owner: "",
+    query: "",
+    show: "all" as const,
+    sort: "tree" as const,
+    status: "",
+  }),
   update: ($, message) =>
     FeatureTreeMessage.match(message, {
+      ChoseOwner: ({ owner }) => $.evolve({ owner }),
+      ChoseShow: ({ show }) => $.evolve({ show }),
       ChoseSort: ({ sort }) => $.evolve({ sort }),
+      ChoseStatus: ({ status }) => $.evolve({ status }),
+      ClickedClear: () =>
+        $.evolve({ owner: "", query: "", show: "all", status: "" }),
+      UpdatedQuery: ({ query }) => $.evolve({ query }),
     }),
   view: (h, model) =>
     AsyncResult.match(h.queries.tree, {
       onFailure: ({ cause }) =>
         h.p.class("note pad").children(failureText(cause)),
       onInitial: () => h.p.class("note pad").children("Loading the tree…"),
-      onSuccess: ({ value: root }) =>
-        h.section.class("outline").children(
+      onSuccess: ({ value: root }) => {
+        const areas = outline(root, model.sort, model);
+
+        return h.section.class("outline").children(
           h.header.class("tools").children(
             h.h1(root.title),
             h.div
@@ -111,10 +151,71 @@ export const FeatureTreeNoDeps = FeatureTreeDef.make({
                 )
               )
           ),
+          h.div.class("filters").children(
+            h.div
+              .class("buttons")
+              .attr("role", "group")
+              .attr("aria-label", "Show")
+              .children(
+                SHOWS.map((show) =>
+                  h.button
+                    .key(show)
+                    .attr("aria-pressed", String(model.show === show))
+                    .on("click", FeatureTreeMessage.ChoseShow({ show }))
+                    .children(SHOW_LABELS[show])
+                )
+              ),
+            h.select
+              .attr("aria-label", "Claimed by")
+              .value(model.owner)
+              .on("change", ({ value }) =>
+                FeatureTreeMessage.ChoseOwner({ owner: value })
+              )
+              .children(
+                h.option.attr("value", "").children("Anyone"),
+                owners(root).map((owner) =>
+                  h.option.key(owner).attr("value", owner).children(owner)
+                )
+              ),
+            h.select
+              .attr("aria-label", "Status")
+              .value(model.status)
+              .on("change", ({ value }) =>
+                FeatureTreeMessage.ChoseStatus({ status: value })
+              )
+              .children(
+                h.option.attr("value", "").children("Any status"),
+                STATUSES.map((status) =>
+                  h.option
+                    .key(status)
+                    .attr("value", status)
+                    .children(statusLabel(status))
+                )
+              ),
+            h.input
+              .class("search")
+              .attr("type", "search")
+              .attr("placeholder", "Search features")
+              .attr("aria-label", "Search features")
+              .value(model.query)
+              .on("input", ({ value }) =>
+                FeatureTreeMessage.UpdatedQuery({ query: value })
+              ),
+            isFiltered(model)
+              ? h.button
+                  .on("click", FeatureTreeMessage.ClickedClear())
+                  .children("Clear")
+              : []
+          ),
           h.div
             .class("areas")
-            .children(outline(root, model.sort).map((entry) => area(h, entry)))
-        ),
+            .children(
+              areas.length === 0
+                ? h.p.class("note pad").children("Nothing matches.")
+                : areas.map((entry) => area(h, entry))
+            )
+        );
+      },
     }),
 });
 

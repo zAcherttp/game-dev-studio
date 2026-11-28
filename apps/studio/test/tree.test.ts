@@ -1,7 +1,7 @@
 import { expect, it } from "@effect/vitest";
 
 import type { TreeNodeValue } from "../src/domain/tree.ts";
-import { isClaimable, outline } from "../src/domain/tree.ts";
+import { isClaimable, NO_FILTER, outline } from "../src/domain/tree.ts";
 
 const tree: TreeNodeValue = {
   children: [
@@ -42,7 +42,10 @@ const tree: TreeNodeValue = {
 };
 
 const order = (sort: "tree" | "status" | "name") =>
-  outline(tree, sort)[0]?.rows.map((row) => [row.node.id, row.depth]);
+  outline(tree, sort, NO_FILTER)[0]?.rows.map((row) => [
+    row.node.id,
+    row.depth,
+  ]);
 
 it("tree order keeps each feature under the one it builds on", () => {
   expect(order("tree")).toStrictEqual([
@@ -69,7 +72,7 @@ it("sorting reorders siblings and keeps the nesting", () => {
 });
 
 it("an area counts its live features", () => {
-  const [moving] = outline(tree, "tree");
+  const [moving] = outline(tree, "tree", NO_FILTER);
 
   expect([moving?.live, moving?.total]).toStrictEqual([2, 4]);
 });
@@ -97,4 +100,27 @@ it("only an unowned, unclaimed feature is claimable", () => {
     })
   ).toBe(false);
   expect(isClaimable({ id: "x", kind: "area", title: "X" })).toBe(false);
+});
+
+it("unclaimed shows free features, with their parents as context", () => {
+  const rows = outline(tree, "tree", { ...NO_FILTER, show: "unclaimed" })[0]
+    ?.rows;
+
+  expect(rows?.map((row) => [row.node.id, row.context])).toStrictEqual([
+    ["dash", true],
+    ["khinh", false],
+    ["stamina", false],
+  ]);
+});
+
+it("claimed by one person shows only their features", () => {
+  const rows = outline(tree, "tree", { ...NO_FILTER, owner: "a" })[0]?.rows;
+
+  expect(rows?.map((row) => row.node.id)).toStrictEqual(["slide", "dash"]);
+});
+
+it("an area with nothing matching is left out", () => {
+  expect(outline(tree, "tree", { ...NO_FILTER, query: "zzz" })).toStrictEqual(
+    []
+  );
 });
