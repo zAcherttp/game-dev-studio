@@ -1,13 +1,23 @@
 import { expect, it } from "@effect/vitest";
 
 import type { TreeNodeValue } from "../src/domain/tree.ts";
-import { branchIds, isClaimable, place, tally } from "../src/domain/tree.ts";
+import { isClaimable, outline } from "../src/domain/tree.ts";
 
 const tree: TreeNodeValue = {
   children: [
     {
       children: [
         {
+          id: "slide",
+          kind: "feature",
+          owner: "a",
+          status: "live",
+          title: "Slide",
+        },
+        {
+          children: [
+            { id: "khinh", kind: "feature", status: "idea", title: "Khinh" },
+          ],
           id: "dash",
           kind: "feature",
           owner: "a",
@@ -17,52 +27,51 @@ const tree: TreeNodeValue = {
         {
           id: "stamina",
           kind: "feature",
-          owner: "",
           status: "needs-owner",
           title: "Stamina",
         },
-        { id: "khinh", kind: "feature", status: "idea", title: "Khinh" },
       ],
       id: "moving",
       kind: "area",
       title: "Moving",
     },
-    { id: "story", kind: "area", title: "Story" },
   ],
   id: "game",
   kind: "root",
   title: "Game",
 };
 
-it("a folded tree places the root between its areas", () => {
-  const placed = place(tree, new Set(), false);
+const order = (sort: "tree" | "status" | "name") =>
+  outline(tree, sort)[0]?.rows.map((row) => [row.node.id, row.depth]);
 
-  expect(placed.map((entry) => [entry.node.id, entry.y])).toStrictEqual([
-    ["game", 0.5],
-    ["moving", 0],
-    ["story", 1],
+it("tree order keeps each feature under the one it builds on", () => {
+  expect(order("tree")).toStrictEqual([
+    ["slide", 0],
+    ["dash", 0],
+    ["khinh", 1],
+    ["stamina", 0],
   ]);
 });
 
-it("an open branch lists its children, ideas hidden unless shown", () => {
-  const hidden = place(tree, new Set(["moving"]), false).map(
-    (entry) => entry.node.id
-  );
-
-  const shown = place(tree, new Set(["moving"]), true).map(
-    (entry) => entry.node.id
-  );
-
-  expect(hidden).toStrictEqual(["game", "moving", "dash", "stamina", "story"]);
-  expect(shown).toContain("khinh");
+it("sorting reorders siblings and keeps the nesting", () => {
+  expect(order("name")).toStrictEqual([
+    ["dash", 0],
+    ["khinh", 1],
+    ["slide", 0],
+    ["stamina", 0],
+  ]);
+  expect(order("status")).toStrictEqual([
+    ["dash", 0],
+    ["khinh", 1],
+    ["slide", 0],
+    ["stamina", 0],
+  ]);
 });
 
-it("a branch tallies live and needs-owner features", () => {
-  const counts = tally(tree, false);
+it("an area counts its live features", () => {
+  const [moving] = outline(tree, "tree");
 
-  expect(counts.live).toBe(1);
-  expect(counts.free).toBe(1);
-  expect(counts.total).toBe(2);
+  expect([moving?.live, moving?.total]).toStrictEqual([2, 4]);
 });
 
 it("only an unowned, unclaimed feature is claimable", () => {
@@ -88,8 +97,4 @@ it("only an unowned, unclaimed feature is claimable", () => {
     })
   ).toBe(false);
   expect(isClaimable({ id: "x", kind: "area", title: "X" })).toBe(false);
-});
-
-it("expand all opens every branch", () => {
-  expect(branchIds(tree)).toStrictEqual(["game", "moving"]);
 });

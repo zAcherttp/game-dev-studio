@@ -8,7 +8,7 @@ import { Studio } from "../client/studio.ts";
 import type { PageValue } from "../domain/page.ts";
 import { kindOf } from "../domain/page.ts";
 import { Decisions } from "./decisions.ts";
-import { MindMap } from "./mind-map.ts";
+import { FeatureTree } from "./feature-tree.ts";
 
 const PageViewDef = Html.component({
   message: Schema.Never,
@@ -61,7 +61,7 @@ export const PageViewNoDeps = PageViewDef.make({
 
         return Match.value(kind).pipe(
           Match.when("tree", () =>
-            MindMap(h, { key: page.id, props: { page } })
+            FeatureTree(h, { key: page.id, props: { page } })
           ),
           Match.when("decisions", () =>
             Decisions(h, { key: page.id, props: { page } })

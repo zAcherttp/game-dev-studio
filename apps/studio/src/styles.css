@@ -208,86 +208,88 @@ button[aria-selected="true"] {
   fill: var(--dropped);
   stroke: var(--dropped);
 }
-.mindmap {
-  position: relative;
+.outline {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
-.canvas {
-  flex: 1;
-  overflow: auto;
-}
-.tree .link {
-  fill: none;
-  stroke-width: 1.6;
-  opacity: 0.55;
-}
-.tree .dot {
-  fill: var(--bg);
-  stroke-width: 2;
-}
-.tree .dot.filled {
-  fill: currentColor;
-}
-.tree .node {
-  cursor: pointer;
-}
-.tree .node:hover .label {
-  fill: var(--accent);
-}
-.tree .label {
-  fill: var(--text);
-  font-size: 13px;
-}
-.tree .label.strong {
-  font-weight: 600;
-  font-size: 14px;
-}
-.tree .tag {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-.tree .seg {
-  stroke: none;
-}
-.tree .count {
-  fill: var(--dim);
-  font-size: 10px;
-}
-.panel {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  width: min(360px, calc(100% - 32px));
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 14px 16px;
-}
-.panel h2 {
-  margin: 0 0 4px;
-  font-size: 16px;
-}
-.panel .close {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 0 8px;
-}
-.panel .meta {
+.sort-label {
   color: var(--dim);
-  margin: 0 0 8px;
+  font-size: 12px;
+  margin-right: 2px;
+  align-self: center;
 }
-.claim {
-  margin-top: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(255, 140, 26, 0.12);
+.areas {
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 16px 40px;
 }
-.claim a {
+.area h2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 24px 0 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.area .tally {
+  color: var(--dim);
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.area ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 4px 5px calc(4px + var(--depth) * 22px);
+  border-radius: 6px;
+}
+.feature:hover {
+  background: var(--panel);
+}
+.feature .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.feature .name {
+  text-decoration: none;
+}
+.feature a.name:hover {
+  text-decoration: underline;
+}
+.feature .status {
+  color: var(--dim);
+  font-size: 12px;
+}
+.feature .owner {
+  margin-left: auto;
+  color: var(--dim);
+  font-size: 12px;
+}
+.claim-button {
+  margin-left: auto;
+  font-size: 12px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--needs-owner);
   color: var(--needs-owner);
+  text-decoration: none;
+}
+.claim-button:hover {
+  background: rgba(255, 140, 26, 0.12);
 }
 .decisions {
   flex: 1;
