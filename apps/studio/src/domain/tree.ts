@@ -10,8 +10,6 @@ export const STATUSES = [
   "dropped",
 ] as const;
 
-export type Status = (typeof STATUSES)[number];
-
 export interface TreeNodeValue {
   readonly children?: readonly TreeNodeValue[];
   readonly id: string;
@@ -38,19 +36,19 @@ export const TreeNode: Schema.Codec<TreeNodeValue> = Schema.Struct({
   url: Schema.optionalKey(Schema.String),
 });
 
-export interface Placed {
+export const SORTS = ["tree", "status", "name"] as const;
+
+export type Sort = (typeof SORTS)[number];
+
+export interface Row {
   readonly depth: number;
-  readonly hasChildren: boolean;
   readonly node: TreeNodeValue;
-  readonly open: boolean;
-  readonly parentId: string;
-  readonly y: number;
 }
 
-export interface Tally {
-  readonly byStatus: Readonly<Record<string, number>>;
-  readonly free: number;
+export interface Area {
   readonly live: number;
+  readonly node: TreeNodeValue;
+  readonly rows: readonly Row[];
   readonly total: number;
 }
 
@@ -62,112 +60,47 @@ export const isClaimable = (node: TreeNodeValue) =>
   (node.issue ?? "") === "" &&
   ["needs-owner", "planned", "idea"].includes(node.status ?? "");
 
-const hasVisible = (node: TreeNodeValue): boolean =>
-  (node.children ?? []).some(
-    (child) => child.status !== "idea" || hasVisible(child)
-  );
+const STATUS_ORDER: readonly string[] = STATUSES;
 
-const visibleChildren = (node: TreeNodeValue, showIdeas: boolean) =>
-  (node.children ?? []).filter(
-    (child) => showIdeas || child.status !== "idea" || hasVisible(child)
-  );
+const rank = (node: TreeNodeValue) => {
+  const index = STATUS_ORDER.indexOf(node.status ?? "");
 
-export const tally = (node: TreeNodeValue, showIdeas: boolean): Tally => {
-  const counts: Record<string, number> = {};
-  let free = 0;
+  return index === -1 ? STATUSES.length : index;
+};
 
-  const walk = (current: TreeNodeValue) => {
-    for (const child of visibleChildren(current, showIdeas)) {
-      const status = child.status ?? "planned";
-
-      if (isFeature(child)) {
-        counts[status] = (counts[status] ?? 0) + 1;
-      }
-
-      if (status === "needs-owner" && isClaimable(child)) {
-        free += 1;
-      }
-
-      walk(child);
-    }
-  };
-
-  walk(node);
-
-  let total = 0;
-
-  for (const value of Object.values(counts)) {
-    total += value;
+const sorted = (nodes: readonly TreeNodeValue[], sort: Sort) => {
+  if (sort === "name") {
+    return nodes.toSorted((a, b) => a.title.localeCompare(b.title));
   }
 
-  return { byStatus: counts, free, live: counts.live ?? 0, total };
+  if (sort === "status") {
+    return nodes.toSorted(
+      (a, b) => rank(a) - rank(b) || a.title.localeCompare(b.title)
+    );
+  }
+
+  return nodes;
 };
 
-interface Visit {
-  readonly entries: readonly Placed[];
-  readonly y: number;
-}
+const rowsOf = (
+  node: TreeNodeValue,
+  depth: number,
+  sort: Sort
+): readonly Row[] =>
+  sorted(node.children ?? [], sort).flatMap((child) => [
+    { depth, node: child },
+    ...rowsOf(child, depth + 1, sort),
+  ]);
 
-export const place = (
-  root: TreeNodeValue,
-  open: ReadonlySet<string>,
-  showIdeas: boolean
-): readonly Placed[] => {
-  let row = 0;
-
-  const visit = (
-    node: TreeNodeValue,
-    depth: number,
-    parentId: string
-  ): Visit => {
-    const children = visibleChildren(node, showIdeas);
-    const isOpen = depth === 0 || open.has(node.id);
-
-    const entry = {
-      depth,
-      hasChildren: children.length > 0,
-      node,
-      open: isOpen,
-      parentId,
-    };
-
-    if (!isOpen || children.length === 0) {
-      const y = row;
-
-      row += 1;
-
-      return { entries: [{ ...entry, y }], y };
-    }
-
-    const results = children.map((child) => visit(child, depth + 1, node.id));
-    const y = ((results[0]?.y ?? 0) + (results.at(-1)?.y ?? 0)) / 2;
+export const outline = (root: TreeNodeValue, sort: Sort): readonly Area[] =>
+  (root.children ?? []).map((area) => {
+    const rows = rowsOf(area, 0, sort);
+    const features = rows.filter((row) => isFeature(row.node));
 
     return {
-      entries: [
-        { ...entry, y },
-        ...results.flatMap((result) => result.entries),
-      ],
-      y,
+      live: features.filter((row) => row.node.status === "live").length,
+      node: area,
+      rows,
+      total: features.length,
     };
-  };
-
-  return visit(root, 0, "").entries;
-};
-
-export const branchIds = (root: TreeNodeValue): readonly string[] => {
-  const ids: string[] = [];
-
-  const walk = (node: TreeNodeValue) => {
-    if ((node.children ?? []).length > 0) {
-      ids.push(node.id);
-
-      for (const child of node.children ?? []) {
-        walk(child);
-      }
-    }
-  };
-
-  walk(root);
-
-  return ids;
-};
+  });
