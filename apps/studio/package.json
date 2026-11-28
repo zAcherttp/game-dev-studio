@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@effect/ui": "https://pkg.pr.new/Effect-TS/ui/@effect/ui@cee4c18",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
     "@gds/capability": "workspace:*",
     "@gds/model": "workspace:*",
     "effect": "4.1.4"

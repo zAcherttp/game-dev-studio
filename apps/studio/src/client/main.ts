@@ -6,6 +6,9 @@ import { FetchHttpClient } from "effect/http";
 import { App } from "../features/app.ts";
 import { AppRoute } from "../routes.ts";
 
+import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
+
 import "../styles.css";
 
 const root = document.querySelector("#root");
