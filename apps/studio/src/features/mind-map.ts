@@ -75,6 +75,8 @@ const yOf = (row: number) => MARGIN + row * ROW;
 
 const xOf = (depth: number) => MARGIN + depth * COLUMN;
 
+const fanned = (entry: Placed) => entry.open && entry.hasChildren;
+
 const statusBar = MindMapDef.fragment(
   (h, entry: Placed, showIdeas: boolean) => {
     const counts = tally(entry.node, showIdeas);
@@ -239,8 +241,8 @@ const drawTree = MindMapDef.fragment(
                 h.svgText
                   .attrs({
                     class: entry.depth <= 1 ? "label strong" : "label",
-                    x: String(xOf(entry.depth) + 12),
-                    y: String(yOf(entry.y) + 4),
+                    x: String(xOf(entry.depth) + (fanned(entry) ? -6 : 12)),
+                    y: String(yOf(entry.y) + (fanned(entry) ? -12 : 4)),
                   })
                   .children(
                     entry.node.title,
