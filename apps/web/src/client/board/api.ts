@@ -22,6 +22,16 @@ export interface RoundInput {
   readonly note: string;
 }
 
+export interface LikeInput {
+  readonly studio: string;
+  readonly asset: string;
+  readonly layer: string;
+  readonly variant: string;
+  readonly keep: boolean;
+  readonly note: string;
+  readonly by: string;
+}
+
 export interface MixInput {
   readonly studio: string;
   readonly asset: string;
@@ -49,6 +59,9 @@ export class BoardApi extends Context.Service<
   {
     readonly pick: (
       input: PickInput
+    ) => Effect.Effect<AssetValue, BoardApiFailed>;
+    readonly like: (
+      input: LikeInput
     ) => Effect.Effect<AssetValue, BoardApiFailed>;
     readonly round: (
       input: RoundInput
@@ -132,6 +145,39 @@ export const withPick = (
   };
 };
 
+export const withLike = (
+  asset: AssetValue,
+  input: LikeInput,
+  at: string
+): AssetValue => {
+  const layer = asset.layers[input.layer];
+
+  if (layer === undefined) {
+    return asset;
+  }
+
+  return {
+    ...asset,
+    layers: {
+      ...asset.layers,
+      [input.layer]: {
+        ...layer,
+        likes: [
+          ...(layer.likes ?? []),
+          {
+            at,
+            by: input.by,
+            keep: input.keep,
+            layer: input.layer,
+            note: input.note,
+            variant: input.variant,
+          },
+        ],
+      },
+    },
+  };
+};
+
 export type MixRenders = (asset: AssetValue) => typeof Render.Type | undefined;
 
 export interface PlayFixture {
@@ -171,6 +217,25 @@ export const memoryBoardApi = (
         }
 
         const next = withPick(current, input, at);
+        yield* Ref.set(store, new Map([...assets, [input.asset, next]]));
+
+        return next;
+      });
+
+      const like = Effect.fn("BoardApi.memory.like")(function* like(
+        input: LikeInput
+      ) {
+        const assets = yield* Ref.get(store);
+        const { asset, layer } = yield* findAsset(assets, input);
+
+        if (!layer.variants.some((variant) => variant.id === input.variant)) {
+          return yield* failed(
+            `No variant ${input.variant} on layer ${input.layer}.`
+          );
+        }
+
+        const at = DateTime.formatIso(yield* DateTime.now);
+        const next = withLike(asset, input, at);
         yield* Ref.set(store, new Map([...assets, [input.asset, next]]));
 
         return next;
@@ -296,6 +361,7 @@ export const memoryBoardApi = (
         frames,
         getAsset,
         launch,
+        like,
         pick,
         record,
         render,

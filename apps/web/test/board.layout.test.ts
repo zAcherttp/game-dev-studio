@@ -123,6 +123,88 @@ it.prop(
   }
 );
 
+it.prop(
+  "a liked take stays on the board with its ancestors, whatever the lineage",
+  {
+    liked: Schema.Int.check(Schema.isBetween({ maximum: 11, minimum: 0 })),
+    parents: parentIndexes,
+  },
+  ({ liked, parents }) => {
+    const variants: readonly VariantValue[] = variantsOf(parents);
+    const target = variants[liked % variants.length];
+
+    const shown = new Map(
+      shownTakes(
+        variants,
+        undefined,
+        target === undefined ? [] : [target.id]
+      ).map((variant) => [variant.id, variant])
+    );
+
+    const chain = (
+      id: string | undefined,
+      seen: readonly string[]
+    ): readonly string[] => {
+      const found = variants.find((variant) => variant.id === id);
+
+      return found === undefined || seen.includes(found.id)
+        ? seen
+        : chain(found.parent, [...seen, found.id]);
+    };
+
+    const kept = chain(target?.id, []);
+
+    expect(kept.length > 0).toBe(target !== undefined);
+
+    for (const id of kept) {
+      expect(shown.has(id)).toBe(true);
+    }
+  }
+);
+
+it("a story block sits on its own row above the asset's layers, wired from the asset", () => {
+  const [entry] = fireFlags.assets;
+
+  expect(entry).toBeDefined();
+
+  if (entry === undefined) {
+    return;
+  }
+
+  const story = {
+    at: "2026-11-28T00:00:00.000Z",
+    by: "phat",
+    references: [],
+    rules: [],
+    title: "Fire",
+    version: 2,
+    words: "A slow lick of flame.",
+  };
+
+  const plain = layout(fireFlags.studio, [entry]);
+
+  const told = layout(fireFlags.studio, [
+    {
+      ...entry,
+      asset: { ...entry.asset, story: [{ ...story, version: 1 }, story] },
+    },
+  ]);
+
+  const storyNodes = told.nodes.filter((node) => node.kind === "story");
+  const layers = told.nodes.filter((node) => node.kind === "layer");
+
+  expect(storyNodes).toMatchObject([
+    { id: "story:fire", story: { version: 2 } },
+  ]);
+  expect(told.height - plain.height).toBe(148);
+  expect(layers.every((node) => node.y > (storyNodes[0]?.y ?? Infinity))).toBe(
+    true
+  );
+  expect(
+    told.edges.some((edge) => edge.id === "structure:asset:fire->story:fire")
+  ).toBe(true);
+});
+
 it("node ids stay unique when layers reuse take letters, as EasyVFX kits do", () => {
   const lettered = fireFlags.assets.map((entry) => ({
     ...entry,

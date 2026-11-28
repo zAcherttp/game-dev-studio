@@ -13,6 +13,7 @@ export {
   getPackContract,
   launchContract,
   layersOfContract,
+  likeContract,
   listAssetsContract,
   listStudiosContract,
   openCheckContract,
@@ -21,6 +22,7 @@ export {
   renderContract,
   renderMixContract,
   roundContract,
+  writeStoryContract,
 } from "./contracts.js";
 
 export { FailsGate } from "./fails-gate.js";
@@ -41,6 +43,8 @@ export { InputChange, InputRecord } from "./input-record.js";
 
 export { LayerBusy } from "./layer-busy.js";
 
+export { Like, likedTakes, type LikeValue } from "./like.js";
+
 export { NoPick } from "./no-pick.js";
 
 export { NotBuilt, notBuilt } from "./not-built.js";
@@ -58,6 +62,15 @@ export { CheckShot, RoundRequest } from "./round.js";
 export { Source } from "./source.js";
 
 export { Store } from "./store.js";
+
+export {
+  Crop,
+  FrameRange,
+  StoryBlock,
+  StoryReference,
+  currentStory,
+  type StoryBlockValue,
+} from "./story.js";
 
 export {
   LayerDef,

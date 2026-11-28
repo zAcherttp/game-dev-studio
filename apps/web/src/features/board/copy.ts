@@ -1,3 +1,6 @@
+const counted = (count: number, one: string, many: string) =>
+  count === 1 ? `1 ${one}` : `${count} ${many}`;
+
 export const boardCopy = {
   brand: "Dev studio",
   canvasLabel: (studio: string) => `Node map of the ${studio} studio`,
@@ -12,6 +15,18 @@ export const boardCopy = {
   noPick: "no pick yet",
   playable: "playable: open to play",
   playableMix: "Playable takes: open a layer to play them",
+  story: (version: number) => `story v${version}`,
+  storyFacts: (references: number, beat: string | undefined, layers: number) =>
+    [
+      counted(references, "reference", "references"),
+      beat === undefined ? "no beat yet" : `beat: ${beat}`,
+      layers === 0
+        ? "layer list not agreed"
+        : `${counted(layers, "layer", "layers")} agreed`,
+    ].join(" · "),
+  storyLabel: (asset: string, version: number) =>
+    `${asset} story block, version ${version}`,
+  liked: "LIKED",
   title: (studio: string) => `${studio} studio board`,
   zoomIn: "Zoom in",
   zoomOut: "Zoom out",
@@ -89,10 +104,14 @@ export const pickerCopy = {
   pick: (label: string) => `Pick ${label}`,
   alone: "Alone",
   inMix: "In the mix",
+  like: (label: string) => `Like ${label}: keep it on the board`,
+  likeLabel: "Like",
+  liked: "Liked",
   reference: "Reference",
   rendering: (label: string) => `Rendering ${label}…`,
   roundButton: "Ask for a round",
   roundNote: "Round note",
+  unlike: (label: string) => `Drop the like on ${label}`,
   still: (label: string, beat: string) => `${label} at the ${beat} beat`,
   sync: (beat: string, period: number) =>
     `Loops restart together; every clip meets at ${beat} (${Math.round(period)} ms cycle)`,

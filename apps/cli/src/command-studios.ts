@@ -198,8 +198,14 @@ export const GatedStore = Layer.effect(
         inner
           .putVariants(studio, asset, layer, variants)
           .pipe(Effect.flatMap(ledger.attach)),
+      like: (studio, asset, liked) =>
+        inner.like(studio, asset, liked).pipe(Effect.flatMap(ledger.attach)),
       round: (studio, asset, request) =>
         inner.round(studio, asset, request).pipe(Effect.flatMap(ledger.attach)),
+      writeStory: (studio, asset, block) =>
+        inner
+          .writeStory(studio, asset, block)
+          .pipe(Effect.flatMap(ledger.attach)),
     });
   })
 );

@@ -8,6 +8,7 @@ import { LayerBusy } from "./layer-busy.js";
 import { NoPick } from "./no-pick.js";
 import { NotBuilt } from "./not-built.js";
 import { CheckShot, RoundRequest } from "./round.js";
+import { StoryReference } from "./story.js";
 import { LayerDef, PackDef, StudioDef } from "./studio.js";
 import { UnknownAsset } from "./unknown-asset.js";
 import { UnknownLayer } from "./unknown-layer.js";
@@ -230,6 +231,60 @@ export const recordContract = defineContract("record", {
   }),
 });
 
+export const writeStoryContract = defineContract("writeStory", {
+  description:
+    "Write a new version of an asset's story block: the owner's words verbatim, references with frame ranges or crops, the sync beat, shared rules, and the layer list the owner said yes to. Earlier versions stay; takes keep the version they answered. Starts the asset when it has no file yet. An agent writes only the owner's own words here and proposes changes as a note instead.",
+  failure: Schema.Union([NotBuilt, UnknownStudio, AdapterFailed]),
+  input: Schema.Struct({
+    asset: assetField,
+    beat: Schema.optionalKey(
+      Schema.String.annotate({
+        description: "The sync beat every take is judged on.",
+      })
+    ),
+    by: Schema.String.annotate({ description: "Whose words these are." }),
+    layers: Schema.optionalKey(
+      Schema.Array(Schema.String).annotate({
+        description:
+          "The layer list the owner said yes to, in order. Leave it out until they have.",
+      })
+    ),
+    references: Schema.Array(StoryReference),
+    rules: Schema.Array(Schema.String),
+    studio: studioField,
+    title: Schema.String,
+    words: Schema.String.annotate({
+      description: "The owner's words for the asset, verbatim.",
+    }),
+  }),
+  output: Asset,
+});
+
+export const likeContract = defineContract("like", {
+  description:
+    "Like a take, or drop an earlier like with keep false. A like keeps the take on the board for later rounds and mixing; it is its own record beside the pick and never changes the mix. Liking what is already liked, or dropping what is not, records nothing.",
+  failure: Schema.Union([
+    NotBuilt,
+    UnknownStudio,
+    UnknownAsset,
+    UnknownLayer,
+    UnknownVariant,
+    AdapterFailed,
+  ]),
+  input: Schema.Struct({
+    asset: assetField,
+    by: Schema.String.annotate({ description: "Who liked." }),
+    keep: Schema.Boolean.annotate({
+      description: "true likes the take; false drops the like.",
+    }),
+    layer: layerField,
+    note: Schema.String,
+    studio: studioField,
+    variant: Schema.String,
+  }),
+  output: Asset,
+});
+
 export const contracts = [
   listStudiosContract,
   listAssetsContract,
@@ -244,4 +299,6 @@ export const contracts = [
   openCheckContract,
   launchContract,
   recordContract,
+  writeStoryContract,
+  likeContract,
 ] as const;

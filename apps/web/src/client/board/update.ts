@@ -1,3 +1,4 @@
+import { likedTakes } from "@gds/model";
 import { Option } from "effect";
 import type { Update } from "foldkit";
 import { modifyFields } from "foldkit/struct";
@@ -5,6 +6,7 @@ import { modifyFields } from "foldkit/struct";
 import type { BoardApi } from "./api.js";
 import {
   LaunchTake,
+  LikeTake,
   LoadAsset,
   LoadFrames,
   PickVariant,
@@ -112,6 +114,37 @@ const pick = (model: BoardModel, variant: string): UpdateReturn =>
   Option.match(model.open, {
     onNone: () => ({ model }),
     onSome: (open) => pickOn(model, open, variant),
+  });
+
+const like = (
+  model: BoardModel,
+  variant: string,
+  keep: boolean
+): UpdateReturn =>
+  Option.match(model.open, {
+    onNone: () => ({ model }),
+    onSome: (open) =>
+      model.status.state === "saving"
+        ? { model }
+        : {
+            commands: [
+              LikeTake({
+                asset: open.asset,
+                by: model.by,
+                keep,
+                layer: open.layer,
+                note: model.note,
+                studio: model.studio.id,
+                variant,
+              }),
+            ],
+            model: modifyFields(model, {
+              status: () => ({
+                message: keep ? "Liking…" : "Dropping the like…",
+                state: "saving" as const,
+              }),
+            }),
+          },
   });
 
 const pickByKey = (model: BoardModel, index: number): UpdateReturn =>
@@ -420,7 +453,8 @@ export const prerenderBoard = (model: BoardModel) =>
         layer.id,
         shownTakes(
           asset.layers[layer.id]?.variants ?? [],
-          asset.mix[layer.id]
+          asset.mix[layer.id],
+          likedTakes(asset.layers[layer.id]?.likes)
         ).map(({ id }) => id)
       )
     ),
@@ -467,6 +501,28 @@ export const update = (
 ): UpdateReturn =>
   Message.match<UpdateReturn>(message, {
     ChoseVariant: ({ variant }) => pick(model, variant),
+    ClickedLike: ({ keep, variant }) => like(model, variant, keep),
+    SucceededLike: ({ asset, keep }) => ({
+      model: modifyFields(model, {
+        assets: (assets) =>
+          assets.map((entry) =>
+            entry.asset.id === asset.id
+              ? { ...entry, asset: keepRenders(entry.asset, asset) }
+              : entry
+          ),
+        status: () => ({
+          message: keep
+            ? "Liked. It stays on the board for later rounds and mixing."
+            : "Like dropped.",
+          state: "done" as const,
+        }),
+      }),
+    }),
+    FailedLike: ({ message: reason }) => ({
+      model: modifyFields(model, {
+        status: () => ({ message: reason, state: "failed" as const }),
+      }),
+    }),
     ClickedPlay: ({ variant }) => play(model, variant),
     ClickedRecord: ({ asset }) => record(model, asset),
     Launched: ({ asset, layer, render, variant }) => {

@@ -1,3 +1,4 @@
+import { likedTakes } from "@gds/model";
 import type { PackDef, StudioDef, Variant } from "@gds/model";
 import { Option } from "effect";
 
@@ -10,16 +11,18 @@ export const MAX_COLUMNS = 5;
 
 export const pickerVariants = (
   variants: readonly VariantValue[],
-  picked: string | undefined
+  picked: string | undefined,
+  liked: readonly string[] = []
 ): readonly VariantValue[] => {
   const latest = variants.slice(-MAX_COLUMNS);
-  const pick = variants.find((variant) => variant.id === picked);
 
-  if (pick === undefined || latest.includes(pick)) {
-    return latest;
-  }
+  const kept = variants.filter(
+    (variant) =>
+      (variant.id === picked || liked.includes(variant.id)) &&
+      !latest.includes(variant)
+  );
 
-  return [pick, ...latest.slice(1)];
+  return [...kept, ...latest.slice(Math.min(kept.length, latest.length))];
 };
 
 export const openedLayer = (
@@ -35,13 +38,15 @@ export const openedLayer = (
   }
 
   const picked = entry.asset.mix[open.layer];
+  const liked = likedTakes(state.likes);
 
   return Option.some({
     asset: entry.asset,
     history: state.picks.filter((pick) => pick.layer === open.layer),
     layer,
+    liked,
     picked,
-    variants: pickerVariants(state.variants, picked),
+    variants: pickerVariants(state.variants, picked, liked),
   });
 };
 

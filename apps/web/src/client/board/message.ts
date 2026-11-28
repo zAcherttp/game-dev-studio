@@ -9,6 +9,7 @@ export const Message = defineMessageUnion({
   ChoseMixCamera: { camera: Schema.String },
   ChoseVariant: { variant: Schema.String },
   ClickedFit: {},
+  ClickedLike: { keep: Schema.Boolean, variant: Schema.String },
   ClickedPlay: { variant: Schema.String },
   ClickedRecord: { asset: Schema.String },
   ClickedZoom: { factor: Schema.Finite },
@@ -24,6 +25,7 @@ export const Message = defineMessageUnion({
     variant: Schema.String,
   },
   FailedRecord: { asset: Schema.String, message: Schema.String },
+  FailedLike: { message: Schema.String },
   FailedPick: { message: Schema.String },
   FailedRender: {
     asset: Schema.String,
@@ -64,6 +66,7 @@ export const Message = defineMessageUnion({
   },
   SubmittedRound: {},
   SwitchedPickerMode: { mode: Schema.Literals(["mix", "solo"]) },
+  SucceededLike: { asset: Asset, keep: Schema.Boolean },
   SucceededPick: { asset: Asset },
   SucceededRound: { request: RoundRequest },
   TickedClock: { elapsed: Schema.Finite },

@@ -94,4 +94,10 @@ export const Variant = Schema.Struct({
   parent: Schema.optionalKey(Schema.String),
   render: Schema.optionalKey(Render),
   seed: Schema.optionalKey(Schema.Finite),
+  story: Schema.optionalKey(
+    Schema.Int.annotate({
+      description:
+        "The story block version this take answered; addVariants stamps the current one when it is left out.",
+    })
+  ),
 });

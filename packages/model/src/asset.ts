@@ -1,11 +1,19 @@
 import { Schema } from "effect";
 
 import { InputRecord } from "./input-record.js";
+import { Like } from "./like.js";
 import { Pick } from "./pick.js";
 import { RoundRequest } from "./round.js";
+import { StoryBlock } from "./story.js";
 import { Variant } from "./variant.js";
 
 export const AssetLayer = Schema.Struct({
+  likes: Schema.optionalKey(
+    Schema.Array(Like).annotate({
+      description:
+        "Every like and dropped like on this layer, oldest first. likedTakes folds them into the takes liked now.",
+    })
+  ),
   making: Schema.optionalKey(
     Schema.String.annotate({
       description:
@@ -33,6 +41,12 @@ export const Asset = Schema.Struct({
     Schema.Array(InputRecord).annotate({
       description:
         "Input records every take of the asset replays, oldest first. A take never owns a record.",
+    })
+  ),
+  story: Schema.optionalKey(
+    Schema.Array(StoryBlock).annotate({
+      description:
+        "Every version of the asset's story block, oldest first; the last is current.",
     })
   ),
   studio: Schema.String,

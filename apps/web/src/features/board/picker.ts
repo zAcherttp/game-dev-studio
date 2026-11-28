@@ -120,11 +120,13 @@ const variantColumn =
     h: HtmlBuilder<BoardMessage>,
     model: BoardModel,
     plan: SyncPlan,
-    picked: string | undefined
+    picked: string | undefined,
+    liked: readonly string[]
   ) =>
   (variant: VariantValue, index: number): Html => {
     const beat = model.studio.sync?.beat ?? "start";
     const isPicked = variant.id === picked;
+    const isLiked = liked.includes(variant.id);
 
     const isRendering = Option.exists(model.open, (open) => {
       const key = takeKey(open.asset, open.layer, variant.id);
@@ -177,6 +179,23 @@ const variantColumn =
             h.OnClick(Message.ChoseVariant({ variant: variant.id })),
           ],
           [pickerCopy.pick(variant.label)]
+        ),
+        h.button(
+          [
+            h.Type("button"),
+            h.Class(cls(pickerStyles.ghost, isLiked && pickerStyles.pressed)),
+            h.AriaPressed(String(isLiked)),
+            h.AriaLabel(
+              isLiked
+                ? pickerCopy.unlike(variant.label)
+                : pickerCopy.like(variant.label)
+            ),
+            h.Disabled(model.status.state === "saving"),
+            h.OnClick(
+              Message.ClickedLike({ keep: !isLiked, variant: variant.id })
+            ),
+          ],
+          [isLiked ? pickerCopy.liked : pickerCopy.likeLabel]
         ),
       ]
     );
@@ -307,7 +326,7 @@ export const pickerView = (
 ): Html =>
   Option.match(openedLayer(model.assets, open), {
     onNone: () => h.empty,
-    onSome: ({ asset, history, layer, picked, variants: takes }) => {
+    onSome: ({ asset, history, layer, liked, picked, variants: takes }) => {
       const variants =
         model.pickerMode === "solo"
           ? takes.map(({ render: _mix, ...take }) => {
@@ -357,7 +376,7 @@ export const pickerView = (
             [h.Class(cls(pickerStyles.columns))],
             [
               referenceColumn(h, model, plan),
-              ...variants.map(variantColumn(h, model, plan, picked)),
+              ...variants.map(variantColumn(h, model, plan, picked, liked)),
             ]
           ),
         onSome: (board) =>

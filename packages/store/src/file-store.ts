@@ -8,8 +8,10 @@ import {
 import type {
   Asset,
   AssetLayer,
+  Like,
   Pick,
   RoundRequest,
+  StoryBlock,
   Variant,
 } from "@gds/model";
 import {
@@ -353,6 +355,51 @@ export const FileStore = Layer.effect(
       );
     });
 
+    const like = Effect.fn("FileStore.like")(function* like(
+      studio: string,
+      asset: string,
+      liked: typeof Like.Type
+    ) {
+      return yield* change(studio, asset, undefined, (current) =>
+        Effect.succeed(
+          updateLayer(current, liked.layer, (entry) => ({
+            ...entry,
+            likes: [...(entry.likes ?? []), liked],
+          }))
+        )
+      );
+    });
+
+    const writeStory = Effect.fn("FileStore.writeStory")(function* writeStory(
+      studio: string,
+      asset: string,
+      block: Omit<typeof StoryBlock.Type, "version">
+    ) {
+      return yield* writes.withPermits(1)(
+        Effect.gen(function* storyVersion() {
+          const def = yield* studioById(studio);
+          const found = yield* readAsset(def, asset);
+
+          const current = Option.getOrElse(found, () =>
+            withStudioLayers(def, {
+              id: asset,
+              layers: {},
+              mix: {},
+              studio: def.id,
+              title: block.title,
+            })
+          );
+
+          const story = current.story ?? [];
+
+          return yield* writeAsset({
+            ...current,
+            story: [...story, { ...block, version: story.length + 1 }],
+          });
+        })
+      );
+    });
+
     const history = Effect.fn("FileStore.history")(function* history(
       studio: string,
       asset: string,
@@ -364,11 +411,13 @@ export const FileStore = Layer.effect(
     return Store.of({
       getAsset,
       history,
+      like,
       listAssets,
       listStudios,
       pick,
       putVariants,
       round,
+      writeStory,
     });
   })
 );

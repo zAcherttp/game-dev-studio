@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { NodeServices } from "@effect/platform-node";
 import { describe, expect, it } from "@effect/vitest";
 import { invokerFor } from "@gds/capability";
-import { AdapterFailed, Apply, Asset } from "@gds/model";
+import { AdapterFailed, Apply, Asset, likedTakes } from "@gds/model";
 import type { StudioDef } from "@gds/model";
 import { GameFolder } from "@gds/store";
 import { Effect, FileSystem, Layer, Path, Schema } from "effect";
@@ -615,5 +615,161 @@ describe("layer lifecycle model", () => {
         })
       ),
     { arbitrary: { runs: 100 } }
+  );
+});
+
+const LikeCommand = Schema.Struct({
+  keep: Schema.Boolean,
+  take: Schema.Int.check(Schema.isBetween({ maximum: 3, minimum: 0 })),
+});
+
+describe("likes model", () => {
+  it.effect.prop(
+    "every generated run of likes and dropped likes keeps exactly the takes liked last, records only changes, and never moves the mix",
+    {
+      commands: Schema.Array(LikeCommand).check(Schema.isBetweenLength(4, 12)),
+    },
+    ({ commands }) =>
+      inGame((invoke) =>
+        Effect.gen(function* followsLikes() {
+          yield* invoke("addVariants", {
+            ...where,
+            variants: [variant("c0"), variant("c1"), variant("c2")],
+          });
+          yield* invoke("pick", pickInput("c0"));
+
+          const liked = new Set<string>();
+          let records = 0;
+
+          for (const { keep, take } of commands) {
+            const chosen = `c${take}`;
+
+            const outcome = yield* invoke("like", {
+              ...where,
+              by: "phat",
+              keep,
+              note: "",
+              variant: chosen,
+            });
+
+            if (take === 3) {
+              expect(tagOf(outcome)).toBe("UnknownVariant");
+              continue;
+            }
+
+            if (liked.has(chosen) !== keep) {
+              records += 1;
+            }
+
+            if (keep) {
+              liked.add(chosen);
+            } else {
+              liked.delete(chosen);
+            }
+
+            const stored = yield* Schema.decodeUnknownEffect(Asset)(
+              outcome.ok ? outcome.value : undefined
+            );
+
+            const { core } = stored.layers;
+
+            expect(new Set(likedTakes(core?.likes))).toEqual(liked);
+            expect(core?.likes ?? []).toHaveLength(records);
+            expect(stored.mix).toEqual({ core: "c0" });
+          }
+        })
+      ),
+    { arbitrary: { runs: 40 } }
+  );
+});
+
+describe("story block", () => {
+  it.effect(
+    "a story starts the asset, every edit adds a version, and new takes keep the version they answered",
+    () =>
+      inGame((invoke) =>
+        Effect.gen(function* versionsStory() {
+          const block = {
+            asset: "draw",
+            by: "phat",
+            references: [
+              {
+                frames: { from: 4, to: 18 },
+                label: "draw",
+                source: "refs/draw.mp4",
+              },
+            ],
+            rules: ["Look.Lock on the blade"],
+            studio: "vfx",
+            title: "Draw and sheathe",
+            words: "The blade leaves the back in one pull.",
+          };
+
+          const first = yield* invoke("writeStory", block);
+
+          const second = yield* invoke("writeStory", {
+            ...block,
+            beat: "blade leaves the back",
+            layers: ["core"],
+          });
+
+          yield* invoke("addVariants", {
+            asset: "draw",
+            layer: "core",
+            studio: "vfx",
+            variants: [variant("d1"), { ...variant("d2"), story: 1 }],
+          });
+
+          const asset = yield* invoke("getAsset", {
+            asset: "draw",
+            studio: "vfx",
+          });
+
+          expect(first).toMatchObject({
+            ok: true,
+            value: { story: [{ version: 1 }], title: "Draw and sheathe" },
+          });
+          expect(second).toMatchObject({
+            ok: true,
+            value: {
+              story: [
+                { version: 1 },
+                { beat: "blade leaves the back", layers: ["core"], version: 2 },
+              ],
+            },
+          });
+          expect(asset).toMatchObject({
+            ok: true,
+            value: {
+              layers: {
+                core: {
+                  variants: [
+                    { id: "d1", story: 2 },
+                    { id: "d2", story: 1 },
+                  ],
+                },
+              },
+            },
+          });
+        })
+      )
+  );
+
+  it.effect("refuses a story for a studio the game does not have", () =>
+    inGame((invoke) =>
+      Effect.gen(function* unknownStudio() {
+        const outcome = yield* invoke("writeStory", {
+          asset: "draw",
+          by: "phat",
+          references: [],
+          rules: [],
+          studio: "nope",
+          title: "Draw",
+          words: "",
+        });
+
+        expect(tagOf(outcome)).toBe("UnknownStudio");
+      })
+    )
   );
 });
