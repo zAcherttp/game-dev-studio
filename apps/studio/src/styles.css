@@ -213,12 +213,6 @@ button[aria-selected="true"] {
   display: flex;
   flex-direction: column;
 }
-.sort-label {
-  color: var(--dim);
-  font-size: 12px;
-  margin-right: 2px;
-  align-self: center;
-}
 .areas {
   max-width: 820px;
   width: 100%;
@@ -452,7 +446,6 @@ code,
 .state,
 .count,
 .me,
-.sort-label,
 .choice .n,
 .where {
   font-family: var(--font-mono);

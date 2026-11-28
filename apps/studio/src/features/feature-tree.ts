@@ -134,23 +134,7 @@ export const FeatureTreeNoDeps = FeatureTreeDef.make({
         const areas = outline(root, model.sort, model);
 
         return h.section.class("outline").children(
-          h.header.class("tools").children(
-            h.h1(root.title),
-            h.div
-              .class("buttons")
-              .attr("role", "group")
-              .attr("aria-label", "Sort")
-              .children(
-                h.span.class("sort-label").children("Sort"),
-                SORTS.map((sort) =>
-                  h.button
-                    .key(sort)
-                    .attr("aria-pressed", String(model.sort === sort))
-                    .on("click", FeatureTreeMessage.ChoseSort({ sort }))
-                    .children(SORT_LABELS[sort])
-                )
-              )
-          ),
+          h.header.class("tools").children(h.h1(root.title)),
           h.div.class("filters").children(
             h.div
               .class("buttons")
@@ -190,6 +174,22 @@ export const FeatureTreeNoDeps = FeatureTreeDef.make({
                     .key(status)
                     .attr("value", status)
                     .children(statusLabel(status))
+                )
+              ),
+            h.select
+              .attr("aria-label", "Sort")
+              .value(model.sort)
+              .on("change", ({ value }) =>
+                FeatureTreeMessage.ChoseSort({
+                  sort: SORTS.find((sort) => sort === value) ?? "tree",
+                })
+              )
+              .children(
+                SORTS.map((sort) =>
+                  h.option
+                    .key(sort)
+                    .attr("value", sort)
+                    .children(`Sort: ${SORT_LABELS[sort]}`)
                 )
               ),
             h.input
