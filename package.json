@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @gds/web dev",
+    "dev:studio": "pnpm --filter @gds/studio dev",
     "build": "turbo run build",
     "bump:checkers": "node scripts/bump-checkers.ts",
     "check": "pnpm run lockfile:check && varlock load && turbo run typecheck typecheck-scripts test:turbo-summary check:turbo-inputs check:landmines --summarize && ultracite check && oxfmt --check .",

@@ -153,6 +153,18 @@
     "@gds/web#typecheck:fast": {
       "dependsOn": ["^build", "^typecheck:fast"],
       "outputs": []
+    },
+    "@gds/studio#typecheck": {
+      "dependsOn": ["^build", "^typecheck"],
+      "outputs": []
+    },
+    "@gds/studio#typecheck:tsc": {
+      "dependsOn": ["^build", "^typecheck:tsc"],
+      "outputs": []
+    },
+    "@gds/studio#typecheck:fast": {
+      "dependsOn": ["^build", "^typecheck:fast"],
+      "outputs": []
     }
   }
 }

@@ -1,0 +1,29 @@
+{
+  "name": "@gds/studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "typecheck": "effect-tsrs diagnostics --project tsconfig.json --strict --type-check",
+    "typecheck:tsc": "tsc --noEmit -p tsconfig.json",
+    "typecheck:fast": "tsrs --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "build": "vite build",
+    "check": "pnpm run typecheck"
+  },
+  "dependencies": {
+    "@effect/ui": "https://pkg.pr.new/Effect-TS/ui/@effect/ui@cee4c18",
+    "@gds/capability": "workspace:*",
+    "@gds/model": "workspace:*",
+    "effect": "4.1.4"
+  },
+  "devDependencies": {
+    "@effect/vitest": "4.1.4",
+    "@types/node": "24.19.2",
+    "jsdom": "31.0.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

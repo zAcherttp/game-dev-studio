@@ -305,6 +305,40 @@ importers:
         specifier: 5.1.0
         version: 5.1.0(@types/node@24.19.2)(jsdom@31.0.0)(vite@8.3.8(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1))
 
+  apps/studio:
+    dependencies:
+      '@effect/ui':
+        specifier: https://pkg.pr.new/Effect-TS/ui/@effect/ui@cee4c18
+        version: https://pkg.pr.new/Effect-TS/ui/@effect/ui@cee4c18(effect@4.1.4)
+      '@gds/capability':
+        specifier: workspace:*
+        version: link:../../packages/capability
+      '@gds/model':
+        specifier: workspace:*
+        version: link:../../packages/model
+      effect:
+        specifier: 4.1.4
+        version: 4.1.4
+    devDependencies:
+      '@effect/vitest':
+        specifier: 4.1.4
+        version: 4.1.4(effect@4.1.4)(vitest@5.1.0(@types/node@24.19.2)(jsdom@31.0.0)(vite@8.3.8(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1)))
+      '@types/node':
+        specifier: 24.19.2
+        version: 24.19.2
+      jsdom:
+        specifier: 31.0.0
+        version: 31.0.0
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vite:
+        specifier: 8.3.8
+        version: 8.3.8(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1)
+      vitest:
+        specifier: 5.1.0
+        version: 5.1.0(@types/node@24.19.2)(jsdom@31.0.0)(vite@8.3.8(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1))
+
   apps/web:
     dependencies:
       '@effect/platform-browser':
@@ -891,6 +925,12 @@ packages:
   '@effect/tsgo@0.69.0':
     resolution: {integrity: sha512-ypgO19woAyrfAG0LzU2QwQnprMpV2G30nEo9ffd4Bc0ow0vXupcx0mcSLG1EfvmRGl0jhiQ3yAbsCuJhqwnRhg==}
     hasBin: true
+
+  '@effect/ui@https://pkg.pr.new/Effect-TS/ui/@effect/ui@cee4c18':
+    resolution: {integrity: sha512-mU7kQnK22zYsm4vCB52xEKrJj007CJ6nofMt/CadGKBzC8ty0mMhdHD9YUXzfWvHXXbC17UarBXrqrTH3I9K8Q==, tarball: https://pkg.pr.new/Effect-TS/ui/@effect/ui@cee4c18}
+    version: 0.0.0
+    peerDependencies:
+      effect: ^4.1.4
 
   '@effect/vitest@4.1.4':
     resolution: {integrity: sha512-AKpZ6zKihCRhY7hDbiQ2yp/krw+afIkxDRjFMwwzMiyhd0iYk0WaHa9J6GGC7TUF/C7HP2dZyMVq5xC0Qm/2/g==}
@@ -3728,6 +3768,10 @@ snapshots:
       '@effect/tsgo-linux-x64': 0.69.0
       '@effect/tsgo-win32-arm64': 0.69.0
       '@effect/tsgo-win32-x64': 0.69.0
+
+  '@effect/ui@https://pkg.pr.new/Effect-TS/ui/@effect/ui@cee4c18(effect@4.1.4)':
+    dependencies:
+      effect: 4.1.4
 
   '@effect/vitest@4.1.4(effect@4.1.4)(vitest@5.1.0(@types/node@24.19.2)(jsdom@31.0.0)(vite@8.3.8(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1)))':
     dependencies:

@@ -1,0 +1,40 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*.ts", "test/**/*.ts", "*.config.ts"],
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "allowedExperimentalApis": [
+          "@effect/ui/Command",
+          "@effect/ui/Component",
+          "@effect/ui/Head",
+          "@effect/ui/Query",
+          "@effect/ui/Route",
+          "@effect/ui/Router",
+          "@effect/ui/UiSchema",
+          "@effect/ui/html/BrowserHost",
+          "@effect/ui/html/BrowserRouter",
+          "@effect/ui/html/Html"
+        ],
+        "allowedUnstableApis": [
+          "@effect/vitest",
+          "effect/http/FetchHttpClient",
+          "effect/http/HttpClient",
+          "effect/http/HttpClientRequest",
+          "effect/http/HttpClientResponse",
+          "effect/reactivity/AsyncResult",
+          "effect/rpc/RpcClient",
+          "effect/rpc/RpcClientError",
+          "effect/rpc/RpcSerialization"
+        ]
+      }
+    ],
+    "allowImportingTsExtensions": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "noEmit": true,
+    "types": ["node", "vite/client"]
+  }
+}
